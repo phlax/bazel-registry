@@ -40,6 +40,34 @@ WORKSPACE_TEST_MODULE = "test_module"
 WORKSPACE_STUB = "stub"
 NO_TEST_TARGETS_MSG = "No test targets were found"
 
+# The Envoy CI worker image is used as *both* the local container that runs
+# verify_module.py and the RBE exec platform.  They must be the same image
+# so that compilation artefacts cached remotely are bit-for-bit compatible
+# with a subsequent local repro.  Update both by changing this one constant.
+ENVOY_CI_IMAGE = (
+    "gcr.io/envoy-ci/envoy-build:worker-v0.1.8"
+    "@sha256:934b50777b1eb9348b0e62cafd9eee5c79828e57d4ca08083c86d3099b14bb42"
+)
+
+# Minimal credential helper for EngFlow RBE.  Written into the consumer
+# workspace at bazel/engflow-bazel-credential-helper.sh so that the
+# --credential_helper flag in the generated .bazelrc can reference it via
+# %workspace%.  The script follows the Bazel credential-helper protocol
+# (https://github.com/bazelbuild/proposals/blob/main/designs/2022-06-07-bazel-credential-helpers.md):
+# read a JSON request from stdin, write a JSON response to stdout.
+# %s receives ${GITHUB_TOKEN} at run-time; printf is used so that the format
+# string can be single-quoted (no bash escaping needed).
+ENGFLOW_CREDENTIAL_HELPER = """\
+#!/bin/bash
+# EngFlow/mordenite credential helper.
+# Emits Authorization: ****** for *.engflow.com endpoints.
+# Called by Bazel for each remote-cache / remote-exec request.
+# Protocol: read a JSON request from stdin, write a JSON response to stdout.
+set -euo pipefail
+cat > /dev/null
+printf '{"headers":{"Authorization":["Bearer %s"]}}\\n' "${GITHUB_TOKEN}"
+"""
+
 
 class VerificationError(Exception):
     pass
@@ -194,7 +222,61 @@ def create_workspace(args, version_dir, tasks, uses_test_module, module_path):
     return workspace, workspace_kind
 
 
+def _write_rbe_config(workspace):
+    """Write the EngFlow credential helper and return RBE bazelrc lines.
+
+    The credential helper is written into the workspace so that the
+    --credential_helper flag can reference it via %workspace%.
+
+    --experimental_remote_downloader is deliberately NOT included.  This
+    registry's purpose is asserting that fetched archives match source.json;
+    routing module archive fetches through EngFlow's CAS would bypass exactly
+    the property being verified.
+    """
+    cred_dir = workspace / "bazel"
+    cred_dir.mkdir(exist_ok=True)
+    cred_helper = cred_dir / "engflow-bazel-credential-helper.sh"
+    cred_helper.write_text(ENGFLOW_CREDENTIAL_HELPER)
+    cred_helper.chmod(0o755)
+    # Client image and exec platform image must be the same so that cached
+    # artefacts are bit-for-bit compatible between the two environments.
+    container_image = f"docker://{ENVOY_CI_IMAGE}"
+    return [
+        "common:engflow-common --google_default_credentials=false",
+        "common:engflow-common "
+        "--credential_helper=*.engflow.com="
+        "%workspace%/bazel/engflow-bazel-credential-helper.sh",
+        "common:engflow-common --grpc_keepalive_time=60s",
+        "common:engflow-common --grpc_keepalive_timeout=30s",
+        "common:engflow-common --remote_cache_compression",
+        "common:engflow-common --remote_retries=10",
+        "common:engflow-common --remote_retry_max_delay=60s",
+        "common:engflow-common "
+        "--experimental_remote_cache_eviction_retries=5",
+        "common:remote-cache "
+        "--remote_cache=grpcs://mordenite.cluster.engflow.com",
+        "common:remote-cache --remote_timeout=3600s",
+        f"common:remote-exec "
+        f"--remote_default_exec_properties=container-image={container_image}",
+        "common:remote-exec "
+        "--remote_executor=grpcs://mordenite.cluster.engflow.com",
+        "common:remote-exec --jobs=200",
+        "common:remote-exec --define=engflow_rbe=true",
+        # Activate both configs.
+        "build --config=engflow-common",
+        "build --config=remote-cache",
+        "build --config=remote-exec",
+    ]
+
+
 def write_bazelrc(args, workspace):
+    """Write .bazelrc for the consumer workspace.
+
+    RBE and local-only settings are mutually exclusive:
+    - RBE off (default): disk cache + modest --jobs for local iteration.
+    - RBE on (--rbe / RBE=1): no disk cache (two layers fighting is worse
+      than one), remote cache + remote executor, --jobs=200.
+    """
     registry_url = f"file://{pathlib.Path(args.registry).resolve()}"
     lines = [
         # Local registry first, BCR fallback.
@@ -204,20 +286,17 @@ def write_bazelrc(args, workspace):
         "build --verbose_failures",
         "build --show_timestamps",
     ]
-    cache = pathlib.Path(args.cache) if args.cache else None
-    if cache and os.access(cache, os.W_OK):
-        lines += [
-            f"common --disk_cache={cache / 'disk'}",
-            f"common --repository_cache={cache / 'repository'}",
-        ]
-    if os.environ.get("RBE") == "1":
-        # RBE is opt-in; credentials are bind-mounted at runtime and the
-        # config supplied as a bazelrc snippet - nothing baked.
-        rbe_bazelrc = os.environ.get("RBE_BAZELRC", "/rbe/bazelrc")
-        if not pathlib.Path(rbe_bazelrc).is_file():
-            raise VerificationError(
-                f"RBE=1 but no bazelrc snippet found at {rbe_bazelrc}")
-        lines.append(f"import {rbe_bazelrc}")
+    rbe = getattr(args, "rbe", False) or os.environ.get("RBE") == "1"
+    if rbe:
+        lines += _write_rbe_config(workspace)
+    else:
+        cache = pathlib.Path(args.cache) if args.cache else None
+        if cache and os.access(cache, os.W_OK):
+            lines += [
+                f"common --disk_cache={cache / 'disk'}",
+                f"common --repository_cache={cache / 'repository'}",
+            ]
+        lines.append("build --jobs=8")
     (workspace / ".bazelrc").write_text("\n".join(lines) + "\n")
 
 
@@ -352,6 +431,12 @@ def parse_args(argv):
         help="Bazel version (bazelisk USE_BAZEL_VERSION)")
     parser.add_argument(
         "--bcr", default=BCR_URL, help="Fallback registry URL")
+    parser.add_argument(
+        "--rbe", action="store_true",
+        default=(os.environ.get("RBE") == "1"),
+        help="Enable EngFlow RBE (remote cache + executor).  "
+             "Also activated by RBE=1 in the environment.  "
+             "Mutually exclusive with disk cache / local --jobs.")
     args = parser.parse_args(argv)
     if not args.scratch:
         args.scratch = tempfile.mkdtemp(prefix="verify-")

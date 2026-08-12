@@ -101,5 +101,127 @@ class VerifyOrderTest(unittest.TestCase):
             self.assertEqual(commands, ["build", "test"])
 
 
-if __name__ == "__main__":
+class WriteBazelrcTest(unittest.TestCase):
+    """Tests for write_bazelrc() RBE/local-only mode switching."""
+
+    def _make_args(self, rbe=False, cache=None, registry=None, bcr=None,
+                   scratch=None):
+        return types.SimpleNamespace(
+            rbe=rbe,
+            cache=cache or "",
+            registry=registry or "/registry",
+            bcr=bcr or verify_module.BCR_URL,
+            scratch=scratch or "",
+        )
+
+    def _read_bazelrc(self, workspace):
+        return (workspace / ".bazelrc").read_text()
+
+    def test_rbe_off_writes_disk_cache_and_no_remote_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            cache_dir = pathlib.Path(tmp) / "cache"
+            cache_dir.mkdir()
+            args = self._make_args(rbe=False, cache=str(cache_dir))
+            verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertIn("--disk_cache=", rc)
+            self.assertIn("--repository_cache=", rc)
+            self.assertNotIn("--remote_cache", rc)
+            self.assertNotIn("--remote_executor", rc)
+            self.assertNotIn("remote-cache", rc)
+            self.assertNotIn("remote-exec", rc)
+
+    def test_rbe_off_writes_local_jobs_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            args = self._make_args(rbe=False)
+            verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertIn("--jobs=", rc)
+            self.assertNotIn("--jobs=200", rc)
+
+    def test_rbe_on_writes_remote_cache_and_executor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            args = self._make_args(rbe=True)
+            verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertIn("remote_cache=grpcs://mordenite.cluster.engflow.com",
+                          rc)
+            self.assertIn(
+                "remote_executor=grpcs://mordenite.cluster.engflow.com", rc)
+            self.assertIn("--jobs=200", rc)
+
+    def test_rbe_on_does_not_write_disk_cache(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            cache_dir = pathlib.Path(tmp) / "cache"
+            cache_dir.mkdir()
+            # Even with a writable cache dir, RBE mode must not add disk_cache.
+            args = self._make_args(rbe=True, cache=str(cache_dir))
+            verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertNotIn("--disk_cache=", rc)
+            self.assertNotIn("--repository_cache=", rc)
+
+    def test_rbe_on_pins_exec_platform_to_envoy_ci_image(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            args = self._make_args(rbe=True)
+            verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertIn(verify_module.ENVOY_CI_IMAGE, rc)
+            self.assertIn("container-image=docker://", rc)
+
+    def test_rbe_on_writes_credential_helper_script(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            args = self._make_args(rbe=True)
+            verify_module.write_bazelrc(args, workspace)
+            cred_helper = workspace / "bazel" / "engflow-bazel-credential-helper.sh"
+            self.assertTrue(cred_helper.exists(),
+                            "credential helper script not written")
+            self.assertTrue(cred_helper.stat().st_mode & 0o111,
+                            "credential helper is not executable")
+
+    def test_experimental_remote_downloader_never_appears(self):
+        """Downloading must go through the normal fetch path, not EngFlow CAS.
+
+        The registry's entire purpose is verifying that fetched archives
+        match source.json; bypassing that via the remote downloader would
+        defeat the verification.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            for rbe in (False, True):
+                args = self._make_args(rbe=rbe)
+                verify_module.write_bazelrc(args, workspace)
+                rc = self._read_bazelrc(workspace)
+                self.assertNotIn(
+                    "experimental_remote_downloader", rc,
+                    f"experimental_remote_downloader must never appear "
+                    f"(rbe={rbe})")
+
+    def test_rbe_env_var_activates_rbe_mode(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = pathlib.Path(tmp) / "ws"
+            workspace.mkdir()
+            # args.rbe=False but RBE=1 in environment
+            args = self._make_args(rbe=False)
+            with mock.patch.dict("os.environ", {"RBE": "1"}):
+                verify_module.write_bazelrc(args, workspace)
+            rc = self._read_bazelrc(workspace)
+            self.assertIn("remote_executor", rc)
+
+
+
+if __name__ == '__main__':
     unittest.main()
