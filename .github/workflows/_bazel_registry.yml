@@ -165,8 +165,17 @@ jobs:
     runs-on: ubuntu-24.04
     name: Bazel module verify (${{ inputs.module }}:${{ inputs.version }})
     steps:
-    # Stub: replaced with containerized bzlmod verification once the
-    # verify harness (#8/#10) lands.
-    - name: Verify module (stub)
-      run: |
-        echo "Verification stub: would verify ${{ inputs.module }}@${{ inputs.version }}"
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - run: |
+        ./verify/verify.sh \
+            --cold \
+            --artifacts "${{ runner.temp }}/verify-artifacts" \
+            "${{ inputs.module }}" \
+            "${{ inputs.version }}"
+      name: Verify ${{ inputs.module }}@${{ inputs.version }}
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+      if: always()
+      with:
+        name: verify-${{ inputs.module }}-${{ inputs.version }}
+        path: ${{ runner.temp }}/verify-artifacts
+        if-no-files-found: ignore
