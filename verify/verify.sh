@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Local/CI runner for BCR-style module verification (CI tier 2).
 #
-# Builds the verification container and runs a single module version
-# against it. The registry is bind-mounted read-only, the scratch
-# consumer workspace stays container-internal, and artifacts
+# Uses the Envoy CI worker image (same image used as the EngFlow RBE exec
+# platform) as the container.  The registry is bind-mounted read-only, the
+# scratch consumer workspace stays container-internal, and artifacts
 # (build logs + build-event JSON) land in a narrow writable mount.
 #
 # The disk/repository cache lives on a named volume for tolerable local
@@ -16,23 +16,29 @@
 #   --bazel <version>     Bazel version(s), comma-separated (default: 8.x)
 #   --cold                No cache volume - cold build, as CI runs it
 #   --artifacts <dir>     Artifacts output dir (default: ./verify-artifacts)
-#   --image <tag>         Image tag (default: envoy-bazel-registry-verify)
-#   --no-build            Skip docker build (use an existing image)
+#   --image <ref>         Image ref (default: pinned ENVOY_CI_IMAGE from verify_module.py)
+#   --rbe                 Enable EngFlow RBE (requires GITHUB_TOKEN in env)
 #
-# RBE is opt-in: set RBE=1 and RBE_CREDS=<dir> (bind-mounted read-only at
-# /rbe, expected to contain a `bazelrc` snippet). Nothing is baked into
-# the image and the default (off) works from a fresh clone with zero
-# setup.
+# RBE is opt-in: pass --rbe (or set RBE=1).  Authentication uses GITHUB_TOKEN
+# from the calling environment.  Nothing is baked into the image.
 
 set -e -o pipefail
 
 REGISTRY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE=envoy-bazel-registry-verify
+# Default image: the pinned Envoy CI worker image defined in verify_module.py.
+# Both the local container and the RBE exec platform use this same image.
+DEFAULT_IMAGE="$(python3 -c "
+import sys
+sys.path.insert(0, '${REGISTRY_ROOT}/verify')
+import verify_module
+print(verify_module.ENVOY_CI_IMAGE)
+")"
+IMAGE="${DEFAULT_IMAGE}"
 CACHE_VOLUME=envoy-bazel-registry-verify-cache
 ARTIFACTS="${PWD}/verify-artifacts"
 BAZEL_VERSIONS="${BAZEL_VERSIONS:-8.x}"
 COLD=
-BUILD_IMAGE=1
+RBE="${RBE:-}"
 ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -41,7 +47,7 @@ while [[ $# -gt 0 ]]; do
         --cold) COLD=1; shift ;;
         --artifacts) ARTIFACTS="$2"; shift 2 ;;
         --image) IMAGE="$2"; shift 2 ;;
-        --no-build) BUILD_IMAGE=; shift ;;
+        --rbe) RBE=1; shift ;;
         -h|--help) grep '^#' "$0" | cut -c3-; exit 0 ;;
         *) ARGS+=("$1"); shift ;;
     esac
@@ -59,10 +65,6 @@ if [[ ! -d "${REGISTRY_ROOT}/modules/${MODULE}/${VERSION}" ]]; then
     exit 1
 fi
 
-if [[ -n "$BUILD_IMAGE" ]]; then
-    docker build -t "$IMAGE" "${REGISTRY_ROOT}/verify"
-fi
-
 mkdir -p "$ARTIFACTS"
 ARTIFACTS="$(cd "$ARTIFACTS" && pwd)"
 
@@ -75,6 +77,9 @@ DOCKER_ARGS=(
     -e HOME=/tmp/verify-home
     -e USER=verify
     -v "${REGISTRY_ROOT}:/registry:ro"
+    # Inject the verifier script from the registry checkout.
+    -v "${REGISTRY_ROOT}/verify/verify_module.py:/usr/local/bin/verify_module.py:ro"
+    --entrypoint python3
 )
 if [[ -z "$COLD" ]]; then
     DOCKER_ARGS+=(-v "${CACHE_VOLUME}:/cache")
@@ -83,9 +88,9 @@ if [[ -z "$COLD" ]]; then
     docker run --rm -v "${CACHE_VOLUME}:/cache" --entrypoint chown \
         --user root "$IMAGE" "$RUN_USER" /cache
 fi
-if [[ "${RBE:-}" == "1" ]]; then
-    : "${RBE_CREDS:?RBE=1 requires RBE_CREDS=<dir containing bazelrc>}"
-    DOCKER_ARGS+=(-e RBE=1 -v "${RBE_CREDS}:/rbe:ro")
+if [[ "${RBE}" == "1" ]]; then
+    : "${GITHUB_TOKEN:?--rbe / RBE=1 requires GITHUB_TOKEN to be set}"
+    DOCKER_ARGS+=(-e RBE=1 -e GITHUB_TOKEN="${GITHUB_TOKEN}")
 fi
 
 FAILED=
@@ -93,12 +98,15 @@ for BAZEL_VERSION in ${BAZEL_VERSIONS//,/ }; do
     VERSION_ARTIFACTS="${ARTIFACTS}/${MODULE}/${VERSION}/bazel-${BAZEL_VERSION}"
     mkdir -p "$VERSION_ARTIFACTS"
     echo ">>> Verifying ${MODULE}@${VERSION} with bazel ${BAZEL_VERSION}"
+    RBE_ARGS=()
+    [[ "${RBE}" == "1" ]] && RBE_ARGS=(--rbe)
     if ! docker run \
              "${DOCKER_ARGS[@]}" \
              -v "${VERSION_ARTIFACTS}:/artifacts" \
              -e "USE_BAZEL_VERSION=${BAZEL_VERSION}" \
              "$IMAGE" \
-             "$MODULE" "$VERSION"; then
+             /usr/local/bin/verify_module.py \
+             "$MODULE" "$VERSION" "${RBE_ARGS[@]}"; then
         FAILED=1
     fi
 done
