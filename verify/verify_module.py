@@ -36,6 +36,9 @@ import yaml
 BCR_URL = "https://bcr.bazel.build"
 MATRIX_VAR_RE = re.compile(r"\$\{\{\s*(\w+)\s*\}\}")
 SKIP_NOTE_EXIT = 0
+WORKSPACE_TEST_MODULE = "test_module"
+WORKSPACE_STUB = "stub"
+NO_TEST_TARGETS_MSG = "No test targets were found"
 
 
 class VerificationError(Exception):
@@ -154,10 +157,10 @@ def fetch_source(version_dir, dest):
 def create_workspace(args, version_dir, tasks, uses_test_module, module_path):
     """Create the scratch consumer workspace.
 
-    Returns (workspace_path, is_test_module).
+    Returns (workspace_path, workspace_kind).
     """
     workspace = pathlib.Path(args.scratch) / "workspace"
-    is_test_module = True
+    workspace_kind = WORKSPACE_TEST_MODULE
     local_test_module = version_dir / "test_module"
     if local_test_module.is_dir():
         log(f"Using registry test_module: {local_test_module}")
@@ -174,7 +177,7 @@ def create_workspace(args, version_dir, tasks, uses_test_module, module_path):
         shutil.copytree(test_module, workspace)
     else:
         log("No test module; synthesising anonymous stub consumer")
-        is_test_module = False
+        workspace_kind = WORKSPACE_STUB
         workspace.mkdir(parents=True)
         (workspace / "MODULE.bazel").write_text(
             'module(name = "verify_consumer")\n'
@@ -188,7 +191,7 @@ def create_workspace(args, version_dir, tasks, uses_test_module, module_path):
             f'\nsingle_version_override(module_name = "{args.module}", '
             f'version = "{args.version}")\n')
     write_bazelrc(args, workspace)
-    return workspace, is_test_module
+    return workspace, workspace_kind
 
 
 def write_bazelrc(args, workspace):
@@ -218,7 +221,8 @@ def write_bazelrc(args, workspace):
     (workspace / ".bazelrc").write_text("\n".join(lines) + "\n")
 
 
-def run_bazel(args, workspace, command, flags, targets, log_name):
+def run_bazel(args, workspace, command, flags, targets, log_name,
+              allow_no_test_targets=False):
     artifacts = pathlib.Path(args.artifacts)
     artifacts.mkdir(parents=True, exist_ok=True)
     build_log = artifacts / f"{log_name}.log"
@@ -243,6 +247,11 @@ def run_bazel(args, workspace, command, flags, targets, log_name):
             logfile.write(line.decode(errors="replace"))
         proc.wait()
     if proc.returncode != 0:
+        if allow_no_test_targets and command == "test":
+            log_text = build_log.read_text(errors="replace")
+            if NO_TEST_TARGETS_MSG in log_text:
+                log("No test targets found in test module; skipping tests")
+                return
         raise VerificationError(
             f"bazel {command} failed (exit {proc.returncode}); "
             f"see {build_log} and {bep}")
@@ -271,8 +280,17 @@ def assert_local_registry(args, workspace):
     log(f"✓ {args.module}@{args.version} resolved from local registry")
 
 
-def default_flags_and_targets(args, tasks, is_test_module, uses_test_module):
-    """Build/test flags+targets from presubmit tasks, or defaults."""
+def default_flags_and_targets(args, tasks, workspace_kind):
+    """Build/test flags+targets from presubmit tasks, or defaults.
+
+    Returns (plans, allow_no_test_targets), where allow_no_test_targets is
+    only enabled for the default test-module `bazel test //...` path.
+    """
+    if not tasks:
+        if workspace_kind == WORKSPACE_TEST_MODULE:
+            # Test-module workspaces should validate their own targets.
+            return [([], ["//..."], [], ["//..."])], True
+        return [([], [f"@{args.module}//..."], [], [])], False
     plans = []
     for name, task in tasks:
         plans.append((
@@ -280,13 +298,7 @@ def default_flags_and_targets(args, tasks, is_test_module, uses_test_module):
             task.get("build_targets") or [],
             task.get("test_flags") or [],
             task.get("test_targets") or []))
-    if is_test_module and not uses_test_module:
-        # A hand-written registry test_module without bcr_test_module
-        # tasks: build and test its own targets as well.
-        plans.append(([], ["//..."], [], ["//..."]))
-    if not plans:
-        plans.append(([], [f"@{args.module}//..."], [], []))
-    return plans
+    return plans, False
 
 
 def verify(args):
@@ -296,10 +308,11 @@ def verify(args):
         raise VerificationError(f"No such module version: {version_dir}")
     tasks, uses_test_module, module_path = parse_presubmit(
         version_dir / "presubmit.yml")
-    workspace, is_test_module = create_workspace(
+    workspace, workspace_kind = create_workspace(
         args, version_dir, tasks, uses_test_module, module_path)
-    plans = default_flags_and_targets(
-        args, tasks, is_test_module, uses_test_module)
+    assert_local_registry(args, workspace)
+    plans, allow_no_test_targets = default_flags_and_targets(
+        args, tasks, workspace_kind)
     for i, (build_flags, build_targets, test_flags, test_targets) \
             in enumerate(plans):
         suffix = f".{i}" if len(plans) > 1 else ""
@@ -310,12 +323,11 @@ def verify(args):
         if test_targets:
             run_bazel(
                 args, workspace, "test", test_flags, test_targets,
-                f"test{suffix}")
+                f"test{suffix}", allow_no_test_targets=allow_no_test_targets)
         if not build_targets and not test_targets:
             run_bazel(
                 args, workspace, "build", build_flags,
                 [f"@{args.module}//..."], f"build{suffix}")
-    assert_local_registry(args, workspace)
     log(f"✓ Verified {args.module}@{args.version} (bazel {args.bazel})")
 
 
