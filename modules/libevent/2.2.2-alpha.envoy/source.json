@@ -3,7 +3,7 @@
     "strip_prefix": "libevent-release-2.2.2-alpha",
     "integrity": "sha256-8KHq04P7SZLN6S3+qIoZ5D2BmLWSk45FTaH1t9vDnak=",
     "overlay": {
-        "BUILD.bazel": "sha256-RF+C+G/jP85anLnl6puvVgYO9NOODDB/t9IwcuGO1Fw=",
+        "BUILD.bazel": "sha256-CyPm29P1NG8djaxdzzEgW17/oVzPksdSXwY1JZsU2jI=",
         "WIN32-Code/BUILD.bazel": "sha256-7UbnkQwzRqS0Ie6T1yg3lvgPtUwmPhjLUk3AGSylnuE=",
         "compat/BUILD.bazel": "sha256-26hzdd3vMmV43OSB6m5wRfC88SASt4sSd/V4aOj+RhU=",
         "evconfig-private.h": "sha256-LIvjuDCAT/2R+g9+y/xC/p0LcLRJ70GkbuXQS/hID2w=",

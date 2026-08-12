@@ -207,29 +207,17 @@ EVENT_EXTRA_PUBLIC_HEADERS = [
 ]
 
 cc_library(
-    name = "event_extra_sha1",
-    srcs = [
-        "sha1.c",
-    ],
-    copts = [
-        # Upstream CMake sets -D${CMAKE_C_BYTE_ORDER}=1 for sha1.c.
-        "-DLITTLE_ENDIAN=1",
-    ],
-    visibility = ["//visibility:private"],
-    deps = [
-        ":event_core",
-        ":event_core_private_headers",
-        ":event_extra_private_headers",
-    ],
-)
-
-cc_library(
     name = "event_extra",
     srcs = [
         "evdns.c",
         "event_tagging.c",
         "evrpc.c",
         "http.c",
+        # sha1.c derives endianness from BYTE_ORDER, which it obtains via
+        # EVENT__HAVE_ENDIAN_H / EVENT__HAVE_SYS_ENDIAN_H from the config
+        # headers.  All supported platforms set at least one of those macros,
+        # so no per-target byte-order copt is required here.
+        "sha1.c",
         "ws.c",
     ],
     hdrs = EVENT_EXTRA_PUBLIC_HEADERS,
@@ -246,7 +234,6 @@ cc_library(
         ":event_core",
         ":event_core_private_headers",
         ":event_extra_private_headers",
-        ":event_extra_sha1",
         "//compat",
     ],
 )
@@ -259,9 +246,8 @@ cc_library(
         ":event_core",
         ":event_extra",
     ] + select({
-        "@platforms//os:linux": [":event_pthreads"],
-        "@platforms//os:macos": [":event_pthreads"],
-        "//conditions:default": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": [":event_pthreads"],
     }),
 )
 
@@ -307,15 +293,13 @@ cc_library(
 cc_library(
     name = "event_pthreads",
     srcs = select({
-        "@platforms//os:linux": ["evthread_pthread.c"],
-        "@platforms//os:macos": ["evthread_pthread.c"],
-        "//conditions:default": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["evthread_pthread.c"],
     }),
     includes = ["include"],
     linkopts = select({
-        "@platforms//os:linux": ["-pthread"],
-        "@platforms//os:macos": ["-pthread"],
-        "//conditions:default": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["-pthread"],
     }),
     visibility = ["//visibility:public"],
     deps = [
