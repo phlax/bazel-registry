@@ -71,6 +71,16 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define EVENT__HAVE_ARPA_INET_H 1
 
+/* Define to 1 if you have the <endian.h> header file. */
+/* Android's bionic libc provides this header. */
+#define EVENT__HAVE_ENDIAN_H 1
+
+/* Define to 1 if you have the <sys/endian.h> header file. */
+/* #undef EVENT__HAVE_SYS_ENDIAN_H */
+
+/* Define to 1 if you have the <machine/endian.h> header file. */
+/* #undef EVENT__HAVE_MACHINE_ENDIAN_H */
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #define EVENT__HAVE_CLOCK_GETTIME 1
 

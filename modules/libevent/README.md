@@ -2,7 +2,7 @@
 
 ## Android config header regeneration
 
-`/home/runner/work/toolshed/toolshed/modules/libevent/2.2.2-alpha.envoy/overlay/event2-config_android.h`
+`/home/runner/work/bazel-registry/bazel-registry/modules/libevent/2.2.2-alpha.envoy/overlay/event2-config_android.h`
 was generated from libevent `release-2.2.2-alpha` using:
 
 - Android NDK: `r26d`
@@ -22,3 +22,7 @@ cmake /path/to/libevent-release-2.2.2-alpha \
 ```
 
 Then copy generated `include/event2/event-config.h` values into the Bazel overlay header in the same style as other platform config headers.
+
+`evconfig-private_android.h` should be kept aligned with generated
+`include/evconfig-private.h`; for Android API 23 it currently matches
+the linux private config.

@@ -217,6 +217,11 @@ cc_library(
         "ws.c",
     ],
     hdrs = EVENT_EXTRA_PUBLIC_HEADERS,
+    copts = [
+        # Upstream CMake sets -D${CMAKE_C_BYTE_ORDER}=1 for sha1.c.
+        # All currently supported CI targets are little-endian.
+        "-DLITTLE_ENDIAN=1",
+    ],
     includes = ["include"],
     linkopts = select({
         "@platforms//os:windows": [
