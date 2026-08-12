@@ -140,7 +140,7 @@ class WriteBazelrcTest(unittest.TestCase):
             args = self._make_args(rbe=False)
             verify_module.write_bazelrc(args, workspace)
             rc = self._read_bazelrc(workspace)
-            self.assertIn("--jobs=", rc)
+            self.assertIn("--jobs=8", rc)
             self.assertNotIn("--jobs=200", rc)
 
     def test_rbe_on_writes_remote_cache_and_executor(self):
