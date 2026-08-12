@@ -207,21 +207,32 @@ EVENT_EXTRA_PUBLIC_HEADERS = [
 ]
 
 cc_library(
+    name = "event_extra_sha1",
+    srcs = [
+        "sha1.c",
+    ],
+    copts = [
+        # Upstream CMake sets -D${CMAKE_C_BYTE_ORDER}=1 for sha1.c.
+        "-DLITTLE_ENDIAN=1",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":event_core",
+        ":event_core_private_headers",
+        ":event_extra_private_headers",
+    ],
+)
+
+cc_library(
     name = "event_extra",
     srcs = [
         "evdns.c",
         "event_tagging.c",
         "evrpc.c",
         "http.c",
-        "sha1.c",
         "ws.c",
     ],
     hdrs = EVENT_EXTRA_PUBLIC_HEADERS,
-    copts = [
-        # Upstream CMake sets -D${CMAKE_C_BYTE_ORDER}=1 for sha1.c.
-        # All currently supported CI targets are little-endian.
-        "-DLITTLE_ENDIAN=1",
-    ],
     includes = ["include"],
     linkopts = select({
         "@platforms//os:windows": [
@@ -235,6 +246,7 @@ cc_library(
         ":event_core",
         ":event_core_private_headers",
         ":event_extra_private_headers",
+        ":event_extra_sha1",
         "//compat",
     ],
 )
