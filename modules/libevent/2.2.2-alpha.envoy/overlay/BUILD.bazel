@@ -213,10 +213,9 @@ cc_library(
         "event_tagging.c",
         "evrpc.c",
         "http.c",
-        # sha1.c derives endianness from BYTE_ORDER, which it obtains via
-        # EVENT__HAVE_ENDIAN_H / EVENT__HAVE_SYS_ENDIAN_H from the config
-        # headers.  All supported platforms set at least one of those macros,
-        # so no per-target byte-order copt is required here.
+        # sha1.c requires LITTLE_ENDIAN or BIG_ENDIAN to be defined; the
+        # per-platform event2-config_*.h headers supply them where the libc
+        # does not.  See event2-config_android.h.
         "sha1.c",
         "ws.c",
     ],

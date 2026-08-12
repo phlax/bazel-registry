@@ -81,6 +81,27 @@
 /* Define to 1 if you have the <machine/endian.h> header file. */
 /* #undef EVENT__HAVE_MACHINE_ENDIAN_H */
 
+/* sha1.c selects its byte-swap path with `#if defined(LITTLE_ENDIAN)` /
+ * `#if defined(BIG_ENDIAN)`.  It does not include <endian.h> itself and
+ * relies on the platform libc leaking those names transitively: glibc does
+ * so via <sys/types.h> under __USE_MISC, but bionic does not, so on Android
+ * neither macro is in scope and sha1.c hits its `#error`.
+ *
+ * Define exactly one of them, driven by the compiler.  Defining both (as
+ * <endian.h> does, since it declares them as the constants 1234/4321) would
+ * make sha1.c unconditionally take the little-endian branch regardless of
+ * the real target byte order.
+ *
+ * The !defined guard keeps this inert if some other header already brought
+ * the macros into scope, preserving existing behaviour in that case. */
+#if !defined(LITTLE_ENDIAN) && !defined(BIG_ENDIAN)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define LITTLE_ENDIAN 1234
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define BIG_ENDIAN 4321
+#endif
+#endif
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #define EVENT__HAVE_CLOCK_GETTIME 1
 

@@ -23,6 +23,11 @@ cmake /path/to/libevent-release-2.2.2-alpha \
 
 Then copy generated `include/event2/event-config.h` values into the Bazel overlay header in the same style as other platform config headers.
 
+Preserve the handwritten byte-order block in
+`event2-config_android.h` when regenerating it. That block is not
+part of the cmake-generated output; it exists so libevent's `sha1.c`
+has exactly one of `LITTLE_ENDIAN` / `BIG_ENDIAN` in scope on Android.
+
 `evconfig-private_android.h` should be kept aligned with generated
 `include/evconfig-private.h`; for Android API 23 it currently matches
 the linux private config.
