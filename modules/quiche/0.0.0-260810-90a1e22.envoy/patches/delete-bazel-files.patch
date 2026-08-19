@@ -1,0 +1,8 @@
+diff --git a/build/BUILD.bazel b/build/BUILD.bazel.upstream
+similarity index 100%
+rename from build/BUILD.bazel
+rename to build/BUILD.bazel.upstream
+diff --git a/quiche/BUILD.bazel b/quiche/BUILD.bazel.upstream
+similarity index 100%
+rename from quiche/BUILD.bazel
+rename to quiche/BUILD.bazel.upstream
