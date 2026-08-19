@@ -40,7 +40,7 @@ label_flag(
 
 label_flag(
     name = "mobile_quiche_bug_tracker_impl_lib",
-    build_setting_default = ":quiche_logging_impl_lib_default",
+    build_setting_default = ":quiche_bug_tracker_impl_lib_default",
     visibility = ["//visibility:public"],
 )
 
@@ -152,13 +152,16 @@ cc_library(
     includes = ["."],
     strip_include_prefix = "quiche/common/platform/default/",
     visibility = ["//visibility:public"],
-    deps = [":quiche_common_platform_export"],
+    deps = [
+        ":quiche_common_platform_export",
+        ":quiche_feature_flags_list_lib",
+        ":quiche_protocol_flags_list_lib",
+    ],
 )
 
 cc_library(
     name = "quiche_logging_impl_lib_default",
     hdrs = [
-        "quiche/common/platform/default/quiche_platform_impl/quiche_bug_tracker_impl.h",
         "quiche/common/platform/default/quiche_platform_impl/quiche_logging_impl.h",
     ],
     includes = ["."],
@@ -170,6 +173,17 @@ cc_library(
         "@abseil-cpp//absl/log:absl_log",
         "@abseil-cpp//absl/log:flags",
     ],
+)
+
+cc_library(
+    name = "quiche_bug_tracker_impl_lib_default",
+    hdrs = [
+        "quiche/common/platform/default/quiche_platform_impl/quiche_bug_tracker_impl.h",
+    ],
+    includes = ["."],
+    strip_include_prefix = "quiche/common/platform/default/",
+    visibility = ["//visibility:public"],
+    deps = [":quiche_common_platform_logging"],
 )
 
 cc_library(
@@ -4371,6 +4385,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":quic_platform_base",
+        ":quic_platform_export",
         ":quiche_common_text_utils_lib",
     ],
 )
@@ -4863,6 +4878,7 @@ envoy_quiche_platform_impl_cc_library(
     hdrs = [
         "quiche/common/platform/default/quiche_platform_impl/quiche_client_stats_impl.h",
     ],
+    deps = [":quiche_common_platform_export"],
 )
 
 envoy_cc_test_library(
@@ -4878,6 +4894,10 @@ envoy_quiche_platform_impl_cc_test_library(
     name = "quiche_common_platform_default_quiche_platform_impl_system_event_loop_impl_lib",
     hdrs = [
         "quiche/common/platform/default/quiche_platform_impl/quiche_system_event_loop_impl.h",
+    ],
+    deps = [
+        ":quiche_common_platform_export",
+        ":quiche_common_platform_logging",
     ],
 )
 
@@ -4942,7 +4962,7 @@ envoy_cc_library(
         "@platforms//os:ios": [
             ":mobile_quiche_bug_tracker_impl_lib",
         ],
-        "//conditions:default": [":quiche_logging_impl_lib"],
+        "//conditions:default": [":quiche_bug_tracker_impl_lib_default"],
     }),
 )
 
@@ -5110,7 +5130,7 @@ envoy_quiche_platform_impl_cc_library(
         "quiche/common/platform/default/quiche_platform_impl/quiche_stream_buffer_allocator_impl.h",
     ],
     deps = [
-        ":quiche_common_platform_export",
+        ":quiche_common_buffer_allocator_lib",
     ],
 )
 
@@ -5182,6 +5202,7 @@ envoy_quiche_platform_impl_cc_library(
     ],
     deps = [
         ":quiche_common_platform_export",
+        ":quiche_common_platform_logging",
     ],
 )
 
@@ -5338,6 +5359,7 @@ envoy_cc_library(
     hdrs = ["quiche/common/http/http_header_block.h"],
     repository = "@envoy",
     deps = [
+        ":quiche_common_callbacks",
         ":quiche_common_lib",
         ":quiche_common_platform_export",
         ":quiche_common_platform_logging",
@@ -5738,6 +5760,7 @@ envoy_cc_library(
         ":quiche_common_quiche_vectorized_io_utils_lib",
         ":quiche_common_status_utils",
         ":quiche_common_structured_headers_lib",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/time",
         "@abseil-cpp//absl/types:span",

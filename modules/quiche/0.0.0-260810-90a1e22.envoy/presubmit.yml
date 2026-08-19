@@ -13,5 +13,12 @@ tasks:
     bazel: ${{ bazel }}
     build_targets:
     - '@quiche//:quiche_common_platform'
+    - '@quiche//:quiche_common_platform_logging'
+    - '@quiche//:quiche_common_platform_bug_tracker'
+    - '@quiche//:quiche_common_platform_export'
+    - '@quiche//:quiche_common_ip_address_family'
     - '@quiche//:quiche_crypto_logging'
     - '@quiche//:http2_adapter_nghttp2_include'
+    - '@quiche//:quiche_common_buffer_allocator_lib'
+    - '@quiche//:quic_core_tag_lib'
+    - '@quiche//:quic_platform_base'
