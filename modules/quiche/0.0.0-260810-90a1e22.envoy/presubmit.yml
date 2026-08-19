@@ -1,0 +1,17 @@
+matrix:
+  platform:
+  - debian11
+  - ubuntu2404
+  - macos
+  bazel:
+  - 8.x
+
+tasks:
+  verify_targets:
+    name: Verify build targets
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@quiche//:quiche_common_platform'
+    - '@quiche//:quiche_crypto_logging'
+    - '@quiche//:http2_adapter_nghttp2_include'

@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/google/quiche",
+    "maintainers": [],
+    "repository": [
+        "github:google/quiche"
+    ],
+    "versions": [
+        "0.0.0-260810-90a1e22.envoy"
+    ],
+    "yanked_versions": {}
+}
