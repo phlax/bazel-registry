@@ -7,6 +7,6 @@
     },
     "patch_strip": 1,
     "patches": {
-        "wasmtime.patch": "sha256-o9mGA7fMHHWCQ63O+MC7hjTfencTJ22PgTUUGC2BTK4="
+        "wasmtime.patch": "sha256-jKsUqpEuzKrZKkiu5Ox5NEx6lJ0tjroZC2+DI4mj6k8="
     }
 }
