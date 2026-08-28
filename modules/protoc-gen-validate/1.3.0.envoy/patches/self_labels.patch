@@ -1,0 +1,84 @@
+diff --git a/bazel/dependency_imports.bzl b/bazel/dependency_imports.bzl
+index 71bafc8..b08749e 100644
+--- a/bazel/dependency_imports.bzl
++++ b/bazel/dependency_imports.bzl
+@@ -8,7 +8,7 @@ def _pgv_pip_dependencies():
+     # into @pgv_pip_deps//:requirements.bzl.
+     pip_parse(
+         name = "pgv_pip_deps",
+-        requirements_lock = "@com_envoyproxy_protoc_gen_validate//python:requirements.txt",
++        requirements_lock = Label("//python:requirements.txt"),
+     )
+ 
+ def _pgv_go_dependencies():
+diff --git a/bazel/pgv_proto_library.bzl b/bazel/pgv_proto_library.bzl
+index 84ea112..c368ab8 100644
+--- a/bazel/pgv_proto_library.bzl
++++ b/bazel/pgv_proto_library.bzl
+@@ -9,9 +9,9 @@ def pgv_go_proto_library(name, compilers = _DEFAULT_GO_PROTOC, proto = None, dep
+     go_proto_library(
+         name = name,
+         proto = proto,
+-        deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate"] + deps,
++        deps = [Label("//validate:validate")] + deps,
+         compilers = compilers + [
+-            "@com_envoyproxy_protoc_gen_validate//bazel/go:pgv_plugin_go",
++            Label("//bazel/go:pgv_plugin_go"),
+         ],
+         visibility = ["//visibility:public"],
+         **kwargs
+@@ -47,13 +47,13 @@ def pgv_cc_proto_library(
+         srcs = [":" + name + "_validate"],
+         deps = cc_deps + [
+             ":" + name + "_cc_proto",
+-            "@com_envoyproxy_protoc_gen_validate//validate:cc_validate",
+-            "@com_envoyproxy_protoc_gen_validate//validate:validate_cc",
++            Label("//validate:cc_validate"),
++            Label("//validate:validate_cc"),
+             protobuf or "@com_google_protobuf//:protobuf",
+             re2 or "@com_googlesource_code_re2//:re2",
+         ],
+         copts = copts + select({
+-            "@com_envoyproxy_protoc_gen_validate//bazel:windows_x86_64": ["-DWIN32"],
++            Label("//bazel:windows_x86_64"): ["-DWIN32"],
+             "//conditions:default": [],
+         }),
+         alwayslink = 1,
+diff --git a/bazel/protobuf.bzl b/bazel/protobuf.bzl
+index d131bd6..7b13a51 100644
+--- a/bazel/protobuf.bzl
++++ b/bazel/protobuf.bzl
+@@ -119,7 +119,7 @@ cc_proto_gen_validate = rule(
+         ),
+         "_plugin": attr.label(
+             cfg = "exec",
+-            default = Label("@com_envoyproxy_protoc_gen_validate//:protoc-gen-validate"),
++            default = Label("//:protoc-gen-validate"),
+             allow_files = True,
+             executable = True,
+         ),
+@@ -180,7 +180,7 @@ _java_proto_gen_validate_aspect = aspect(
+         ),
+         "_plugin": attr.label(
+             cfg = "exec",
+-            default = Label("@com_envoyproxy_protoc_gen_validate//:protoc-gen-validate"),
++            default = Label("//:protoc-gen-validate"),
+             allow_files = True,
+             executable = True,
+         ),
+@@ -223,12 +223,12 @@ java_proto_gen_validate = rule(
+         ),
+         "_validate_deps": attr.label_list(
+             default = [
+-                Label("@com_envoyproxy_protoc_gen_validate//validate:validate_java"),
++                Label("//validate:validate_java"),
+                 Label("@com_google_re2j//jar"),
+                 Label("@com_google_protobuf//:protobuf_java"),
+                 Label("@com_google_protobuf//:protobuf_java_util"),
+-                Label("@com_envoyproxy_protoc_gen_validate//java/pgv-java-stub/src/main/java/io/envoyproxy/pgv"),
+-                Label("@com_envoyproxy_protoc_gen_validate//java/pgv-java-validation/src/main/java/io/envoyproxy/pgv"),
++                Label("//java/pgv-java-stub/src/main/java/io/envoyproxy/pgv"),
++                Label("//java/pgv-java-validation/src/main/java/io/envoyproxy/pgv"),
+             ],
+         ),
+         "_java_toolchain": attr.label(default = Label("@bazel_tools//tools/jdk:current_java_toolchain")),
