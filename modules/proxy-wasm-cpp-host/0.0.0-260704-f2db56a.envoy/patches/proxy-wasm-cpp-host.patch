@@ -11,6 +11,15 @@ index 0b53661..6555e7c 100644
      }),
      alwayslink = 1,
  )
+@@ -136,7 +136,7 @@ cc_library(
+     deps = [
+         ":base_lib",
+         ":wasm_vm_headers",
+-        "//bazel:wee8_no_pointer_compression",
++        "//bazel:v8_engine",
+     ],
+ )
+ 
 @@ -158,7 +158,7 @@ cc_library(
      }),
      deps = [
@@ -183,6 +192,6 @@ index 58b4aed..edc64ce 100644
 +
 +# V8/wee8 library - can be overridden by consuming repos
 +label_flag(
-+    name = "v8_lib",
-+    build_setting_default = "@v8//:wee8",
++    name = "v8_engine",
++    build_setting_default = "//bazel:wee8_no_pointer_compression",
 +)
