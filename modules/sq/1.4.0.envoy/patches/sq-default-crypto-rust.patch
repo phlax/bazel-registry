@@ -1,0 +1,15 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 5292d9c..4f5ce94 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -113,7 +113,9 @@ required-features = ["subplot"]
+ 
+ [features]
+ default = [
+-    "crypto-nettle",
++    "crypto-rust",
++    "allow-experimental-crypto",
++    "allow-variable-time-crypto",
+ ]
+ crypto-nettle = ["sequoia-openpgp/crypto-nettle"]
+ crypto-openssl = ["sequoia-openpgp/crypto-openssl"]
