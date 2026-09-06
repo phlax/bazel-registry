@@ -1,0 +1,8 @@
+{
+  "url": "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v1.4.0/sequoia-sq-v1.4.0.tar.gz",
+  "integrity": "sha256-yFa/sPDJShuPS3KgSm7/Hh09JMN3ywseSVaI6arYRno=",
+  "strip_prefix": "sequoia-sq-v1.4.0",
+  "overlay": {
+    "BUILD.bazel": "sha256-VW78Ja07NvERUtVD5iuPacrhWQUBU0cUO6PLJqtTXK0="
+  }
+}

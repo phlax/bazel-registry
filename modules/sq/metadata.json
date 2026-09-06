@@ -1,0 +1,16 @@
+{
+  "homepage": "https://sequoia-pgp.org",
+  "maintainers": [
+    {
+      "name": "Envoy maintainers",
+      "github": "envoyproxy"
+    }
+  ],
+  "repository": [
+    "gitlab:sequoia-pgp/sequoia-sq"
+  ],
+  "versions": [
+    "1.4.0.envoy"
+  ],
+  "yanked_versions": {}
+}
