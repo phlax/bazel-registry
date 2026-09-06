@@ -1,0 +1,480 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 5292d9c..5622b71 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -37,7 +37,7 @@ fs_extra = "1"
+ sequoia-directories = "0.1"
+ sequoia-openpgp = { version = "2", default-features = false, features = ["compression"] }
+ sequoia-autocrypt = { version = "0.26", default-features = false }
+-sequoia-net = { version = "0.30", default-features = false }
++sequoia-net = { version = "0.30", default-features = false, optional = true }
+ sequoia-policy-config = "0.8"
+ anyhow = "1.0.18"
+ chrono = "0.4.10"
+@@ -49,7 +49,7 @@ humantime = "2"
+ libc = "0.2"
+ indicatif = ">= 0.17, <0.19"
+ once_cell = "1.17"
+-reqwest = { version = ">=0.12, <0.13", features = ["hickory-dns", "stream"] }
++reqwest = { version = ">=0.12, <0.13", default-features = false, features = ["hickory-dns", "rustls-tls", "stream"], optional = true }
+ sequoia-cert-store = { version = "0.7", default-features = false }
+ sequoia-ipc = { version = "0.36", default-features = false }
+ sequoia-keystore = { version = "0.7" }
+@@ -66,6 +66,7 @@ terminal_size = ">=0.2.6, <0.5"
+ termcolor = "1.2.0"
+ textwrap = { version = ">=0.15, <0.17", default-features = false, features = ["smawk", "unicode-width"] }
+ typenum = "1"
++url = "2.1"
+ 
+ # This is for subplot only.  If you don't enable the subplot feature,
+ # feel free to patch it out.
+@@ -85,9 +86,10 @@ serde = { version = "1.0.137", features = ["derive"] }
+ sequoia-directories = "0.1"
+ sequoia-man = "0.3"
+ sequoia-openpgp = { version = "2", default-features = false, features = ["compression"] }
+-sequoia-net = { version = "0.30", default-features = false }
++sequoia-net = { version = "0.30", default-features = false, optional = true }
+ textwrap = ">=0.15, <0.17"
+ typenum = "1"
++url = "2.1"
+ cfg-if = "1"
+ terminal_size = ">=0.2.6, <0.5"
+ 
+@@ -121,6 +123,7 @@ crypto-botan = ["sequoia-openpgp/crypto-botan"]
+ crypto-botan2 = ["sequoia-openpgp/crypto-botan2"]
+ crypto-cng = ["sequoia-openpgp/crypto-cng"]
+ crypto-rust = ["sequoia-openpgp/crypto-rust"]
++network = ["dep:reqwest", "dep:sequoia-net"]
+ allow-experimental-crypto = ["sequoia-openpgp/allow-experimental-crypto"]
+ allow-variable-time-crypto = ["sequoia-openpgp/allow-variable-time-crypto"]
+ subplot = ["culpa", "subplot-build", "subplotlib"]
+diff --git a/Cargo.lock b/Cargo.lock
+index 395a257..7f11a44 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -530,6 +530,17 @@ version = "0.2.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
+ 
++[[package]]
++name = "chacha20"
++version = "0.10.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
++dependencies = [
++ "cfg-if",
++ "cpufeatures 0.3.0",
++ "rand_core 0.10.1",
++]
++
+ [[package]]
+ name = "chrono"
+ version = "0.4.45"
+@@ -1637,8 +1648,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
+ dependencies = [
+  "cfg-if",
++ "js-sys",
+  "libc",
+  "r-efi 6.0.0",
++ "rand_core 0.10.1",
++ "wasm-bindgen",
+ ]
+ 
+ [[package]]
+@@ -2026,6 +2040,7 @@ dependencies = [
+  "tokio",
+  "tokio-rustls",
+  "tower-service",
++ "webpki-roots",
+ ]
+ 
+ [[package]]
+@@ -2518,6 +2533,12 @@ dependencies = [
+  "linked-hash-map",
+ ]
+ 
++[[package]]
++name = "lru-slab"
++version = "0.1.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
++
+ [[package]]
+ name = "marked-yaml"
+ version = "0.7.2"
+@@ -3278,6 +3299,62 @@ version = "0.11.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "007d8adb5ddab6f8e3f491ac63566a7d5002cc7ed73901f72057943fa71ae1ae"
+ 
++[[package]]
++name = "quinn"
++version = "0.11.11"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0c1a41e437b6bbd489372cd4971de128e85c855f56c57f283d20ff016cf7c0a8"
++dependencies = [
++ "bytes",
++ "cfg_aliases",
++ "pin-project-lite",
++ "quinn-proto",
++ "quinn-udp",
++ "rustc-hash",
++ "rustls",
++ "socket2",
++ "thiserror 2.0.18",
++ "tokio",
++ "tracing",
++ "web-time",
++]
++
++[[package]]
++name = "quinn-proto"
++version = "0.11.17"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "04759210543be93709136e28212294a659ef5001836ff4eab4d663e4529bba83"
++dependencies = [
++ "bytes",
++ "getrandom 0.4.3",
++ "lru-slab",
++ "rand 0.10.2",
++ "rand_pcg",
++ "ring",
++ "rustc-hash",
++ "rustls",
++ "rustls-pki-types",
++ "slab",
++ "thiserror 2.0.18",
++ "tinyvec",
++ "tracing",
++ "web-time",
++]
++
++[[package]]
++name = "quinn-udp"
++version = "0.5.15"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "35a133f956daabe89a61a685c2649f13d82d5aa4bd5d12d1277e1072a21c0694"
++dependencies = [
++ "cfg_aliases",
++ "libc",
++ "once_cell",
++ "socket2",
++ "tracing",
++ "windows-sys 0.52.0",
++]
++
+ [[package]]
+ name = "quote"
+ version = "1.0.46"
+@@ -3336,6 +3413,17 @@ dependencies = [
+  "rand_core 0.9.5",
+ ]
+ 
++[[package]]
++name = "rand"
++version = "0.10.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c7f5fa3a058cd35567ef9bfa5e75732bee0f9e4c55fa90477bef2dfcdbc4be80"
++dependencies = [
++ "chacha20",
++ "getrandom 0.4.3",
++ "rand_core 0.10.1",
++]
++
+ [[package]]
+ name = "rand_chacha"
+ version = "0.3.1"
+@@ -3380,6 +3468,15 @@ version = "0.10.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+ 
++[[package]]
++name = "rand_pcg"
++version = "0.10.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
++dependencies = [
++ "rand_core 0.10.1",
++]
++
+ [[package]]
+ name = "rayon"
+ version = "1.12.0"
+@@ -3501,6 +3598,8 @@ dependencies = [
+  "once_cell",
+  "percent-encoding",
+  "pin-project-lite",
++ "quinn",
++ "rustls",
+  "rustls-pki-types",
+  "serde",
+  "serde_json",
+@@ -3508,6 +3607,7 @@ dependencies = [
+  "sync_wrapper",
+  "tokio",
+  "tokio-native-tls",
++ "tokio-rustls",
+  "tokio-util",
+  "tower",
+  "tower-http",
+@@ -3517,6 +3617,7 @@ dependencies = [
+  "wasm-bindgen-futures",
+  "wasm-streams",
+  "web-sys",
++ "webpki-roots",
+ ]
+ 
+ [[package]]
+@@ -3679,6 +3780,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "6b92b125634d9b795e7beca796cc790df15a7fb38323bf3196fda83292d06b1f"
+ dependencies = [
+  "once_cell",
++ "ring",
+  "rustls-pki-types",
+  "rustls-webpki",
+  "subtle",
+@@ -3691,6 +3793,7 @@ version = "1.15.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "764899a24af3980067ee14bc143654f297b22eaebfe3c7b6b211920a5a59b046"
+ dependencies = [
++ "web-time",
+  "zeroize",
+ ]
+ 
+@@ -4125,6 +4228,7 @@ dependencies = [
+  "tokio",
+  "toml_edit",
+  "typenum",
++ "url",
+ ]
+ 
+ [[package]]
+@@ -5277,6 +5381,15 @@ dependencies = [
+  "wasm-bindgen",
+ ]
+ 
++[[package]]
++name = "webpki-roots"
++version = "1.0.9"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
++dependencies = [
++ "rustls-pki-types",
++]
++
+ [[package]]
+ name = "widestring"
+ version = "1.2.1"
+diff --git a/src/config.rs b/src/config.rs
+index 030cdb0..0b4735e 100644
+--- a/src/config.rs
++++ b/src/config.rs
+@@ -23,7 +23,7 @@ use sequoia_openpgp::{
+     Fingerprint,
+     policy::StandardPolicy,
+ };
+-use sequoia_net::reqwest::Url;
++use url::Url;
+ use sequoia_directories::{Component, Home};
+ use sequoia_policy_config::ConfiguredStandardPolicy;
+ 
+@@ -491,7 +491,16 @@ impl ConfigFile {
+                      to_possible_value().unwrap().get_name()),
+             &format!("{:?}", cli::types::Profile::default()
+                      .to_possible_value().unwrap().get_name()),
+-            &format!("{:?}", cli::network::keyserver::DEFAULT_KEYSERVERS),
++            &format!("{:?}", {
++                #[cfg(feature = "network")]
++                {
++                    cli::network::keyserver::DEFAULT_KEYSERVERS
++                }
++                #[cfg(not(feature = "network"))]
++                {
++                    &[] as &[&str]
++                }
++            }),
+             &format!("{:?}", {
+                 sequoia_keystore::sequoia_ipc::Context::configure().build()
+                     .map(|c| c.lib().display().to_string())
+diff --git a/src/cli/mod.rs b/src/cli/mod.rs
+index 41a5d1a..928847a 100644
+--- a/src/cli/mod.rs
++++ b/src/cli/mod.rs
+@@ -96,11 +96,13 @@ pub mod examples;
+ pub mod cert;
+ pub mod config;
+ pub mod decrypt;
++#[cfg(feature = "network")]
+ pub mod download;
+ pub mod encrypt;
+ pub mod inspect;
+ pub mod key;
+ pub mod keyring;
++#[cfg(feature = "network")]
+ pub mod network;
+ pub mod output;
+ pub mod packet;
+@@ -598,6 +600,7 @@ pub enum SqSubcommands {
+ 
+     Sign(sign::Command),
+     Verify(verify::Command),
++    #[cfg(feature = "network")]
+     Download(download::Command),
+ 
+     Inspect(inspect::Command),
+@@ -606,6 +609,7 @@ pub enum SqSubcommands {
+     Key(key::Command),
+     Pki(pki::Command),
+ 
++    #[cfg(feature = "network")]
+     Network(network::Command),
+ 
+     Keyring(keyring::Command),
+diff --git a/src/commands.rs b/src/commands.rs
+index 8612937..dbe3e69 100644
+--- a/src/commands.rs
++++ b/src/commands.rs
+@@ -19,12 +19,14 @@ pub mod autocrypt;
+ pub mod cert;
+ pub mod config;
+ pub mod decrypt;
++#[cfg(feature = "network")]
+ pub mod download;
+ pub mod encrypt;
+ pub mod keyring;
+ pub mod sign;
+ pub mod inspect;
+ pub mod key;
++#[cfg(feature = "network")]
+ pub mod network;
+ pub mod packet;
+ pub mod pki;
+@@ -46,6 +48,7 @@ pub fn dispatch(sq: Sq, command: SqCommand, matches: &ArgMatches) -> Result<()>
+             sign::dispatch(sq, command),
+         SqSubcommands::Verify(command) =>
+             verify::dispatch(sq, command),
++        #[cfg(feature = "network")]
+         SqSubcommands::Download(command) =>
+             download::dispatch(sq, command),
+ 
+@@ -60,6 +63,7 @@ pub fn dispatch(sq: Sq, command: SqCommand, matches: &ArgMatches) -> Result<()>
+         SqSubcommands::Pki(command) =>
+             pki::dispatch(sq, command, matches),
+ 
++        #[cfg(feature = "network")]
+         SqSubcommands::Network(command) =>
+             network::dispatch(sq, command, matches),
+         SqSubcommands::Keyring(command) =>
+diff --git a/src/cli/config/inspect.rs b/src/cli/config/inspect.rs
+index af03a2e..99a2877 100644
+--- a/src/cli/config/inspect.rs
++++ b/src/cli/config/inspect.rs
+@@ -5,6 +5,7 @@ use clap::{
+     Subcommand,
+ };
+ 
++#[cfg(feature = "network")]
+ pub mod network;
+ pub mod paths;
+ pub mod policy;
+@@ -33,6 +34,7 @@ pub struct Command {
+ #[non_exhaustive]
+ pub enum Subcommands {
+     Paths(paths::Command),
++    #[cfg(feature = "network")]
+     Network(network::Command),
+     Policy(policy::Command),
+ }
+diff --git a/src/commands/config/inspect.rs b/src/commands/config/inspect.rs
+index d828b64..7c10e5a 100644
+--- a/src/commands/config/inspect.rs
++++ b/src/commands/config/inspect.rs
+@@ -8,7 +8,6 @@ use clap::parser::ValueSource;
+ use crate::{
+     Sq,
+     cli::config::inspect,
+-    cli::network,
+     config::ConfigFile,
+ };
+ 
+@@ -18,6 +17,7 @@ pub fn dispatch(sq: Sq, cmd: inspect::Command)
+                 -> Result<()>
+ {
+     match cmd.subcommand {
++        #[cfg(feature = "network")]
+         inspect::Subcommands::Network(c) => network(sq, c),
+         inspect::Subcommands::Paths(c) => paths(sq, c),
+         inspect::Subcommands::Policy(c) => policy::dispatch(sq, c),
+@@ -25,6 +25,7 @@ pub fn dispatch(sq: Sq, cmd: inspect::Command)
+ }
+ 
+ /// Implements `sq config inspect network`.
++#[cfg(feature = "network")]
+ fn network(sq: Sq, _: inspect::network::Command) -> Result<()> {
+     fn may_use(what: &str, enabled: bool) -> String {
+         format!("will {}use {}",
+diff --git a/src/common/key.rs b/src/common/key.rs
+index cab28e4..a97f536 100644
+--- a/src/common/key.rs
++++ b/src/common/key.rs
+@@ -113,6 +113,14 @@ pub fn certify_generated<'store, 'rstore>(sq: &mut Sq<'store, 'rstore>,
+                                           cert: &Cert)
+     -> Result<Cert>
+ {
++    #[cfg(not(feature = "network"))]
++    {
++        let _ = sq;
++        return Ok(cert.clone());
++    }
++
++    #[cfg(feature = "network")]
++    {
+     use crate::commands::network::certify_downloads;
+ 
+     let hostname =
+@@ -128,4 +136,5 @@ pub fn certify_generated<'store, 'rstore>(sq: &mut Sq<'store, 'rstore>,
+ 
+     Ok(certify_downloads(sq, false, ca, vec![cert.clone()], None)
+        .into_iter().next().expect("exactly one"))
++    }
+ }
+diff --git a/src/commands/autocrypt.rs b/src/commands/autocrypt.rs
+index 3fbce55..cdc8308 100644
+--- a/src/commands/autocrypt.rs
++++ b/src/commands/autocrypt.rs
+@@ -10,10 +10,7 @@ use sequoia_autocrypt as autocrypt;
+ 
+ use crate::{
+     Sq,
+-    commands::{
+-        cert::import::import_and_report,
+-        network::certify_downloads,
+-    },
++    commands::cert::import::import_and_report,
+     output::import::ImportStats,
+ };
+ 
+@@ -48,16 +45,22 @@ pub fn import_certs(sq: &mut Sq, source: &mut Box<dyn BufferedReader<Cookie>>,
+             if let Some(cert) = h.key {
+                 sender_cert = Some(cert.clone());
+ 
++                #[cfg(feature = "network")]
+                 if let Ok((ca, _)) = sq.certd_or_else()
+                     .and_then(|certd| certd.shadow_ca_autocrypt())
+                 {
+-                    acc.append(&mut certify_downloads(
++                    acc.append(&mut crate::commands::network::certify_downloads(
+                         sq, false, ca,
+                         vec![cert], Some(&addr[..])));
+                     provenance_recorded = true;
+                 } else {
+                     acc.push(cert);
+                 }
++
++                #[cfg(not(feature = "network"))]
++                {
++                    acc.push(cert);
++                }
+             }
+         }
+     }
