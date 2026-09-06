@@ -1,0 +1,32 @@
+module(
+    name = "sq",
+    version = "1.4.0.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.85.0"],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.annotation(
+    crate = "sequoia-openpgp",
+    crate_features = [
+        "crypto-rust",
+        "allow-experimental-crypto",
+        "allow-variable-time-crypto",
+    ],
+)
+crate.from_cargo(
+    name = "sequoia_sq_crate_index",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "sequoia_sq_crate_index")
