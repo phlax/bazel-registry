@@ -1,10 +1,13 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@sequoia_sq_crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("//:defs.bzl", "current_sq_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
+toolchain_type(name = "toolchain_type")
+
 rust_binary(
-    name = "sq",
+    name = "sq_from_source",
     srcs = glob(["src/**/*.rs"]),
     aliases = aliases(),
     compile_data = ["README.md"],
@@ -18,3 +21,5 @@ rust_binary(
     proc_macro_deps = all_crate_deps(proc_macro = True),
     deps = all_crate_deps(normal = True),
 )
+
+current_sq_toolchain(name = "sq")

@@ -1,0 +1,14 @@
+load("//:defs.bzl", "sq_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+sq_toolchain(
+    name = "from_source_impl",
+    sq = "//:sq_from_source",
+)
+
+toolchain(
+    name = "from_source",
+    toolchain = ":from_source_impl",
+    toolchain_type = "//:toolchain_type",
+)
