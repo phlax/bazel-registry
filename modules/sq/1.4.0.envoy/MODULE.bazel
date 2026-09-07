@@ -6,6 +6,7 @@ module(
 
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
+bazel_dep(name = "capnp-cpp", version = "1.4.0")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -23,6 +24,29 @@ crate.annotation(
         "allow-experimental-crypto",
         "allow-variable-time-crypto",
     ],
+)
+
+# `sequoia-ipc` and `sequoia-keystore` compile `.capnp` schemas in their
+# `build.rs` via the `capnpc` crate, which shells out to a `capnp`
+# executable. Point it at the hermetic `capnp-cpp` toolchain instead of
+# relying on a host-installed binary.
+crate.annotation(
+    crate = "sequoia-ipc",
+    build_script_env = {"CAPNP": "$(execpath @capnp-cpp//src/capnp:capnp_tool)"},
+    build_script_tools = ["@capnp-cpp//src/capnp:capnp_tool"],
+)
+crate.annotation(
+    crate = "sequoia-keystore",
+    build_script_env = {"CAPNP": "$(execpath @capnp-cpp//src/capnp:capnp_tool)"},
+    build_script_tools = ["@capnp-cpp//src/capnp:capnp_tool"],
+)
+
+# `libsqlite3-sys` (via `rusqlite`) defaults to looking for a system sqlite3
+# via `pkg-config`. Force it to compile its bundled sqlite3 amalgamation
+# instead so the build stays hermetic.
+crate.annotation(
+    crate = "rusqlite",
+    crate_features = ["bundled"],
 )
 crate.from_cargo(
     name = "sequoia_sq_crate_index",
