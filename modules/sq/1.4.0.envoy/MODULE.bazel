@@ -4,9 +4,7 @@ module(
     compatibility_level = 1,
 )
 
-bazel_dep(name = "bazel_skylib", version = "1.7.0")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.2.22")
 bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
@@ -19,9 +17,8 @@ register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.annotation(
-    crate = "sequoia-sq",
-    default_features = False,
-    features = [
+    crate = "sequoia-openpgp",
+    crate_features = [
         "crypto-rust",
         "allow-experimental-crypto",
         "allow-variable-time-crypto",

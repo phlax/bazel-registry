@@ -2,7 +2,11 @@
   "url": "https://gitlab.com/sequoia-pgp/sequoia-sq/-/archive/v1.4.0/sequoia-sq-v1.4.0.tar.gz",
   "integrity": "sha256-yFa/sPDJShuPS3KgSm7/Hh09JMN3ywseSVaI6arYRno=",
   "strip_prefix": "sequoia-sq-v1.4.0",
+  "patch_strip": 1,
+  "patches": {
+    "sq-default-crypto-rust.patch": "sha256-HDXDp3D8mE8QmN00Cra6HG4Dz6/DyEEIe83fgIYqk5g="
+  },
   "overlay": {
-    "BUILD.bazel": "sha256-VW78Ja07NvERUtVD5iuPacrhWQUBU0cUO6PLJqtTXK0="
+    "BUILD.bazel": "sha256-Z9gyfFWekCqZ6/GuCTtVcDIgtpHoE9UQISHjI4qX3s8="
   }
 }
