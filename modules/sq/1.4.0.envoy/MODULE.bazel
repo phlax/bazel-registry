@@ -49,11 +49,13 @@ crate.annotation(
 # which rules_rust does not absolutise the way it does `--sysroot`. By
 # default the build script runs from the crate's manifest directory, where
 # those relative paths don't resolve and clang can't find its own builtin
-# headers (`stdarg.h`). Run it from the execroot instead; `OUT_DIR` and
-# `CARGO_MANIFEST_DIR` are absolute so the script itself is unaffected.
+# headers (`stdarg.h`). Run it from the execroot instead, and patch the
+# script's own cwd-relative source paths to resolve via `CARGO_MANIFEST_DIR`.
 crate.annotation(
     crate = "libsqlite3-sys",
     build_script_rundir = ".",
+    patch_args = ["-p1"],
+    patches = ["//crate-patches:libsqlite3-sys-manifest-dir.patch"],
 )
 
 # `sequoia-keystore-backend`'s always-compiled `test_framework` module bakes
