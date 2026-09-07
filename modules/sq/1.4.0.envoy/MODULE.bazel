@@ -17,15 +17,6 @@ use_repo(rust, "rust_toolchains")
 register_toolchains("@rust_toolchains//:all")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
-crate.annotation(
-    crate = "sequoia-openpgp",
-    crate_features = [
-        "crypto-rust",
-        "allow-experimental-crypto",
-        "allow-variable-time-crypto",
-    ],
-)
-
 # `sequoia-ipc` and `sequoia-keystore` compile `.capnp` schemas in their
 # `build.rs` via the `capnpc` crate, which always shells out to a `capnp`
 # found on `$PATH` unless told otherwise (`capnpc::CompilerCommand` has no
@@ -47,17 +38,10 @@ crate.annotation(
     patches = ["//crate-patches:sequoia-keystore-hermetic-capnp.patch"],
 )
 
-# `libsqlite3-sys` (via `rusqlite`) defaults to looking for a system sqlite3
-# via `pkg-config`. Force it to compile its bundled sqlite3 amalgamation
-# instead so the build stays hermetic.
-crate.annotation(
-    crate = "rusqlite",
-    crate_features = ["bundled"],
-)
-crate.annotation(
-    crate = "libsqlite3-sys",
-    crate_features = ["bundled"],
-)
+# The patched root manifest selects `rusqlite`'s `bundled` feature so
+# `libsqlite3-sys` builds its bundled sqlite3 amalgamation.  Features that add
+# optional dependencies must be selected by Cargo before crate_universe
+# resolves the graph; crate annotations cannot add those dependencies.
 
 # `sequoia-keystore-backend`'s always-compiled `test_framework` module bakes
 # an absolute, build-script-sandbox-specific path into `OUT_DIR` and reads it

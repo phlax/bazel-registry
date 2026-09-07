@@ -4,8 +4,8 @@
   "strip_prefix": "sequoia-sq-v1.4.0",
   "patch_strip": 1,
   "patches": {
-    "sq-default-crypto-rust.patch": "sha256-HDXDp3D8mE8QmN00Cra6HG4Dz6/DyEEIe83fgIYqk5g=",
-    "sq-rustls-network.patch": "sha256-8vTJqDzC82GPcB2gnk+x3ErJ0m1L6VBTu8qpx+ioe4Q="
+    "sq-default-crypto-rust.patch": "sha256-3agAt9kpKaUGfz/udiK5uZ2gzFX+ya7wnafisYIXr8I=",
+    "sq-rustls-network.patch": "sha256-+DQQI8AatEgg75s+aMGAgUHb0Otwl63TbSOZIClHVnY="
   },
   "overlay": {
     "BUILD.bazel": "sha256-iwihOPe8y81fe6WFrIuZNjHRNn/GD3rvakpKFYh3kgQ=",
