@@ -67,13 +67,34 @@ crate.annotation(
     patch_args = ["-p1"],
     patches = ["//crate-patches:sequoia-keystore-backend-hermetic-paths.patch"],
 )
-# `sequoia-net` pulls in `hyper-tls`/`reqwest`'s default `native-tls` backend,
-# which on Linux means `openssl-sys`. `openssl-sys` defaults to discovering
-# OpenSSL on the host via `pkg-config`, which is non-hermetic. Force it to
-# build its bundled/vendored copy of OpenSSL from source instead.
+# Keep sq's network functionality, but force the HTTP and DNSSEC stacks away
+# from native TLS/OpenSSL and onto Rustls with Ring.  The Rustls ecosystem
+# defaults to aws-lc-rs in several crates, so disable defaults where needed to
+# avoid its cmake/go build requirements.
 crate.annotation(
-    crate = "openssl-sys",
-    crate_features = ["vendored"],
+    crate = "sequoia-net",
+    patch_args = ["-p1"],
+    patches = ["//crate-patches:sequoia-net-rustls.patch"],
+)
+crate.annotation(
+    crate = "rustls",
+    default_features = False,
+    crate_features = ["ring", "std", "tls12"],
+)
+crate.annotation(
+    crate = "hyper-rustls",
+    default_features = False,
+    crate_features = ["http1", "http2", "ring", "tls12", "webpki-tokio"],
+)
+crate.annotation(
+    crate = "tokio-rustls",
+    default_features = False,
+    crate_features = ["ring", "tls12"],
+)
+crate.annotation(
+    crate = "rustls-webpki",
+    default_features = False,
+    crate_features = ["ring", "std"],
 )
 
 crate.from_cargo(

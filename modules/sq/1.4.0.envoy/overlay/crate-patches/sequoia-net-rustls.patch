@@ -1,0 +1,31 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 208c206..68e405a 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -92,7 +92,7 @@ version = "0.24"
+ 
+ [dependencies.hickory-resolver]
+ version = "0.24"
+-features = ["dnssec-openssl"]
++features = ["dnssec-ring"]
+ 
+ [dependencies.http]
+ version = "1"
+@@ -104,8 +104,6 @@ features = [
+     "http2",
+ ]
+ 
+-[dependencies.hyper-tls]
+-version = "0.6"
+ 
+ [dependencies.libc]
+ version = "0.2.66"
+@@ -115,6 +113,8 @@ version = "2.1"
+ 
+ [dependencies.reqwest]
+ version = "0.12"
++default-features = false
++features = ["rustls-tls"]
+ 
+ [dependencies.sequoia-openpgp]
+ version = "2"
