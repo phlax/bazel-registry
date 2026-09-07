@@ -20,6 +20,7 @@ rust_binary(
     edition = "2021",
     proc_macro_deps = all_crate_deps(proc_macro = True),
     deps = all_crate_deps(normal = True),
+    version = "1.4.0",
 )
 
 current_sq_toolchain(name = "sq")

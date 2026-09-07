@@ -54,6 +54,10 @@ crate.annotation(
     crate = "rusqlite",
     crate_features = ["bundled"],
 )
+crate.annotation(
+    crate = "libsqlite3-sys",
+    crate_features = ["bundled"],
+)
 
 # `sequoia-keystore-backend`'s always-compiled `test_framework` module bakes
 # an absolute, build-script-sandbox-specific path into `OUT_DIR` and reads it
@@ -67,35 +71,10 @@ crate.annotation(
     patch_args = ["-p1"],
     patches = ["//crate-patches:sequoia-keystore-backend-hermetic-paths.patch"],
 )
-# Keep sq's network functionality, but force the HTTP and DNSSEC stacks away
-# from native TLS/OpenSSL and onto Rustls with Ring.  The Rustls ecosystem
-# defaults to aws-lc-rs in several crates, so disable defaults where needed to
-# avoid its cmake/go build requirements.
-crate.annotation(
-    crate = "sequoia-net",
-    patch_args = ["-p1"],
-    patches = ["//crate-patches:sequoia-net-rustls.patch"],
-)
-crate.annotation(
-    crate = "rustls",
-    default_features = False,
-    crate_features = ["ring", "std", "tls12"],
-)
-crate.annotation(
-    crate = "hyper-rustls",
-    default_features = False,
-    crate_features = ["http1", "http2", "ring", "tls12", "webpki-tokio"],
-)
-crate.annotation(
-    crate = "tokio-rustls",
-    default_features = False,
-    crate_features = ["ring", "tls12"],
-)
-crate.annotation(
-    crate = "rustls-webpki",
-    default_features = False,
-    crate_features = ["ring", "std"],
-)
+# The from-source fallback is used for hermetic signing only, so omit sq's
+# network-facing commands by default.  This keeps sequoia-net, reqwest, native
+# TLS, OpenSSL, and Nettle out of deps(//:sq_from_source); the prebuilt upstream
+# sq binaries still provide the full CLI.
 
 crate.from_cargo(
     name = "sequoia_sq_crate_index",
