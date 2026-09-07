@@ -4,10 +4,15 @@
   "strip_prefix": "sequoia-sq-v1.4.0",
   "patch_strip": 1,
   "patches": {
-    "sq-default-crypto-rust.patch": "sha256-HDXDp3D8mE8QmN00Cra6HG4Dz6/DyEEIe83fgIYqk5g="
+    "sq-default-crypto-rust.patch": "sha256-HDXDp3D8mE8QmN00Cra6HG4Dz6/DyEEIe83fgIYqk5g=",
+    "sq-vendor-openssl-lockfile.patch": "sha256-4scTY3SioRSvGz4s7zVsQriHVVaS4jMImA/PpvHvxak="
   },
   "overlay": {
     "BUILD.bazel": "sha256-0LkS+HXmh0/XzAR/uURbMwlplajRFpQUx6feP3tmwcQ=",
+    "crate-patches/BUILD.bazel": "sha256-YlzNmwpgN5l+K1HVurtCInHiu9AmWH7ejEHKRrA7SIU=",
+    "crate-patches/sequoia-ipc-hermetic-capnp.patch": "sha256-pxe3DHHOOY71CZO8vc94UGTRhFpu/ccBMs2RqIa/iAQ=",
+    "crate-patches/sequoia-keystore-backend-hermetic-paths.patch": "sha256-XRsRzmFIyLgGUwV1esk26kcVyWgAMiZF8KccWNprkkI=",
+    "crate-patches/sequoia-keystore-hermetic-capnp.patch": "sha256-vuEa3tFNYWR3MTWIzLvB4kJxdpTIQdGaJK8dpi+gV8E=",
     "defs.bzl": "sha256-W0mVOA2QWL/uKfkVqXr0NPRdz6fa3QCj3CzvEwfO+Ck=",
     "toolchains/BUILD.bazel": "sha256-1Wp7UJDPlwvmxalkc8ugxCUlAOyxFb7cyPJFosKysFc="
   }

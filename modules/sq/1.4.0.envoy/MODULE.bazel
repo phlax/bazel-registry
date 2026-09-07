@@ -27,18 +27,24 @@ crate.annotation(
 )
 
 # `sequoia-ipc` and `sequoia-keystore` compile `.capnp` schemas in their
-# `build.rs` via the `capnpc` crate, which shells out to a `capnp`
-# executable. Point it at the hermetic `capnp-cpp` toolchain instead of
-# relying on a host-installed binary.
+# `build.rs` via the `capnpc` crate, which always shells out to a `capnp`
+# found on `$PATH` unless told otherwise (`capnpc::CompilerCommand` has no
+# way to do that via an environment variable). Patch both `build.rs` files
+# to honour a `CAPNP` env var pointing at the hermetic `capnp-cpp` tool
+# instead of relying on a host-installed binary.
 crate.annotation(
     crate = "sequoia-ipc",
-    build_script_env = {"CAPNP": "$(execpath @capnp-cpp//src/capnp:capnp_tool)"},
-    build_script_tools = ["@capnp-cpp//src/capnp:capnp_tool"],
+    build_script_env = {"CAPNP": "$(execpath @@capnp-cpp+//src/capnp:capnp_tool)"},
+    build_script_tools = ["@@capnp-cpp+//src/capnp:capnp_tool"],
+    patch_args = ["-p1"],
+    patches = ["//crate-patches:sequoia-ipc-hermetic-capnp.patch"],
 )
 crate.annotation(
     crate = "sequoia-keystore",
-    build_script_env = {"CAPNP": "$(execpath @capnp-cpp//src/capnp:capnp_tool)"},
-    build_script_tools = ["@capnp-cpp//src/capnp:capnp_tool"],
+    build_script_env = {"CAPNP": "$(execpath @@capnp-cpp+//src/capnp:capnp_tool)"},
+    build_script_tools = ["@@capnp-cpp+//src/capnp:capnp_tool"],
+    patch_args = ["-p1"],
+    patches = ["//crate-patches:sequoia-keystore-hermetic-capnp.patch"],
 )
 
 # `libsqlite3-sys` (via `rusqlite`) defaults to looking for a system sqlite3
@@ -48,6 +54,28 @@ crate.annotation(
     crate = "rusqlite",
     crate_features = ["bundled"],
 )
+
+# `sequoia-keystore-backend`'s always-compiled `test_framework` module bakes
+# an absolute, build-script-sandbox-specific path into `OUT_DIR` and reads it
+# back via `include_bytes!` when the crate itself is compiled. Under Bazel
+# each action gets its own sandbox, so that absolute path doesn't survive
+# between the build script action and the compile action. Patch it to write
+# a path relative to `CARGO_MANIFEST_DIR`, which rules_rust sets correctly
+# for every action.
+crate.annotation(
+    crate = "sequoia-keystore-backend",
+    patch_args = ["-p1"],
+    patches = ["//crate-patches:sequoia-keystore-backend-hermetic-paths.patch"],
+)
+# `sequoia-net` pulls in `hyper-tls`/`reqwest`'s default `native-tls` backend,
+# which on Linux means `openssl-sys`. `openssl-sys` defaults to discovering
+# OpenSSL on the host via `pkg-config`, which is non-hermetic. Force it to
+# build its bundled/vendored copy of OpenSSL from source instead.
+crate.annotation(
+    crate = "openssl-sys",
+    crate_features = ["vendored"],
+)
+
 crate.from_cargo(
     name = "sequoia_sq_crate_index",
     cargo_lockfile = "//:Cargo.lock",
