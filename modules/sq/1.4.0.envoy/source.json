@@ -7,6 +7,8 @@
     "sq-default-crypto-rust.patch": "sha256-HDXDp3D8mE8QmN00Cra6HG4Dz6/DyEEIe83fgIYqk5g="
   },
   "overlay": {
-    "BUILD.bazel": "sha256-Z9gyfFWekCqZ6/GuCTtVcDIgtpHoE9UQISHjI4qX3s8="
+    "BUILD.bazel": "sha256-0LkS+HXmh0/XzAR/uURbMwlplajRFpQUx6feP3tmwcQ=",
+    "defs.bzl": "sha256-W0mVOA2QWL/uKfkVqXr0NPRdz6fa3QCj3CzvEwfO+Ck=",
+    "toolchains/BUILD.bazel": "sha256-1Wp7UJDPlwvmxalkc8ugxCUlAOyxFb7cyPJFosKysFc="
   }
 }
