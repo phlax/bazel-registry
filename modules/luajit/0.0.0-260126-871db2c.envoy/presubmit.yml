@@ -4,6 +4,8 @@ matrix:
   - ubuntu2404
   - macos
   - macos_arm64
+  windows_platform:
+  - windows
   bazel:
   - 8.x
   - 7.x
@@ -12,6 +14,12 @@ tasks:
   verify_targets:
     name: Verify build targets
     platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@luajit//:luajit'
+  verify_windows_targets:
+    name: Verify Windows build targets
+    platform: ${{ windows_platform }}
     bazel: ${{ bazel }}
     build_targets:
     - '@luajit//:luajit'

@@ -1,8 +1,16 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_foreign_cc//foreign_cc:configure.bzl", "configure_make")
 
 licenses(["notice"])
 
 exports_files(["COPYRIGHT"])
+
+# Source tree for the foreign_cc (Windows) build below.
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
 
 config_setting(
     name = "linux_x86_64",
@@ -34,6 +42,16 @@ config_setting(
         "@platforms//cpu:aarch64",
         "@platforms//os:macos",
     ],
+)
+
+config_setting(
+    name = "windows",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+config_setting(
+    name = "dbg",
+    values = {"compilation_mode": "dbg"},
 )
 
 ##############################################################################
@@ -279,7 +297,7 @@ genrule(
 ##############################################################################
 
 cc_library(
-    name = "luajit",
+    name = "luajit_posix",
     srcs = [
         # LJCORE_O (core sources)
         "src/lj_assert.c",
@@ -388,5 +406,39 @@ cc_library(
     local_defines = [
         "LUAJIT_ENABLE_LUA52COMPAT",
     ],
+    visibility = ["//visibility:public"],
+)
+
+##############################################################################
+# Windows: build with MSVC via msvcbuild.bat
+#
+# The Bazel-native build above is POSIX-only (it relies on the DynASM x64/arm64
+# backends emitting ELF/Mach-O assembly and on GCC/Clang-style flags).  On
+# Windows the upstream MSVC build script is driven through rules_foreign_cc
+# instead; patches/windows_msvc_static_build.patch adds the wrapper script and
+# makes msvcbuild.bat produce a Bazel-compatible static library.
+##############################################################################
+
+configure_make(
+    name = "luajit_windows",
+    configure_command = "luajit_build_win.sh",
+    env = select({
+        ":dbg": {"WINDOWS_DBG_BUILD": "debug"},
+        "//conditions:default": {},
+    }),
+    lib_source = ":all",
+    out_include_dir = "include/luajit-2.1",
+    out_static_libs = ["lua51.lib"],
+    target_compatible_with = ["@platforms//os:windows"],
+    targets = [],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "luajit",
+    actual = select({
+        ":windows": ":luajit_windows",
+        "//conditions:default": ":luajit_posix",
+    }),
     visibility = ["//visibility:public"],
 )
