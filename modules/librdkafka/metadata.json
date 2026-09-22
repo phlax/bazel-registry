@@ -11,7 +11,7 @@
         "github:confluentinc/librdkafka"
     ],
     "versions": [
-        "2.6.0.envoy"
+        "2.15.1.envoy"
     ],
     "yanked_versions": {}
 }

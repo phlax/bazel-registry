@@ -1,7 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 
 # Targets are based on the CMakeLists.txt files.
 
@@ -62,8 +62,10 @@ expand_template(
         "#cmakedefine01 WITHOUT_OPTIMIZATION": "#define WITHOUT_OPTIMIZATION 0",
         "#cmakedefine01 ENABLE_DEVEL": "#define ENABLE_DEVEL 0",
         "#cmakedefine01 ENABLE_REFCNT_DEBUG": "#define ENABLE_REFCNT_DEBUG 0",
+        "#cmakedefine01 HAVE_ATOMICS_32_ATOMIC": "#define HAVE_ATOMICS_32_ATOMIC 0",
         "#cmakedefine01 HAVE_ATOMICS_32_SYNC": "#define HAVE_ATOMICS_32_SYNC 0",
         "#cmakedefine01 HAVE_ATOMICS_32": "#define HAVE_ATOMICS_32 0",
+        "#cmakedefine01 HAVE_ATOMICS_64_ATOMIC": "#define HAVE_ATOMICS_64_ATOMIC 0",
         "#cmakedefine01 HAVE_ATOMICS_64_SYNC": "#define HAVE_ATOMICS_64_SYNC 0",
         "#cmakedefine01 HAVE_ATOMICS_64": "#define HAVE_ATOMICS_64 0",
         "#cmakedefine01 WITH_PKGCONFIG": "#define WITH_PKGCONFIG 0",
@@ -78,6 +80,7 @@ expand_template(
         "#cmakedefine01 HAVE_REGEX": "#define HAVE_REGEX 1",
         "#cmakedefine01 HAVE_STRNDUP": "#define HAVE_STRNDUP 1",
         "#cmakedefine01 HAVE_RAND_R": "#define HAVE_RAND_R 1",
+        "#cmakedefine01 HAVE_GETENTROPY": "#define HAVE_GETENTROPY 0",
         "#cmakedefine01 HAVE_PTHREAD_SETNAME_GNU": "#define HAVE_PTHREAD_SETNAME_GNU 0",
         "#cmakedefine01 HAVE_PTHREAD_SETNAME_DARWIN": "#define HAVE_PTHREAD_SETNAME_DARWIN 0",
         "#cmakedefine01 WITH_C11THREADS": "#define WITH_C11THREADS 0",

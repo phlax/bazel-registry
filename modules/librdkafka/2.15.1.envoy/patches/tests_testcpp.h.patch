@@ -1,6 +1,6 @@
 --- tests/testcpp.h
 +++ tests/testcpp.h
-@@ -38,7 +38,7 @@ extern "C" {
+@@ -38,7 +38,7 @@
  #include "../src/win32_config.h"
  #include "../src/rdwin32.h"
  #else

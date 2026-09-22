@@ -1,0 +1,7 @@
+bazel_dep(name = "librdkafka", version = "2.15.1.envoy")
+local_path_override(
+    module_name = "librdkafka",
+    path = "..",
+)
+
+bazel_dep(name = "curl", version = "8.21.0.bcr.2")
