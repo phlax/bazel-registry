@@ -2,7 +2,15 @@ diff --git a/crate_universe/extensions.bzl b/crate_universe/extensions.bzl
 index 36bcbce..44e31c8 100644
 --- a/crate_universe/extensions.bzl
 +++ b/crate_universe/extensions.bzl
-@@ -635,7 +635,7 @@ def _generate_hub_and_spokes(
+@@ -619,7 +619,2 @@ def _generate_hub_and_spokes(
+     if not is_root:
+-        if not lockfile:
+-            fail(("crate_universe extension call `{}` is in a non-root module " +
+-                  "but has no lockfile. Transitive crate_universe repositories " +
+-                  "must ship a `lockfile = ...` because repinning is not " +
+-                  "supported across module boundaries.").format(cfg.name))
+         repin = False
+@@ -635,7 +630,7 @@ def _generate_hub_and_spokes(
  
      # The workspace root when one is explicitly provided.
      # buildifier: disable=canonical-repository
