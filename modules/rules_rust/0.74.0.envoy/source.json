@@ -3,7 +3,7 @@
   "integrity": "sha256-2LzB4RHpgnDcAxcuIu96+cL5TzJpgBYYorg9IIkPjfU=",
   "patch_strip": 1,
   "patches": {
-    "rules_rust.patch": "sha256-PRG4HycRs1/zr0A150RSpLn3WcmoIcXrOwMv+66JgU0="
+    "rules_rust.patch": "sha256-BaEOQORveY7Kek5owYmWFO0q75rPUOPIrTyxQzfJIwQ="
   },
   "strip_prefix": ""
 }
