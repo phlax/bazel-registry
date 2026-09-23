@@ -1,5 +1,7 @@
---- src/rd.h
-+++ src/rd.h
+diff --git a/src/rd.h b/src/rd.h
+index 8c215fc..279d856 100644
+--- a/src/rd.h
++++ b/src/rd.h
 @@ -68,7 +68,7 @@
  #include "win32_config.h"
  #else

@@ -7,12 +7,12 @@
         "MODULE.bazel": "sha256-zfsM0N+LZ3sfPw+kf2TiTPJXV6pMNGc9gpBAdkkaSH4=",
         "test/MODULE.bazel": "sha256-qyGaUrHzRtNEQeQLkpR0ABqBDcWU7MxrPrpCB0wR/J0="
     },
-    "patch_strip": 0,
+    "patch_strip": 1,
     "patches": {
-        "envoy-remove-cjson.patch": "sha256-uiGkcb7ak7RYY6QP3/ost+I4TboTiE50wMUt+1LE9Cc=",
-        "src-cpp_rdkafkacpp_int.h.patch": "sha256-aO4J10xzsrFRorwMT7VYIKSdl/Sc8QqNHlUXRqEMIJA=",
-        "src_rd.h.patch": "sha256-VOSjAWO+Hvl3jZRj8Cd0dTw8biAajTiCkvWGtH+DxoQ=",
-        "src_tinycthread.h.patch": "sha256-J1HxU7H+gQXj+LooixOfsbvoJad6MKuToOTGFMq+FTM=",
-        "tests_testcpp.h.patch": "sha256-KCz3w4Wn9vTdnB0Mho85w73GYr8Q+wJQ2kw60Gs2qZY="
+        "envoy-remove-cjson.patch": "sha256-1SfZddrHtbjUfbvwFsQ6eAZskkBeqUsruK2gj0QnDF8=",
+        "src-cpp_rdkafkacpp_int.h.patch": "sha256-P7oobsRl8BpLPUBYOCW4wqHQnCWqe2YDtMrk5/pbn9w=",
+        "src_rd.h.patch": "sha256-h8IXF/aIhQNnOPZ17u/MoSQwfgZBZWBkrqcfR4Wvf5w=",
+        "src_tinycthread.h.patch": "sha256-QfsGAs0teFQMmi/UJYyoaAsxEqTOR+nhdrBYvI6gY9U=",
+        "tests_testcpp.h.patch": "sha256-hu63PzNrkal7SNRTwHXObL3alVoGpu+m+GQHP7DZlT0="
     }
 }

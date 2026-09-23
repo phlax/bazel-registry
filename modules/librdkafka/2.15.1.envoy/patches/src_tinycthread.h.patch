@@ -1,6 +1,8 @@
---- src/tinycthread.h
-+++ src/tinycthread.h
-@@ -29,7 +29,7 @@
+diff --git a/src/tinycthread.h b/src/tinycthread.h
+index 6bc39fe..0590b09 100644
+--- a/src/tinycthread.h
++++ b/src/tinycthread.h
+@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
  #ifdef _WIN32
  #include "win32_config.h"
  #else

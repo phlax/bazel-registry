@@ -1,6 +1,8 @@
---- src-cpp/rdkafkacpp_int.h
-+++ src-cpp/rdkafkacpp_int.h
-@@ -46,7 +46,7 @@
+diff --git a/src-cpp/rdkafkacpp_int.h b/src-cpp/rdkafkacpp_int.h
+index 167b83a..9ac59a0 100644
+--- a/src-cpp/rdkafkacpp_int.h
++++ b/src-cpp/rdkafkacpp_int.h
+@@ -46,7 +46,7 @@ extern "C" {
  #include "../src/win32_config.h"
  #else
  /* POSIX / UNIX based systems */

@@ -1,6 +1,8 @@
---- mklove/Makefile.base
-+++ mklove/Makefile.base
-@@ -7,6 +7,22 @@
+diff --git a/mklove/Makefile.base b/mklove/Makefile.base
+index 91be439..ee0952a 100755
+--- a/mklove/Makefile.base
++++ b/mklove/Makefile.base
+@@ -7,6 +7,22 @@ MKL_YELLOW?=	\033[033m
  MKL_BLUE?=	\033[034m
  MKL_CLR_RESET?=	\033[0m
  
@@ -23,9 +25,11 @@
  DEPS=		$(OBJS:%.o=%.d)
  
  # TOPDIR is "TOPDIR/mklove/../" i.e., TOPDIR.
---- src/CMakeLists.txt
-+++ src/CMakeLists.txt
-@@ -81,7 +81,6 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 2754ca7..afeb739 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -81,7 +81,6 @@ set(
      tinycthread.c
      tinycthread_extra.c
      rdxxhash.c
@@ -33,9 +37,11 @@
  )
  
  if(WITH_SSL)
---- src/Makefile
-+++ src/Makefile
-@@ -47,7 +47,7 @@
+diff --git a/src/Makefile b/src/Makefile
+index 4a2223f..64542e2 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -47,7 +47,7 @@ SRCS=		rdkafka.c rdkafka_broker.c rdkafka_msg.c rdkafka_topic.c \
  		rdkafka_assignor.c rdkafka_range_assignor.c \
  		rdkafka_roundrobin_assignor.c rdkafka_sticky_assignor.c \
  		rdkafka_feature.c \
@@ -44,8 +50,10 @@
  		rdaddr.c rdrand.c rdlist.c \
  		tinycthread.c tinycthread_extra.c \
  		rdlog.c rdstring.c rdkafka_event.c rdkafka_metadata.c \
---- src/rdkafka.c
-+++ src/rdkafka.c
+diff --git a/src/rdkafka.c b/src/rdkafka.c
+index a8691f0..f6edf77 100644
+--- a/src/rdkafka.c
++++ b/src/rdkafka.c
 @@ -75,9 +75,6 @@
  #include <sys/timeb.h>
  #endif
@@ -56,7 +64,7 @@
  #if WITH_CURL
  #include "rdhttp.h"
  #endif
-@@ -181,8 +178,6 @@
+@@ -181,8 +178,6 @@ void rd_kafka_thread_srand(rd_kafka_t *rk, rd_bool_t internal_thread) {
  #endif
  
  static void rd_kafka_global_init0(void) {
@@ -65,7 +73,7 @@
          mtx_init(&rd_kafka_global_lock, mtx_plain);
  #if ENABLE_DEVEL
          rd_atomic32_init(&rd_kafka_op_cnt, 0);
-@@ -195,8 +190,6 @@
+@@ -195,8 +190,6 @@ static void rd_kafka_global_init0(void) {
          rd_kafka_ssl_init();
  #endif
  
