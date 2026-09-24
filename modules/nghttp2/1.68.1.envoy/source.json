@@ -5,8 +5,8 @@
     "patch_strip": 1,
     "patches": {
         "nghttp2.patch": "sha256-XQTQH0EJzv+6EZKfCzGeNB3JPCthlcBraERW5O7o5M8=",
-        "nghttp2_huffman.patch": "sha256-EgkPgoHf9IDjf8Cq6d3uyyUSI/RDB+DhAs96Pe+2zD8=",
-        "nghttp2_max_hd_nv.patch": "sha256-EI9F5C8y3SD0SSr2DBo2CvPlR7eg5CzLnuXIOzxuAiM="
+        "nghttp2_huffman.patch": "sha256-EyQ/YttbpvP/y+zska8k6rKkS94dMcNS45sVIszyLCA=",
+        "nghttp2_max_hd_nv.patch": "sha256-6+DQOf18s+qKR/5smVUdDt36cQcV0SL1F3Fe/3+1otg="
     },
     "overlay": {
         "BUILD.bazel": "sha256-VFl9Aw9rOW6Xf3cYx6imoP6W+EBymiZPtwQ+I1tUoUo=",

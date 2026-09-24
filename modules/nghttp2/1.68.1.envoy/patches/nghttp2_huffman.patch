@@ -1,10 +1,11 @@
+diff --git a/lib/includes/nghttp2/nghttp2.h b/lib/includes/nghttp2/nghttp2.h
+index 19c1874..4f0f28a 100644
 --- a/lib/includes/nghttp2/nghttp2.h
 +++ b/lib/includes/nghttp2/nghttp2.h
-@@ -3176,6 +3176,15 @@
-  */
+@@ -3177,6 +3177,15 @@ NGHTTP2_EXTERN void nghttp2_option_set_no_closed_streams(nghttp2_option *option,
  NGHTTP2_EXTERN void nghttp2_option_set_max_outbound_ack(nghttp2_option *option,
                                                          size_t val);
-+
+ 
 +/**
 + * @function
 + *
@@ -13,12 +14,15 @@
 +*/
 +NGHTTP2_EXTERN void
 +nghttp2_option_set_disable_huffman_encoding(nghttp2_option *option, int val);
- 
++
  /**
   * @function
+  *
+diff --git a/lib/nghttp2_hd.c b/lib/nghttp2_hd.c
+index ad85eed..6eb438e 100644
 --- a/lib/nghttp2_hd.c
 +++ b/lib/nghttp2_hd.c
-@@ -730,9 +730,22 @@
+@@ -730,10 +730,23 @@ int nghttp2_hd_deflate_init2(nghttp2_hd_deflater *deflater,
  
    deflater->deflate_hd_table_bufsize_max = max_deflate_dynamic_table_size;
    deflater->min_hd_table_bufsize_max = UINT32_MAX;
@@ -26,7 +30,7 @@
  
    return 0;
  }
-+
+ 
 +int nghttp2_hd_deflate_init3(nghttp2_hd_deflater *deflater,
 +                             size_t max_deflate_dynamic_table_size,
 +                             nghttp2_mem *mem) {
@@ -38,10 +42,11 @@
 +  return rv;
 +}
 +
- 
++
  int nghttp2_hd_inflate_init(nghttp2_hd_inflater *inflater, nghttp2_mem *mem) {
    int rv;
-@@ -1026,6 +1039,51 @@
+ 
+@@ -1026,6 +1039,51 @@ static int emit_string(nghttp2_bufs *bufs, const uint8_t *str, size_t len) {
    return rv;
  }
  
@@ -93,11 +98,10 @@
  static uint8_t pack_first_byte(int indexing_mode) {
    switch (indexing_mode) {
    case NGHTTP2_HD_WITH_INDEXING:
-@@ -1109,6 +1167,77 @@
- 
+@@ -1110,6 +1168,77 @@ static int emit_newname_block(nghttp2_bufs *bufs, const nghttp2_nv *nv,
    return 0;
  }
-+
+ 
 +static int emit_indname_block_nohuffman(nghttp2_bufs *bufs, size_t idx,
 +                                        const nghttp2_nv *nv,
 +                                        int indexing_mode) {
@@ -168,10 +172,11 @@
 +  return 0;
 +}
 +
- 
++
  static int add_hd_table_incremental(nghttp2_hd_context *context,
                                      nghttp2_hd_nv *nv, nghttp2_hd_map *map,
-@@ -1435,10 +1564,19 @@
+                                     uint32_t hash) {
+@@ -1435,10 +1564,19 @@ static int deflate_nv(nghttp2_hd_deflater *deflater, nghttp2_bufs *bufs,
        return NGHTTP2_ERR_HEADER_COMP;
      }
    }
@@ -194,9 +199,11 @@
    }
    if (rv != 0) {
      return rv;
+diff --git a/lib/nghttp2_hd.h b/lib/nghttp2_hd.h
+index bdc7fad..7f00bd7 100644
 --- a/lib/nghttp2_hd.h
 +++ b/lib/nghttp2_hd.h
-@@ -227,6 +227,8 @@
+@@ -227,6 +227,8 @@ struct nghttp2_hd_deflater {
    /* If nonzero, send header table size using encoding context update
       in the next deflate process */
    uint8_t notify_table_size_change;
@@ -205,10 +212,11 @@
  };
  
  struct nghttp2_hd_inflater {
-@@ -307,6 +309,16 @@
+@@ -306,6 +308,16 @@ int nghttp2_hd_deflate_init2(nghttp2_hd_deflater *deflater,
+                              size_t max_deflate_dynamic_table_size,
                               nghttp2_mem *mem);
  
- /*
++/*
 + * Initializes |deflater| for deflating name/values pairs.
 + *
 + * This is `nghttp2_hd_deflate_init2` with the addition of tracking that
@@ -218,13 +226,14 @@
 +                             size_t max_deflate_dynamic_table_size,
 +                             nghttp2_mem *mem);
 +
-+/*
+ /*
   * Deallocates any resources allocated for |deflater|.
   */
- void nghttp2_hd_deflate_free(nghttp2_hd_deflater *deflater);
+diff --git a/lib/nghttp2_option.c b/lib/nghttp2_option.c
+index 7e44a24..020d54c 100644
 --- a/lib/nghttp2_option.c
 +++ b/lib/nghttp2_option.c
-@@ -116,6 +116,12 @@
+@@ -116,6 +116,12 @@ void nghttp2_option_set_max_deflate_dynamic_table_size(nghttp2_option *option,
    option->max_deflate_dynamic_table_size = val;
  }
  
@@ -237,9 +246,11 @@
  void nghttp2_option_set_no_closed_streams(nghttp2_option *option, int val) {
    option->opt_set_mask |= NGHTTP2_OPT_NO_CLOSED_STREAMS;
    option->no_closed_streams = val;
+diff --git a/lib/nghttp2_option.h b/lib/nghttp2_option.h
+index 711185b..ada7d8d 100644
 --- a/lib/nghttp2_option.h
 +++ b/lib/nghttp2_option.h
-@@ -73,6 +73,7 @@
+@@ -73,6 +73,7 @@ typedef enum {
    NGHTTP2_OPT_STREAM_RESET_RATE_LIMIT = 1 << 15,
    NGHTTP2_OPT_MAX_CONTINUATIONS = 1 << 16,
    NGHTTP2_OPT_GLITCH_RATE_LIMIT = 1 << 17,
@@ -247,7 +258,7 @@
  } nghttp2_option_flag;
  
  /**
-@@ -97,6 +98,10 @@
+@@ -97,6 +98,10 @@ struct nghttp2_option {
     * NGHTTP2_OPT_MAX_DEFLATE_DYNAMIC_TABLE_SIZE
     */
    size_t max_deflate_dynamic_table_size;
@@ -258,9 +269,11 @@
    /**
     * NGHTTP2_OPT_MAX_OUTBOUND_ACK
     */
+diff --git a/lib/nghttp2_session.c b/lib/nghttp2_session.c
+index 0fbcc93..6f2ff74 100644
 --- a/lib/nghttp2_session.c
 +++ b/lib/nghttp2_session.c
-@@ -438,6 +438,7 @@
+@@ -438,6 +438,7 @@ static int session_new(nghttp2_session **session_ptr,
    size_t max_deflate_dynamic_table_size =
      NGHTTP2_HD_DEFAULT_MAX_DEFLATE_BUFFER_SIZE;
    size_t i;
@@ -268,22 +281,21 @@
    uint32_t map_seed;
  
    if (mem == NULL) {
-@@ -576,10 +577,18 @@
+@@ -576,10 +577,19 @@ static int session_new(nghttp2_session **session_ptr,
        nghttp2_ratelim_init(&(*session_ptr)->glitch_ratelim,
                             option->glitch_burst, option->glitch_rate);
      }
--  }
--
--  rv = nghttp2_hd_deflate_init2(&(*session_ptr)->hd_deflater,
--                                max_deflate_dynamic_table_size, mem);
 +
-+    if (option->opt_set_mask & NGHTTP2_OPT_DISABLE_HUFFMAN && option->disable_huffman) {
++    if (option->opt_set_mask & NGHTTP2_OPT_DISABLE_HUFFMAN &&
++        option->disable_huffman) {
 +      rv = nghttp2_hd_deflate_init3(&(*session_ptr)->hd_deflater,
 +                                    max_deflate_dynamic_table_size, mem);
 +      deflater_inited = 1;
 +    }
-+  }
-+
+   }
+ 
+-  rv = nghttp2_hd_deflate_init2(&(*session_ptr)->hd_deflater,
+-                                max_deflate_dynamic_table_size, mem);
 +  if (!deflater_inited) {
 +    rv = nghttp2_hd_deflate_init2(&(*session_ptr)->hd_deflater,
 +                                  max_deflate_dynamic_table_size, mem);
