@@ -1,5 +1,5 @@
 diff --git a/quiche/http2/adapter/nghttp2_callbacks.cc b/quiche/http2/adapter/nghttp2_callbacks.cc
-index 243495a..75c5667 100644
+index 243495a..0f7bfa0 100644
 --- a/quiche/http2/adapter/nghttp2_callbacks.cc
 +++ b/quiche/http2/adapter/nghttp2_callbacks.cc
 @@ -4,7 +4,10 @@
@@ -17,7 +17,7 @@ index 243495a..75c5667 100644
  
  using OnHeaderResult = ::http2::adapter::Http2VisitorInterface::OnHeaderResult;
  
-+#if NGHTTP2_VERSION_NUM >= 0x010700 && NGHTTP2_VERSION_NUM < 0x010900
++#if NGHTTP2_VERSION_NUM >= 0x014300 && NGHTTP2_VERSION_NUM < 0x014500
 +constexpr absl::string_view kInvalidHttpHeaderErrorPrefix =
 +    "Invalid HTTP header field was received: frame type: ";
 +constexpr absl::string_view kInvalidHttpHeaderStreamPrefix = ", stream: ";
@@ -104,7 +104,7 @@ index 243495a..75c5667 100644
    auto* visitor = static_cast<Http2VisitorInterface*>(user_data);
 -  visitor->OnErrorDebug(absl::string_view(msg, len));
 +  visitor->OnErrorDebug(message);
-+#if NGHTTP2_VERSION_NUM >= 0x010700 && NGHTTP2_VERSION_NUM < 0x010900
++#if NGHTTP2_VERSION_NUM >= 0x014300 && NGHTTP2_VERSION_NUM < 0x014500
 +  if (lib_error_code == NGHTTP2_ERR_HTTP_HEADER) {
 +    Http2StreamId stream_id;
 +    absl::string_view header_name;
