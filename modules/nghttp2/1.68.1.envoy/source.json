@@ -1,0 +1,16 @@
+{
+    "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.68.1/nghttp2-1.68.1.tar.gz",
+    "integrity": "sha256-zrQ0wfnf4qnTBba3l3hvuSJ0hN+ohQjRTKHFAmPbVdM=",
+    "strip_prefix": "nghttp2-1.68.1",
+    "patch_strip": 1,
+    "patches": {
+        "nghttp2.patch": "sha256-XQTQH0EJzv+6EZKfCzGeNB3JPCthlcBraERW5O7o5M8=",
+        "nghttp2_huffman.patch": "sha256-EyQ/YttbpvP/y+zska8k6rKkS94dMcNS45sVIszyLCA=",
+        "nghttp2_max_hd_nv.patch": "sha256-6+DQOf18s+qKR/5smVUdDt36cQcV0SL1F3Fe/3+1otg="
+    },
+    "overlay": {
+        "BUILD.bazel": "sha256-VFl9Aw9rOW6Xf3cYx6imoP6W+EBymiZPtwQ+I1tUoUo=",
+        "MODULE.bazel": "sha256-JXabXTJu78ApwIgZL0rABc5AoL96Qega5Vg8+VmNAR0=",
+        "config/config.h": "sha256-ionfCCUf7G0RP+Ae+9PyGof5bAGYtcha5tDCEY7wHUQ="
+    }
+}
