@@ -1,6 +1,6 @@
 # quiche 0.0.0-260922-7f07dc4.envoy
 
-This module packages QUICHE from commit `7f07dc4d14c5702607a0dee9c7e4ab07f63f9883` (2026-09-22) with a generated root `BUILD.bazel` overlay, a patch that removes upstream `*.bazel` files so the overlay is authoritative, and a patch that restores `NgHttp2Adapter` invalid-header stream-error handling across nghttp2 1.66+ while synthesizing the missing pseudo-header `OnInvalidFrame(..., kHttpHeader)` callback on nghttp2 1.67.x-1.68.x.
+This module packages QUICHE from commit `7f07dc4d14c5702607a0dee9c7e4ab07f63f9883` (2026-09-22) with a generated root `BUILD.bazel` overlay, a patch that removes upstream `*.bazel` files so the overlay is authoritative, and a patch that restores `NgHttp2Adapter` invalid-header stream-error handling across nghttp2 1.66+ while synthesizing the missing `OnInvalidFrame(..., kHttpHeader)` callback for nghttp2 1.67.x-1.68.x `NGHTTP2_ERR_HTTP_HEADER` session-error paths without double-reporting the `OnInvalidHeader` stream-error path.
 
 The overlay breaks the `@envoy` cycle by inlining lightweight compatibility macros and rewriting Envoy platform deps to `label_flag`s. By default those flags point at QUICHE's upstream default platform impl headers (or empty stubs for Envoy-only/test-only hooks). Envoy should override the public flags to its real platform impl targets when consuming this module.
 

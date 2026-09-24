@@ -1,9 +1,13 @@
 diff --git a/quiche/http2/adapter/nghttp2_callbacks.cc b/quiche/http2/adapter/nghttp2_callbacks.cc
-index 243495a..0f7bfa0 100644
+index 243495a..6535f22 100644
 --- a/quiche/http2/adapter/nghttp2_callbacks.cc
 +++ b/quiche/http2/adapter/nghttp2_callbacks.cc
-@@ -4,7 +4,10 @@
+@@ -2,9 +2,14 @@
+ 
+ #include <cstdint>
  #include <cstring>
++#include <mutex>
++#include <unordered_set>
  #include <utility>
  
 +#include "absl/strings/match.h"
@@ -13,7 +17,7 @@ index 243495a..0f7bfa0 100644
  #include "quiche/http2/adapter/data_source.h"
  #include "quiche/http2/adapter/http2_protocol.h"
  #include "quiche/http2/adapter/http2_visitor_interface.h"
-@@ -20,6 +23,53 @@ namespace callbacks {
+@@ -20,6 +25,65 @@ namespace callbacks {
  
  using OnHeaderResult = ::http2::adapter::Http2VisitorInterface::OnHeaderResult;
  
@@ -22,11 +26,9 @@ index 243495a..0f7bfa0 100644
 +    "Invalid HTTP header field was received: frame type: ";
 +constexpr absl::string_view kInvalidHttpHeaderStreamPrefix = ", stream: ";
 +constexpr absl::string_view kInvalidHttpHeaderNamePrefix = ", name: [";
-+constexpr absl::string_view kInvalidHttpHeaderValuePrefix = "], value: [";
 +
 +bool ParseInvalidHttpHeaderError(absl::string_view message,
-+                                 Http2StreamId* stream_id,
-+                                 absl::string_view* header_name) {
++                                 Http2StreamId* stream_id) {
 +  if (!absl::StartsWith(message, kInvalidHttpHeaderErrorPrefix)) {
 +    return false;
 +  }
@@ -49,35 +51,67 @@ index 243495a..0f7bfa0 100644
 +          stream_id)) {
 +    return false;
 +  }
-+
-+  const size_t header_name_begin =
-+      name_begin + kInvalidHttpHeaderNamePrefix.size();
-+  const size_t value_begin =
-+      message.find(kInvalidHttpHeaderValuePrefix, header_name_begin);
-+  if (value_begin == absl::string_view::npos) {
-+    return false;
-+  }
-+
-+  *header_name =
-+      message.substr(header_name_begin, value_begin - header_name_begin);
 +  return true;
++}
++
++std::mutex& PendingInvalidHeaderVisitorsMutex() {
++  static auto* const mutex = new std::mutex;
++  return *mutex;
++}
++
++std::unordered_set<const void*>& PendingInvalidHeaderVisitors() {
++  static auto* const visitors = new std::unordered_set<const void*>;
++  return *visitors;
++}
++
++void MarkPendingInvalidHeaderVisitor(const void* user_data) {
++  std::lock_guard<std::mutex> lock(PendingInvalidHeaderVisitorsMutex());
++  PendingInvalidHeaderVisitors().insert(user_data);
++}
++
++bool ConsumePendingInvalidHeaderVisitor(const void* user_data) {
++  std::lock_guard<std::mutex> lock(PendingInvalidHeaderVisitorsMutex());
++  return PendingInvalidHeaderVisitors().erase(user_data) != 0;
++}
++
++void ClearPendingInvalidHeaderVisitor(const void* user_data) {
++  std::lock_guard<std::mutex> lock(PendingInvalidHeaderVisitorsMutex());
++  PendingInvalidHeaderVisitors().erase(user_data);
 +}
 +#endif
 +
  ssize_t OnReadyToSend(nghttp2_session* /* session */, const uint8_t* data,
                        size_t length, int flags, void* user_data) {
    QUICHE_CHECK_NE(user_data, nullptr);
-@@ -181,6 +231,21 @@ int OnBeginHeaders(nghttp2_session* /* session */, const nghttp2_frame* frame,
+@@ -43,6 +107,13 @@ int OnBeginFrame(nghttp2_session* /* session */, const nghttp2_frame_hd* header,
+                  << ", length=" << header->length
+                  << ", flags=" << int(header->flags) << ")";
+   QUICHE_CHECK_NE(user_data, nullptr);
++#if NGHTTP2_VERSION_NUM >= 0x014300 && NGHTTP2_VERSION_NUM < 0x014500
++  // This state is keyed by the session's visitor rather than a static bool
++  // because multiple nghttp2 sessions may be active concurrently on different
++  // threads. Starting a new frame clears any stale pending entry if nghttp2
++  // ever returns before calling error_callback2().
++  ClearPendingInvalidHeaderVisitor(user_data);
++#endif
+   auto* visitor = static_cast<Http2VisitorInterface*>(user_data);
+   bool result = visitor->OnFrameHeader(header->stream_id, header->length,
+                                        header->type, header->flags);
+@@ -181,6 +252,25 @@ int OnBeginHeaders(nghttp2_session* /* session */, const nghttp2_frame* frame,
    return result ? 0 : NGHTTP2_ERR_CALLBACK_FAILURE;
  }
  
 +int OnInvalidHeader(nghttp2_session* /* session */, const nghttp2_frame* frame,
 +                    nghttp2_rcbuf* name, nghttp2_rcbuf* value,
-+                    uint8_t /*flags*/, void* /*user_data*/) {
++                    uint8_t /*flags*/, void* user_data) {
 +  QUICHE_VLOG(1) << "callbacks::OnInvalidHeader(stream_id="
 +                 << frame->hd.stream_id << ", name=["
 +                 << absl::CEscape(ToStringView(name)) << "], value=["
 +                 << absl::CEscape(ToStringView(value)) << "])";
++#if NGHTTP2_VERSION_NUM >= 0x014300 && NGHTTP2_VERSION_NUM < 0x014500
++  QUICHE_CHECK_NE(user_data, nullptr);
++  MarkPendingInvalidHeaderVisitor(user_data);
++#endif
 +  // Treat invalid header fields as a stream error. nghttp2 >= 1.67 silently
 +  // ignores them when no invalid-header callback is registered; returning
 +  // NGHTTP2_ERR_TEMPORAL_CALLBACK_FAILURE causes nghttp2 to RST_STREAM and
@@ -89,7 +123,7 @@ index 243495a..0f7bfa0 100644
  int OnHeader(nghttp2_session* /* session */, const nghttp2_frame* frame,
               nghttp2_rcbuf* name, nghttp2_rcbuf* value, uint8_t /*flags*/,
               void* user_data) {
-@@ -341,12 +406,32 @@ ssize_t OnPackExtensionCallback(nghttp2_session* /*session*/, uint8_t* buf,
+@@ -341,12 +431,33 @@ ssize_t OnPackExtensionCallback(nghttp2_session* /*session*/, uint8_t* buf,
    return result.first;
  }
  
@@ -106,15 +140,16 @@ index 243495a..0f7bfa0 100644
 +  visitor->OnErrorDebug(message);
 +#if NGHTTP2_VERSION_NUM >= 0x014300 && NGHTTP2_VERSION_NUM < 0x014500
 +  if (lib_error_code == NGHTTP2_ERR_HTTP_HEADER) {
++    if (ConsumePendingInvalidHeaderVisitor(user_data)) {
++      return 0;
++    }
 +    Http2StreamId stream_id;
-+    absl::string_view header_name;
-+    if (ParseInvalidHttpHeaderError(message, &stream_id, &header_name) &&
-+        !header_name.empty() && header_name[0] == ':') {
-+      // nghttp2 PR #2480 changed 1.67.x-1.68.x to terminate the session for
-+      // pseudo-header HTTP_HEADER failures after error_callback2(), skipping
-+      // on_invalid_frame_recv_callback. Regular invalid-header cases still go
-+      // through on_invalid_header_callback2 and on_invalid_frame_recv_callback,
-+      // so only synthesize the missing invalid-frame notification here.
++    if (ParseInvalidHttpHeaderError(message, &stream_id)) {
++      // nghttp2 1.67.x-1.68.x terminates the session directly for
++      // NGHTTP2_ERR_HTTP_HEADER after error_callback2(), skipping
++      // on_invalid_frame_recv_callback. The pending-invalid-header set above
++      // suppresses synthesis for the NGHTTP2_ERR_IGN_HTTP_HEADER path, where
++      // OnInvalidFrameReceived still reports the stream error.
 +      if (!visitor->OnInvalidFrame(
 +              stream_id,
 +              Http2VisitorInterface::InvalidFrameError::kHttpHeader)) {
@@ -126,7 +161,7 @@ index 243495a..0f7bfa0 100644
    return 0;
  }
  
-@@ -363,6 +448,8 @@ nghttp2_session_callbacks_unique_ptr Create(
+@@ -363,6 +474,8 @@ nghttp2_session_callbacks_unique_ptr Create(
    nghttp2_session_callbacks_set_on_begin_headers_callback(callbacks,
                                                            &OnBeginHeaders);
    nghttp2_session_callbacks_set_on_header_callback2(callbacks, &OnHeader);
