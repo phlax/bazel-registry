@@ -270,10 +270,18 @@ index 711185b..ada7d8d 100644
     * NGHTTP2_OPT_MAX_OUTBOUND_ACK
     */
 diff --git a/lib/nghttp2_session.c b/lib/nghttp2_session.c
-index 0fbcc93..dbf6dd6 100644
+index 0fbcc93..6f2ff74 100644
 --- a/lib/nghttp2_session.c
 +++ b/lib/nghttp2_session.c
-@@ -576,10 +576,19 @@ static int session_new(nghttp2_session **session_ptr,
+@@ -438,6 +438,7 @@ static int session_new(nghttp2_session **session_ptr,
+   size_t max_deflate_dynamic_table_size =
+     NGHTTP2_HD_DEFAULT_MAX_DEFLATE_BUFFER_SIZE;
+   size_t i;
++  int deflater_inited = 0;
+   uint32_t map_seed;
+ 
+   if (mem == NULL) {
+@@ -576,10 +577,19 @@ static int session_new(nghttp2_session **session_ptr,
        nghttp2_ratelim_init(&(*session_ptr)->glitch_ratelim,
                             option->glitch_burst, option->glitch_rate);
      }
@@ -295,11 +303,3 @@ index 0fbcc93..dbf6dd6 100644
    if (rv != 0) {
      goto fail_hd_deflater;
    }
-@@ -791,6 +800,7 @@ void nghttp2_session_del(nghttp2_session *session) {
-   nghttp2_mem *mem;
-   nghttp2_inflight_settings *settings;
-   size_t i;
-+  int deflater_inited = 0;
- 
-   if (session == NULL) {
-     return;
