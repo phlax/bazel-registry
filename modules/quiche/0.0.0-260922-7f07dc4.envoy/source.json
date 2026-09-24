@@ -5,7 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "delete-bazel-files.patch": "sha256-pPXq5RbMW5YpJdq/gcGZwmZghwRPIW3lMzlW4xd2x3U=",
-        "nghttp2_invalid_header_callback.patch": "sha256-t3yF+jzHnnzdebYpjJJTiguHqE4+0PryJ3ZtKmkq+mM="
+        "nghttp2_invalid_header_callback.patch": "sha256-J4ZXYN0wfXEACJT4AizF/c9O0unB22ee6RSLbeeFBPg="
     },
     "overlay": {
         "BUILD.bazel": "sha256-WjXbPYxuLjGDeL+kX62U5vuCljk6djnULMReQ43FhMo=",
