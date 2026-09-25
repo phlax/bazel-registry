@@ -1,19 +1,14 @@
+# The module source is the linux-amd64 Go tarball, so :go and :go_sdk resolve
+# through @go_fips_host, which fetches the same Go version for the host
+# architecture. Target names are unchanged for consumers.
 package(default_visibility = ["//visibility:public"])
 
-exports_files([
-    "bin/go",
-    "bin/gofmt",
-])
-
-filegroup(
-    name = "go_sdk",
-    srcs = glob(
-        ["**"],
-        exclude = ["**/test/**"],
-    ),
+alias(
+    name = "go",
+    actual = "@go_fips_host//:go",
 )
 
-filegroup(
-    name = "go",
-    srcs = ["bin/go"],
+alias(
+    name = "go_sdk",
+    actual = "@go_fips_host//:go_sdk",
 )

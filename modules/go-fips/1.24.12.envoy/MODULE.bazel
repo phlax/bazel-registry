@@ -21,3 +21,9 @@ module(
 )
 
 bazel_dep(name = "platforms", version = "0.0.11")
+
+# The module source is the linux-amd64 Go tarball. This extension fetches the
+# same Go version for the host architecture so the BoringSSL FIPS delocate step
+# can run on aarch64 as well as x86_64.
+go_fips_ext = use_extension("//:go_fips_ext.bzl", "go_fips_ext")
+use_repo(go_fips_ext, "go_fips_host")
