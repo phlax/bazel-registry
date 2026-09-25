@@ -9,6 +9,9 @@ module(
     repo_name = "com_google_protobuf",
 )
 
+protobuf = use_extension("//:extensions.bzl", "protobuf")
+use_repo(protobuf, "protobuf_deps")
+
 # LOWER BOUND dependency versions.
 # Bzlmod follows MVS:
 # https://bazel.build/versions/6.0.0/build/bzlmod#version-resolution
@@ -194,7 +197,7 @@ rust.toolchain(
     versions = ["1.85.0"],
 )
 
-crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate", dev_dependency = True)
 crate.spec(
     package = "googletest",
     version = ">0.0.0",
