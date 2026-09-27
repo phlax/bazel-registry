@@ -5,5 +5,5 @@
     "overlay": {
         "BUILD.bazel": "sha256-b4I6yrxlko5o06WO/ZdD7uBU6d1o8IXH1hcB6t5+RgE=",
         "MODULE.bazel": "sha256-KMiDIfAEPu2nZAycWFDIpU+vwg3ZoQMGlHm5TDootWA="
-    },
+    }
 }
