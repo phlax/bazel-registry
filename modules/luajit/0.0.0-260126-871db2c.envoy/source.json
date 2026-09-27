@@ -3,11 +3,7 @@
     "integrity": "sha256-qz8W2C32lGVDVlz7DSgQ04fXmjpD4EMWlbA0ZhiOJoA=",
     "strip_prefix": "LuaJIT-871db2c84ecefd70a850e03a6c340214a81739f0",
     "overlay": {
-        "BUILD.bazel": "sha256-K3yJmvO4zYghDiIsc8QyccdEvMYywTzHB7ZR2gWhFS0=",
-        "MODULE.bazel": "sha256-U/w63oXm/1PMqwqm6pQ1kPErKoU0SFITLvMxS35hhwY="
+        "BUILD.bazel": "sha256-b4I6yrxlko5o06WO/ZdD7uBU6d1o8IXH1hcB6t5+RgE=",
+        "MODULE.bazel": "sha256-KMiDIfAEPu2nZAycWFDIpU+vwg3ZoQMGlHm5TDootWA="
     },
-    "patches": {
-        "windows_msvc_static_build.patch": "sha256-Aq/jlXVfPVPZtpmDCakIukaGu2y9CcnmNTM8FLRxDTw="
-    },
-    "patch_strip": 1
 }
