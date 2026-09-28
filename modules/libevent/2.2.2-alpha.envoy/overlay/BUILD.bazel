@@ -218,6 +218,9 @@ cc_library(
         "sha1.c",
         "ws.c",
     ],
+    copts = [
+        "-Wno-unused-function",
+    ],
     hdrs = EVENT_EXTRA_PUBLIC_HEADERS,
     includes = ["include"],
     linkopts = select({
