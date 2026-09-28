@@ -1,0 +1,104 @@
+diff --git a/proto_processing_lib/factory_helper.h b/proto_processing_lib/factory_helper.h
+index 95003ff..24ecca1 100644
+--- a/proto_processing_lib/factory_helper.h
++++ b/proto_processing_lib/factory_helper.h
+@@ -27,14 +27,14 @@
+ namespace proto_processing_lib {
+ 
+ // Factory Method to create UnknownFieldChecker.
+-static const proto_processing_lib::proto_scrubber::FieldCheckerInterface*
++inline const proto_processing_lib::proto_scrubber::FieldCheckerInterface*
+ FactoryCreateUnknownFieldChecker() {
+   return proto_processing_lib::proto_scrubber::UnknownFieldChecker::
+       GetDefault();
+ }
+ 
+ // Factory Method to create UnknownFieldChecker.
+-static std::unique_ptr<proto_processing_lib::FieldMaskTreeInterface>
++inline std::unique_ptr<proto_processing_lib::FieldMaskTreeInterface>
+ FactoryCreateFieldMaskTree(
+     const google::protobuf::Type* type,
+     std::function<const google::protobuf::Type*(const std::string&)>
+diff --git a/proto_processing_lib/proto_scrubber/checksummer.cc b/proto_processing_lib/proto_scrubber/checksummer.cc
+index 8658b78..8257ee8 100644
+--- a/proto_processing_lib/proto_scrubber/checksummer.cc
++++ b/proto_processing_lib/proto_scrubber/checksummer.cc
+@@ -499,7 +499,7 @@ void Checksummer::ScanPrimitiveField(google::protobuf::io::CodedInputStream* inp
+   switch (field.kind()) {
+     case google::protobuf::Field::TYPE_UNKNOWN:
+       // Skip unknown field.
+-      WireFormatLite::SkipField(input_stream, *tag);
++      (void)WireFormatLite::SkipField(input_stream, *tag);
+       break;
+     case google::protobuf::Field::TYPE_DOUBLE:
+       (void)input_stream->ReadLittleEndian64(&buffer64);
+@@ -541,7 +541,7 @@ void Checksummer::ScanPrimitiveField(google::protobuf::io::CodedInputStream* inp
+       (void)input_stream->ReadString(&result, buffer32);
+       break;
+     case google::protobuf::Field::TYPE_GROUP:
+-      WireFormatLite::SkipField(input_stream, *tag);
++      (void)WireFormatLite::SkipField(input_stream, *tag);
+       break;
+     case google::protobuf::Field::TYPE_BYTES: {
+       absl::Cord cord;
+diff --git a/proto_processing_lib/proto_scrubber/field_mask_tree.h b/proto_processing_lib/proto_scrubber/field_mask_tree.h
+index 883f2b5..cdac0ad 100644
+--- a/proto_processing_lib/proto_scrubber/field_mask_tree.h
++++ b/proto_processing_lib/proto_scrubber/field_mask_tree.h
+@@ -72,7 +72,7 @@ class FieldMaskTree : public FieldMaskTreeInterface {
+   // Returns OK if all "paths" are legal, otherwise returns INVALID_ARGUMENT and
+   // the tree will be left in a broken state. Calling this method again on a
+   // broken FieldMaskTree will yield an error of FAILED_PRECONDITION.
+-  absl::Status AddOrIntersectFieldPaths(const std::vector<std::string>& paths);
++  absl::Status AddOrIntersectFieldPaths(const std::vector<std::string>& paths) override;
+ 
+   // Checks if a field is on this tree. Returns "kInclude" if the field is on a
+   // leaf node of the tree, "kPartial" if it's on a non-leaf node and "kExclude"
+@@ -96,10 +96,10 @@ class FieldMaskTree : public FieldMaskTreeInterface {
+   }
+ 
+   // Returns the status of the tree.
+-  absl::Status status() { return status_; }
++  absl::Status status() override { return status_; }
+ 
+   // Returns root node of the tree.
+-  const FieldMaskNode* root() const { return root_.get(); }
++  const FieldMaskNode* root() const override { return root_.get(); }
+ 
+  private:
+   // The root node of the FieldMask tree.
+diff --git a/proto_processing_lib/proto_scrubber/proto_scrubber.cc b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+index 8d1461f..e6e244d 100644
+--- a/proto_processing_lib/proto_scrubber/proto_scrubber.cc
++++ b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+@@ -782,7 +782,9 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanMapEntry(
+         // The current entry should be included wholly. Saves the starting
+         // position of its key field and length of both key and value fields
+         // so the entry can be copied to the result.
+-        WireFormatLite::SkipField(input_stream, tag);
++        if (!WireFormatLite::SkipField(input_stream, tag)) {
++          return absl::InvalidArgumentError("Failed to skip field");
++        }
+         uint32_t length = input_stream->CurrentPosition() - current_position;
+         if (is_value_added) {
+           // Duplicate field 2 in map, ignore the previous one. This is spec
+@@ -837,7 +839,9 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanMapEntry(
+       IncreaseFieldDroppedCount(map_type.name(), field_number,
+                                 scrubber_context_,
+                                 FieldFilters::UnknownFieldFilter);
+-      WireFormatLite::SkipField(input_stream, tag);
++      if (!WireFormatLite::SkipField(input_stream, tag)) {
++        return absl::InvalidArgumentError("Failed to skip field");
++      }
+     }
+ 
+     // Always read from input stream on every loop iteration to prevent
+@@ -988,7 +992,7 @@ const google::protobuf::Field* ProtoScrubber::FindField(
+ 
+ const google::protobuf::Type* ProtoScrubber::GetFieldType(
+     const google::protobuf::Field* field) const {
+-  absl::MutexLock lock(&lock_);
++  absl::MutexLock lock(lock_);
+ 
+   const auto it = field_type_map_.find(field);
+   if (it != field_type_map_.end()) {

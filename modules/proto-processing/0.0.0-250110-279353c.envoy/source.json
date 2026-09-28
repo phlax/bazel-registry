@@ -5,6 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "ocp.patch": "sha256-aaKu7VgG8nI6hYMdNqLRoFm9LcCy2lMUJEq9GOJUmV0=",
-        "proto_scrubber_nodiscard.patch": "sha256-59iUMZnICtM9lp1Lxzmz2MBnxQuUetTAf4afp8k5b3k="
+        "proto_scrubber_nodiscard.patch": "sha256-59iUMZnICtM9lp1Lxzmz2MBnxQuUetTAf4afp8k5b3k=",
+        "warnings.patch": "sha256-Bbz/mzSUfBIUio7FiRUoKyS533fT5P2L4fRljgeR+SQ="
     }
 }
