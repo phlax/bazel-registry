@@ -1,6 +1,1474 @@
+diff -urN orig/base/BUILD mod/base/BUILD
+--- orig/base/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/base/BUILD	2026-09-28 11:26:51.834138709 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Under active development, not yet being released.
+@@ -31,6 +32,7 @@
+         "attribute.h",
+         "attribute_set.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":kind",
+         "//internal:status_macros",
+@@ -49,6 +51,7 @@
+ cc_library(
+     name = "kind",
+     hdrs = ["kind.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:kind",
+         "//common:type_kind",
+@@ -60,6 +63,7 @@
+     name = "operators",
+     srcs = ["operators.cc"],
+     hdrs = ["operators.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base/internal:operators",
+         "@com_google_absl//absl/base",
+@@ -73,6 +77,7 @@
+ cc_test(
+     name = "operators_test",
+     srcs = ["operators_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":operators",
+         "//base/internal:operators",
+@@ -89,6 +94,7 @@
+     hdrs = [
+         "type_provider.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:value",
+     ],
+@@ -99,6 +105,7 @@
+     hdrs = [
+         "function.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:function",
+     ],
+@@ -109,6 +116,7 @@
+     hdrs = [
+         "function_descriptor.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:function_descriptor",
+     ],
+@@ -119,6 +127,7 @@
+     hdrs = [
+         "function_result.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [":function_descriptor"],
+ )
+ 
+@@ -130,6 +139,7 @@
+     hdrs = [
+         "function_result_set.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_result",
+         "@com_google_absl//absl/container:btree",
+@@ -139,12 +149,14 @@
+ cc_library(
+     name = "ast",
+     hdrs = ["ast.h"],
++    copts = CEL_COPTS,
+     deps = ["//common:ast"],
+ )
+ 
+ cc_library(
+     name = "function_adapter",
+     hdrs = ["function_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:function_adapter",
+     ],
+@@ -153,4 +165,5 @@
+ cc_library(
+     name = "builtins",
+     hdrs = ["builtins.h"],
++    copts = CEL_COPTS,
+ )
+diff -urN orig/base/internal/BUILD mod/base/internal/BUILD
+--- orig/base/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/base/internal/BUILD	2026-09-28 11:26:51.834138709 +0000
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -23,6 +24,7 @@
+     testonly = True,
+     srcs = ["memory_manager_testing.cc"],
+     hdrs = ["memory_manager_testing.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:testing",
+     ],
+@@ -31,11 +33,13 @@
+ cc_library(
+     name = "message_wrapper",
+     hdrs = ["message_wrapper.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "operators",
+     hdrs = ["operators.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/strings",
+     ],
+@@ -45,6 +49,7 @@
+     name = "unknown_set",
+     srcs = ["unknown_set.cc"],
+     hdrs = ["unknown_set.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:attributes",
+         "//base:function_result_set",
+diff -urN orig/bazel/BUILD mod/bazel/BUILD
+--- orig/bazel/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/bazel/BUILD	2026-09-28 11:26:51.835138714 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+ load("@rules_java//java:defs.bzl", "java_binary")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ java_binary(
+     name = "antlr4_tool",
+@@ -19,6 +20,7 @@
+ cc_binary(
+     name = "cel_cc_embed",
+     srcs = ["cel_cc_embed.cc"],
++    copts = CEL_COPTS,
+     visibility = ["//:__subpackages__"],
+     deps = [
+         "@com_google_absl//absl/flags:flag",
+@@ -33,6 +35,7 @@
+ cc_binary(
+     name = "cat_param_file",
+     srcs = ["cat_param_file.cc"],
++    copts = CEL_COPTS,
+     visibility = ["//:__subpackages__"],
+     deps = [
+         "@com_google_absl//absl/log:absl_check",
+diff -urN orig/bazel/antlr.bzl mod/bazel/antlr.bzl
+--- orig/bazel/antlr.bzl	2026-08-13 22:12:09.000000000 +0000
++++ mod/bazel/antlr.bzl	2026-09-28 11:26:51.823176753 +0000
+@@ -19,6 +19,7 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ def antlr_cc_library(name, src, package):
+     """Creates a C++ lexer and parser from a source grammar.
+@@ -55,7 +56,7 @@
+             generated,
+             "@antlr4-cpp-runtime//:antlr4-cpp-runtime",
+         ],
+-        copts = ["-fexceptions"],
++        copts = ["-fexceptions"] + CEL_COPTS,
+         linkstatic = 1,
+     )
+ 
+diff -urN orig/bazel/copts.bzl mod/bazel/copts.bzl
+--- orig/bazel/copts.bzl	1970-01-01 00:00:00.000000000 +0000
++++ mod/bazel/copts.bzl	2026-09-28 11:26:51.798370088 +0000
+@@ -0,0 +1,9 @@
++"""Envoy registry: compiler options applied to all cel-cpp C++ targets."""
++
++# cel-cpp's own .bazelrc builds with -Wno-deprecated-declarations; abseil
++# ABSL_DEPRECATE_AND_INLINE shims used throughout cel-cpp headers otherwise
++# fire in every consuming TU.
++CEL_COPTS = select({
++    "@platforms//os:windows": [],
++    "//conditions:default": ["-Wno-deprecated-declarations"],
++})
+diff -urN orig/checker/BUILD mod/checker/BUILD
+--- orig/checker/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/checker/BUILD	2026-09-28 11:26:51.836138720 +0000
+@@ -14,17 +14,21 @@
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
++load("//bazel:copts.bzl", "CEL_COPTS")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+     name = "checker_options",
+     hdrs = ["checker_options.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "type_check_issue",
+     srcs = ["type_check_issue.cc"],
+     hdrs = ["type_check_issue.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:source",
+         "@com_google_absl//absl/strings:str_format",
+@@ -35,6 +39,7 @@
+ cc_test(
+     name = "type_check_issue_test",
+     srcs = ["type_check_issue_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_check_issue",
+         "//common:source",
+@@ -46,6 +51,7 @@
+     name = "validation_result",
+     srcs = ["validation_result.cc"],
+     hdrs = ["validation_result.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_check_issue",
+         "//common:ast",
+@@ -64,6 +70,7 @@
+ cc_test(
+     name = "validation_result_test",
+     srcs = ["validation_result_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_check_issue",
+         ":validation_result",
+@@ -79,6 +86,7 @@
+     name = "type_checker",
+     srcs = ["type_checker.cc"],
+     hdrs = ["type_checker.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validation_result",
+         "//common:ast",
+@@ -91,6 +99,7 @@
+ cc_library(
+     name = "type_checker_builder",
+     hdrs = ["type_checker_builder.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checker_options",
+         ":type_checker",
+@@ -110,6 +119,7 @@
+     name = "type_checker_builder_factory",
+     srcs = ["type_checker_builder_factory.cc"],
+     hdrs = ["type_checker_builder_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checker_options",
+         ":type_checker_builder",
+@@ -127,6 +137,7 @@
+ cc_test(
+     name = "type_checker_builder_factory_test",
+     srcs = ["type_checker_builder_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checker_options",
+         ":optional",
+@@ -152,6 +163,7 @@
+     name = "standard_library",
+     srcs = ["standard_library.cc"],
+     hdrs = ["standard_library.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_checker_builder",
+         "//checker/internal:builtins_arena",
+@@ -168,6 +180,7 @@
+ cc_test(
+     name = "standard_library_test",
+     srcs = ["standard_library_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checker_options",
+         ":standard_library",
+@@ -192,6 +205,7 @@
+     name = "optional",
+     srcs = ["optional.cc"],
+     hdrs = ["optional.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_checker_builder",
+         "//base:builtins",
+@@ -207,6 +221,7 @@
+ cc_test(
+     name = "optional_test",
+     srcs = ["optional_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checker_options",
+         ":optional",
+@@ -228,6 +243,7 @@
+     name = "type_checker_subset_factory",
+     srcs = ["type_checker_subset_factory.cc"],
+     hdrs = ["type_checker_subset_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_checker_builder",
+         "//common:decl",
+@@ -241,6 +257,7 @@
+ cc_test(
+     name = "type_checker_subset_factory_test",
+     srcs = ["type_checker_subset_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_checker_subset_factory",
+         ":validation_result",
+diff -urN orig/checker/internal/BUILD mod/checker/internal/BUILD
+--- orig/checker/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/checker/internal/BUILD	2026-09-28 11:26:51.837138725 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Implementation details for the checker library.
+@@ -25,6 +26,7 @@
+     testonly = 1,
+     srcs = ["test_ast_helpers.cc"],
+     hdrs = ["test_ast_helpers.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//internal:status_macros",
+@@ -40,6 +42,7 @@
+ cc_test(
+     name = "test_ast_helpers_test",
+     srcs = ["test_ast_helpers_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":test_ast_helpers",
+         "//common:ast",
+@@ -53,6 +56,7 @@
+     name = "builtins_arena",
+     srcs = ["builtins_arena.cc"],
+     hdrs = ["builtins_arena.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:no_destructor",
+         "@com_google_absl//absl/base:nullability",
+@@ -64,6 +68,7 @@
+     name = "type_check_env",
+     srcs = ["type_check_env.cc"],
+     hdrs = ["type_check_env.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":proto_type_mask",
+         ":proto_type_mask_registry",
+@@ -92,6 +97,7 @@
+     name = "namespace_generator",
+     srcs = ["namespace_generator.cc"],
+     hdrs = ["namespace_generator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:container",
+         "//internal:lexis",
+@@ -110,6 +116,7 @@
+ cc_test(
+     name = "namespace_generator_test",
+     srcs = ["namespace_generator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":namespace_generator",
+         "//common:container",
+@@ -129,6 +136,7 @@
+         "type_checker_builder_impl.h",
+         "type_checker_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":namespace_generator",
+         ":proto_type_mask",
+@@ -177,6 +185,7 @@
+ cc_test(
+     name = "type_checker_impl_test",
+     srcs = ["type_checker_impl_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":test_ast_helpers",
+         ":type_check_env",
+@@ -216,6 +225,7 @@
+ cc_test(
+     name = "type_checker_builder_impl_test",
+     srcs = ["type_checker_builder_impl_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":test_ast_helpers",
+         ":type_checker_impl",
+@@ -242,6 +252,7 @@
+     name = "type_inference_context",
+     srcs = ["type_inference_context.cc"],
+     hdrs = ["type_inference_context.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:decl",
+         "//common:format_type_name",
+@@ -263,6 +274,7 @@
+ cc_test(
+     name = "type_inference_context_test",
+     srcs = ["type_inference_context_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_inference_context",
+         "//common:decl",
+@@ -279,6 +291,7 @@
+     name = "field_path",
+     srcs = ["field_path.cc"],
+     hdrs = ["field_path.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/strings:string_view",
+@@ -289,6 +302,7 @@
+ cc_test(
+     name = "field_path_test",
+     srcs = ["field_path_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_path",
+         "//internal:testing",
+@@ -300,6 +314,7 @@
+     name = "proto_type_mask",
+     srcs = ["proto_type_mask.cc"],
+     hdrs = ["proto_type_mask.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_path",
+         "//internal:status_macros",
+@@ -315,6 +330,7 @@
+ cc_test(
+     name = "proto_type_mask_test",
+     srcs = ["proto_type_mask_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_path",
+         ":proto_type_mask",
+@@ -330,6 +346,7 @@
+     name = "proto_type_mask_registry",
+     srcs = ["proto_type_mask_registry.cc"],
+     hdrs = ["proto_type_mask_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_path",
+         ":proto_type_mask",
+@@ -353,6 +370,7 @@
+ cc_test(
+     name = "proto_type_mask_registry_test",
+     srcs = ["proto_type_mask_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":proto_type_mask",
+         ":proto_type_mask_registry",
+diff -urN orig/codelab/BUILD mod/codelab/BUILD
+--- orig/codelab/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/codelab/BUILD	2026-09-28 11:26:51.838138730 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ licenses(["notice"])
+ 
+@@ -39,6 +40,7 @@
+     name = "exercise1",
+     srcs = ["exercise1.cc"],
+     hdrs = ["exercise1.h"],
++    copts = CEL_COPTS,
+     tags = [
+         "manual",
+         "nobuilder",
+@@ -67,6 +69,7 @@
+ cc_test(
+     name = "exercise1_test",
+     srcs = ["exercise1_test.cc"],
++    copts = CEL_COPTS,
+     tags = EXERCISE_TEST_TAGS,
+     deps = [
+         ":exercise1",
+@@ -79,6 +82,7 @@
+     name = "exercise2",
+     srcs = ["exercise2.cc"],
+     hdrs = ["exercise2.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker:validation_result",
+@@ -107,6 +111,7 @@
+ cc_test(
+     name = "exercise2_test",
+     srcs = ["exercise2_test.cc"],
++    copts = CEL_COPTS,
+     tags = EXERCISE_TEST_TAGS,
+     deps = [
+         ":exercise2",
+@@ -120,6 +125,7 @@
+ cc_test(
+     name = "exercise3_test",
+     srcs = ["exercise3_test.cc"],
++    copts = CEL_COPTS,
+     tags = EXERCISE_TEST_TAGS,
+     deps = [
+         ":exercise2",
+@@ -134,6 +140,7 @@
+ cc_library(
+     name = "checked_expr_conversion_example",
+     hdrs = ["checked_expr_conversion_example.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:ast_proto",
+@@ -146,6 +153,7 @@
+ cc_test(
+     name = "checked_expr_conversion_example_test",
+     srcs = ["checked_expr_conversion_example_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":checked_expr_conversion_example",
+         "//checker:validation_result",
+@@ -164,6 +172,7 @@
+     name = "exercise4",
+     srcs = ["exercise4.cc"],
+     hdrs = ["exercise4.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker:validation_result",
+@@ -194,6 +203,7 @@
+ cc_test(
+     name = "exercise4_test",
+     srcs = ["exercise4_test.cc"],
++    copts = CEL_COPTS,
+     tags = EXERCISE_TEST_TAGS,
+     deps = [
+         ":exercise4",
+@@ -208,6 +218,7 @@
+     name = "network_functions",
+     srcs = ["network_functions.cc"],
+     hdrs = ["network_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//common:decl",
+@@ -237,6 +248,7 @@
+ cc_test(
+     name = "network_functions_test",
+     srcs = ["network_functions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":network_functions",
+         "//common:decl",
+@@ -267,6 +279,7 @@
+     name = "exercise10",
+     srcs = ["exercise10.cc"],
+     hdrs = ["exercise10.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":network_functions",
+         "//checker:validation_result",
+@@ -294,6 +307,7 @@
+ cc_test(
+     name = "exercise10_test",
+     srcs = ["exercise10_test.cc"],
++    copts = CEL_COPTS,
+     tags = EXERCISE_TEST_TAGS,
+     deps = [
+         ":exercise10",
+diff -urN orig/codelab/solutions/BUILD mod/codelab/solutions/BUILD
+--- orig/codelab/solutions/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/codelab/solutions/BUILD	2026-09-28 11:26:51.839138736 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -23,6 +24,7 @@
+     name = "exercise1",
+     srcs = ["exercise1.cc"],
+     hdrs = ["//codelab:exercise1.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:validation_result",
+         "//common:ast",
+@@ -47,6 +49,7 @@
+ cc_test(
+     name = "exercise1_test",
+     srcs = ["//codelab:exercise1_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":exercise1",
+         "//internal:testing",
+@@ -58,6 +61,7 @@
+     name = "exercise2",
+     srcs = ["exercise2.cc"],
+     hdrs = ["//codelab:exercise2.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker:validation_result",
+@@ -86,6 +90,7 @@
+ cc_test(
+     name = "exercise2_test",
+     srcs = ["//codelab:exercise2_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":exercise2",
+         "//internal:testing",
+@@ -98,6 +103,7 @@
+ cc_test(
+     name = "exercise3_test",
+     srcs = ["exercise3_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":exercise2",
+         "//internal:testing",
+@@ -112,6 +118,7 @@
+     name = "exercise4",
+     srcs = ["exercise4.cc"],
+     hdrs = ["//codelab:exercise4.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker:validation_result",
+@@ -142,6 +149,7 @@
+ cc_test(
+     name = "exercise4_test",
+     srcs = ["//codelab:exercise4_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":exercise4",
+         "//internal:testing",
+@@ -155,6 +163,7 @@
+     name = "exercise10",
+     srcs = ["exercise10.cc"],
+     hdrs = ["//codelab:exercise10.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:validation_result",
+         "//codelab:network_functions",
+@@ -182,6 +191,7 @@
+ cc_test(
+     name = "exercise10_test",
+     srcs = ["//codelab:exercise10_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":exercise10",
+         "//internal:testing",
+diff -urN orig/common/BUILD mod/common/BUILD
+--- orig/common/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/BUILD	2026-09-28 11:26:51.842138752 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -23,6 +24,7 @@
+     name = "ast",
+     srcs = ["ast.cc"],
+     hdrs = ["ast.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":expr",
+         ":source",
+@@ -38,6 +40,7 @@
+     name = "expr_printer",
+     srcs = ["expr_printer.cc"],
+     hdrs = ["expr_printer.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":ast_proto",
+@@ -56,6 +59,7 @@
+ cc_test(
+     name = "expr_printer_test",
+     srcs = ["expr_printer_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":expr",
+         ":expr_printer",
+@@ -70,6 +74,7 @@
+ cc_test(
+     name = "ast_test",
+     srcs = ["ast_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":expr",
+@@ -83,6 +88,7 @@
+     name = "type_spec_resolver",
+     srcs = ["type_spec_resolver.cc"],
+     hdrs = ["type_spec_resolver.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":descriptor_pool_type_introspector",
+@@ -100,6 +106,7 @@
+ cc_test(
+     name = "type_spec_resolver_test",
+     srcs = ["type_spec_resolver_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":type",
+@@ -118,6 +125,7 @@
+     name = "descriptor_pool_type_introspector",
+     srcs = ["descriptor_pool_type_introspector.cc"],
+     hdrs = ["descriptor_pool_type_introspector.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type",
+         "@com_google_absl//absl/base:core_headers",
+@@ -136,6 +144,7 @@
+ cc_test(
+     name = "descriptor_pool_type_introspector_test",
+     srcs = ["descriptor_pool_type_introspector_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":descriptor_pool_type_introspector",
+         ":type",
+@@ -151,6 +160,7 @@
+     name = "signature",
+     srcs = ["signature.cc"],
+     hdrs = ["signature.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":type",
+@@ -167,6 +177,7 @@
+ cc_test(
+     name = "signature_test",
+     srcs = ["signature_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":signature",
+@@ -187,6 +198,7 @@
+     name = "expr",
+     srcs = ["expr.cc"],
+     hdrs = ["expr.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         "@com_google_absl//absl/algorithm:container",
+@@ -203,6 +215,7 @@
+ cc_test(
+     name = "expr_test",
+     srcs = ["expr_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":expr",
+         "//internal:testing",
+@@ -213,6 +226,7 @@
+     name = "navigable_ast",
+     srcs = ["navigable_ast.cc"],
+     hdrs = ["navigable_ast.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_traverse",
+         ":ast_visitor",
+@@ -229,6 +243,7 @@
+ cc_test(
+     name = "navigable_ast_test",
+     srcs = ["navigable_ast_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":expr",
+@@ -247,6 +262,7 @@
+     name = "decl",
+     srcs = ["decl.cc"],
+     hdrs = ["decl.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         ":signature",
+@@ -269,6 +285,7 @@
+ cc_test(
+     name = "decl_test",
+     srcs = ["decl_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         ":decl",
+@@ -285,6 +302,7 @@
+     name = "reference",
+     srcs = ["reference.cc"],
+     hdrs = ["reference.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         "@com_google_absl//absl/algorithm:container",
+@@ -298,6 +316,7 @@
+ cc_test(
+     name = "reference_test",
+     srcs = ["reference_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         ":reference",
+@@ -309,6 +328,7 @@
+     name = "ast_rewrite",
+     srcs = ["ast_rewrite.cc"],
+     hdrs = ["ast_rewrite.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         ":constant",
+@@ -323,6 +343,7 @@
+ cc_test(
+     name = "ast_rewrite_test",
+     srcs = ["ast_rewrite_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":ast_rewrite",
+@@ -342,6 +363,7 @@
+     name = "ast_traverse",
+     srcs = ["ast_traverse.cc"],
+     hdrs = ["ast_traverse.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         ":constant",
+@@ -355,6 +377,7 @@
+ cc_test(
+     name = "ast_traverse_test",
+     srcs = ["ast_traverse_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_traverse",
+         ":ast_visitor",
+@@ -367,6 +390,7 @@
+ cc_library(
+     name = "ast_visitor",
+     hdrs = ["ast_visitor.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         ":expr",
+@@ -376,6 +400,7 @@
+ cc_library(
+     name = "ast_visitor_base",
+     hdrs = ["ast_visitor_base.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         ":constant",
+@@ -387,6 +412,7 @@
+     name = "constant",
+     srcs = ["constant.cc"],
+     hdrs = ["constant.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:strings",
+         "@com_google_absl//absl/base:core_headers",
+@@ -402,6 +428,7 @@
+ cc_test(
+     name = "constant_test",
+     srcs = ["constant_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         "//internal:testing",
+@@ -414,6 +441,7 @@
+ cc_library(
+     name = "expr_factory",
+     hdrs = ["expr_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant",
+         ":expr",
+@@ -430,6 +458,7 @@
+     hdrs = [
+         "operators.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/container:flat_hash_map",
+         "@com_google_absl//absl/strings",
+@@ -442,6 +471,7 @@
+     name = "any",
+     srcs = ["any.cc"],
+     hdrs = ["any.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/base:nullability",
+@@ -454,6 +484,7 @@
+ cc_test(
+     name = "any_test",
+     srcs = ["any_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":any",
+         "//internal:testing",
+@@ -466,6 +497,7 @@
+ cc_library(
+     name = "casting",
+     hdrs = ["casting.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common/internal:casting",
+         "@com_google_absl//absl/base:core_headers",
+@@ -475,12 +507,14 @@
+ cc_library(
+     name = "json",
+     hdrs = ["json.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "kind",
+     srcs = ["kind.cc"],
+     hdrs = ["kind.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/strings",
+@@ -490,6 +524,7 @@
+ cc_test(
+     name = "kind_test",
+     srcs = ["kind_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":kind",
+         ":type_kind",
+@@ -502,6 +537,7 @@
+     name = "memory",
+     srcs = ["memory.cc"],
+     hdrs = ["memory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":allocator",
+         ":arena",
+@@ -523,6 +559,7 @@
+ cc_test(
+     name = "memory_test",
+     srcs = ["memory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":allocator",
+         ":data",
+@@ -539,6 +576,7 @@
+     name = "memory_testing",
+     testonly = True,
+     hdrs = ["memory_testing.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":memory",
+         "//internal:testing",
+@@ -552,6 +590,7 @@
+     name = "type_testing",
+     testonly = True,
+     hdrs = ["type_testing.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+@@ -559,6 +598,7 @@
+     testonly = True,
+     srcs = ["value_testing.cc"],
+     hdrs = ["value_testing.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":value",
+         ":value_kind",
+@@ -583,6 +623,7 @@
+ cc_test(
+     name = "value_testing_test",
+     srcs = ["value_testing_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":value",
+         ":value_testing",
+@@ -595,6 +636,7 @@
+ cc_library(
+     name = "type_kind",
+     hdrs = ["type_kind.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":kind",
+         "@com_google_absl//absl/base:core_headers",
+@@ -605,6 +647,7 @@
+ cc_library(
+     name = "value_kind",
+     hdrs = ["value_kind.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":kind",
+         "@com_google_absl//absl/base:core_headers",
+@@ -616,6 +659,7 @@
+     name = "source",
+     srcs = ["source.cc"],
+     hdrs = ["source.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:unicode",
+         "//internal:utf8",
+@@ -637,6 +681,7 @@
+ cc_test(
+     name = "source_test",
+     srcs = ["source_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":source",
+         "//internal:testing",
+@@ -648,6 +693,7 @@
+ cc_library(
+     name = "native_type",
+     hdrs = ["native_type.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":typeinfo",
+     ],
+@@ -677,6 +723,7 @@
+         "type.h",
+         "type_introspector.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_kind",
+         "//internal:string_pool",
+@@ -708,6 +755,7 @@
+     name = "format_type_name",
+     srcs = ["format_type_name.cc"],
+     hdrs = ["format_type_name.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type",
+         ":type_kind",
+@@ -722,6 +770,7 @@
+     ]) + [
+         "type_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":memory",
+         ":type",
+@@ -740,6 +789,7 @@
+ cc_test(
+     name = "format_type_name_test",
+     srcs = ["format_type_name_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":format_type_name",
+         ":type",
+@@ -774,6 +824,7 @@
+         "type_reflector.h",
+         "value.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":allocator",
+         ":any",
+@@ -855,6 +906,7 @@
+         "type_reflector_test.cc",
+         "value_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":casting",
+         ":memory",
+@@ -896,6 +948,7 @@
+ cc_library(
+     name = "unknown",
+     hdrs = ["unknown.h"],
++    copts = CEL_COPTS,
+     deps = ["//base/internal:unknown_set"],
+ )
+ 
+@@ -907,6 +960,7 @@
+ cc_library(
+     name = "arena",
+     hdrs = ["arena.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:nullability",
+         "@com_google_protobuf//:protobuf",
+@@ -916,12 +970,14 @@
+ cc_library(
+     name = "reference_count",
+     hdrs = ["reference_count.h"],
++    copts = CEL_COPTS,
+     deps = ["//common/internal:reference_count"],
+ )
+ 
+ cc_library(
+     name = "allocator",
+     hdrs = ["allocator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":arena",
+         ":data",
+@@ -938,6 +994,7 @@
+ cc_test(
+     name = "allocator_test",
+     srcs = ["allocator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":allocator",
+         "//internal:testing",
+@@ -949,6 +1006,7 @@
+ cc_library(
+     name = "data",
+     hdrs = ["data.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common/internal:metadata",
+         "@com_google_absl//absl/base:nullability",
+@@ -960,6 +1018,7 @@
+ cc_test(
+     name = "data_test",
+     srcs = ["data_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":data",
+         "//common/internal:reference_count",
+@@ -972,6 +1031,7 @@
+ cc_library(
+     name = "optional_ref",
+     hdrs = ["optional_ref.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/base:nullability",
+@@ -986,6 +1046,7 @@
+         "arena_string.h",
+         "arena_string_view.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base",
+         "@com_google_absl//absl/base:core_headers",
+@@ -1002,6 +1063,7 @@
+         "arena_string_test.cc",
+         "arena_string_view_test.cc",
+     ],
++    copts = CEL_COPTS,
+     tags = ["no_test_msvc"],
+     deps = [
+         ":arena_string",
+@@ -1017,6 +1079,7 @@
+ cc_library(
+     name = "arena_string_pool",
+     hdrs = ["arena_string_pool.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":arena_string",
+         "//internal:string_pool",
+@@ -1032,6 +1095,7 @@
+ cc_test(
+     name = "arena_string_pool_test",
+     srcs = ["arena_string_pool_test.cc"],
++    copts = CEL_COPTS,
+     tags = ["no_test_msvc"],
+     deps = [
+         ":arena_string_pool",
+@@ -1046,6 +1110,7 @@
+     name = "minimal_descriptor_pool",
+     srcs = ["minimal_descriptor_pool.cc"],
+     hdrs = ["minimal_descriptor_pool.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:minimal_descriptors",
+         "@com_google_absl//absl/base:nullability",
+@@ -1057,6 +1122,7 @@
+ cc_test(
+     name = "minimal_descriptor_pool_test",
+     srcs = ["minimal_descriptor_pool_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":minimal_descriptor_pool",
+         "//internal:testing",
+@@ -1069,6 +1135,7 @@
+     name = "minimal_descriptor_database",
+     srcs = ["minimal_descriptor_database.cc"],
+     hdrs = ["minimal_descriptor_database.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:minimal_descriptors",
+         "@com_google_absl//absl/base:nullability",
+@@ -1079,6 +1146,7 @@
+ cc_test(
+     name = "minimal_descriptor_database_test",
+     srcs = ["minimal_descriptor_database_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":minimal_descriptor_database",
+         "//internal:testing",
+@@ -1094,6 +1162,7 @@
+     hdrs = [
+         "function_descriptor.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":kind",
+         "@com_google_absl//absl/base:core_headers",
+@@ -1106,6 +1175,7 @@
+     name = "decl_proto",
+     srcs = ["decl_proto.cc"],
+     hdrs = ["decl_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":decl",
+         ":type",
+@@ -1124,6 +1194,7 @@
+ cc_test(
+     name = "decl_proto_test",
+     srcs = ["decl_proto_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":decl",
+         ":decl_proto",
+@@ -1142,6 +1213,7 @@
+     name = "decl_proto_v1alpha1",
+     srcs = ["decl_proto_v1alpha1.cc"],
+     hdrs = ["decl_proto_v1alpha1.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":decl",
+         ":decl_proto",
+@@ -1160,6 +1232,7 @@
+     name = "type_proto",
+     srcs = ["type_proto.cc"],
+     hdrs = ["type_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type",
+         ":type_kind",
+@@ -1179,6 +1252,7 @@
+ cc_test(
+     name = "type_proto_test",
+     srcs = ["type_proto_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":type",
+         ":type_kind",
+@@ -1198,6 +1272,7 @@
+     name = "ast_proto",
+     srcs = ["ast_proto.cc"],
+     hdrs = ["ast_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":constant",
+@@ -1225,6 +1300,7 @@
+     srcs = [
+         "ast_proto_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast",
+         ":ast_proto",
+@@ -1262,6 +1338,7 @@
+     hdrs = [
+         "standard_definitions.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/strings:string_view",
+     ],
+@@ -1271,6 +1348,7 @@
+     name = "typeinfo",
+     srcs = ["typeinfo.cc"],
+     hdrs = ["typeinfo.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base",
+         "@com_google_absl//absl/base:config",
+@@ -1284,6 +1362,7 @@
+ cc_test(
+     name = "typeinfo_test",
+     srcs = ["typeinfo_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":typeinfo",
+         "//internal:testing",
+@@ -1296,6 +1375,7 @@
+     name = "container",
+     srcs = ["container.cc"],
+     hdrs = ["container.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:lexis",
+         "@com_google_absl//absl/container:flat_hash_map",
+@@ -1308,6 +1388,7 @@
+ cc_test(
+     name = "container_test",
+     srcs = ["container_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":container",
+         "//internal:testing",
+diff -urN orig/common/ast/BUILD mod/common/ast/BUILD
+--- orig/common/ast/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/BUILD	2026-09-28 11:26:51.843138757 +0000
+@@ -18,12 +18,15 @@
+ # Internal AST implementation and utilities
+ # These are needed by various parts of the CEL-C++ library, but are not intended for public use at
+ # this time.
++load("//bazel:copts.bzl", "CEL_COPTS")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+     name = "constant_proto",
+     srcs = ["constant_proto.cc"],
+     hdrs = ["constant_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:constant",
+         "//internal:proto_time_encoding",
+@@ -42,6 +45,7 @@
+     name = "expr_proto",
+     srcs = ["expr_proto.cc"],
+     hdrs = ["expr_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant_proto",
+         "//common:constant",
+@@ -61,6 +65,7 @@
+ cc_test(
+     name = "expr_proto_test",
+     srcs = ["expr_proto_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":expr_proto",
+         "//common:expr",
+@@ -77,6 +82,7 @@
+     name = "source_info_proto",
+     srcs = ["source_info_proto.cc"],
+     hdrs = ["source_info_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":expr_proto",
+         "//common:ast",
+@@ -95,6 +101,7 @@
+     name = "metadata",
+     srcs = ["metadata.cc"],
+     hdrs = ["metadata.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:constant",
+         "//common:expr",
+@@ -113,6 +120,7 @@
+ cc_test(
+     name = "metadata_test",
+     srcs = ["metadata_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":metadata",
+         "//common:expr",
+@@ -128,6 +136,7 @@
+         "navigable_ast_internal.h",
+         "navigable_ast_kinds.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:nullability",
+         "@com_google_absl//absl/container:flat_hash_map",
+@@ -141,6 +150,7 @@
+ cc_test(
+     name = "navigable_ast_internal_test",
+     srcs = ["navigable_ast_internal_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":navigable_ast_internal",
+         "//internal:testing",
+diff -urN orig/common/internal/BUILD mod/common/internal/BUILD
+--- orig/common/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/internal/BUILD	2026-09-28 11:26:51.843138757 +0000
+@@ -14,12 +14,14 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+     name = "casting",
+     hdrs = ["casting.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:casts",
+         "@com_google_absl//absl/base:core_headers",
+@@ -32,6 +34,7 @@
+     name = "reference_count",
+     srcs = ["reference_count.cc"],
+     hdrs = ["reference_count.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:data",
+         "//internal:new",
+@@ -46,6 +49,7 @@
+ cc_test(
+     name = "reference_count_test",
+     srcs = ["reference_count_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":reference_count",
+         "//common:data",
+@@ -59,6 +63,7 @@
+ cc_library(
+     name = "metadata",
+     hdrs = ["metadata.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_protobuf//:protobuf"],
+ )
+ 
+@@ -66,6 +71,7 @@
+     name = "byte_string",
+     srcs = ["byte_string.cc"],
+     hdrs = ["byte_string.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":metadata",
+         ":reference_count",
+@@ -88,6 +94,7 @@
+ cc_test(
+     name = "byte_string_test",
+     srcs = ["byte_string_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":byte_string",
+         ":reference_count",
+@@ -108,6 +115,7 @@
+     name = "value_conversion",
+     srcs = ["value_conversion.cc"],
+     hdrs = ["value_conversion.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:any",
+         "//common:value",
 diff -urN orig/common/internal/byte_string.cc mod/common/internal/byte_string.cc
---- orig/common/internal/byte_string.cc
-+++ mod/common/internal/byte_string.cc
+--- orig/common/internal/byte_string.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/internal/byte_string.cc	2026-09-28 11:26:51.798545827 +0000
 @@ -104,6 +104,12 @@
  
  ByteString::ByteString(Allocator<> allocator, absl::string_view string) {
@@ -15,8 +1483,8 @@ diff -urN orig/common/internal/byte_string.cc mod/common/internal/byte_string.cc
    if (string.size() <= kSmallByteStringCapacity) {
      SetSmall(arena, string);
 diff -urN orig/common/value.h mod/common/value.h
---- orig/common/value.h
-+++ mod/common/value.h
+--- orig/common/value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/value.h	2026-09-28 11:26:51.798978588 +0000
 @@ -2802,7 +2802,7 @@
      const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
      google::protobuf::MessageFactory* absl_nonnull message_factory,
@@ -26,3 +1494,4077 @@ diff -urN orig/common/value.h mod/common/value.h
    ABSL_DCHECK(descriptor_pool != nullptr);
    ABSL_DCHECK(message_factory != nullptr);
    ABSL_DCHECK(arena != nullptr);
+diff -urN orig/compiler/BUILD mod/compiler/BUILD
+--- orig/compiler/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/compiler/BUILD	2026-09-28 11:26:51.844138762 +0000
+@@ -14,12 +14,14 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+     name = "compiler",
+     hdrs = ["compiler.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:checker_options",
+         "//checker:type_checker",
+@@ -41,6 +43,7 @@
+     name = "compiler_factory",
+     srcs = ["compiler_factory.cc"],
+     hdrs = ["compiler_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         "//checker:type_check_issue",
+@@ -68,6 +71,7 @@
+ cc_test(
+     name = "compiler_factory_test",
+     srcs = ["compiler_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         ":compiler_factory",
+@@ -98,6 +102,7 @@
+     name = "optional",
+     srcs = ["optional.cc"],
+     hdrs = ["optional.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         "//checker:optional",
+@@ -110,6 +115,7 @@
+ cc_test(
+     name = "optional_test",
+     srcs = ["optional_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         ":compiler_factory",
+@@ -137,6 +143,7 @@
+     name = "standard_library",
+     srcs = ["standard_library.cc"],
+     hdrs = ["standard_library.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         "//checker:standard_library",
+@@ -151,6 +158,7 @@
+     name = "compiler_library_subset_factory",
+     srcs = ["compiler_library_subset_factory.cc"],
+     hdrs = ["compiler_library_subset_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         "//checker:type_checker_subset_factory",
+@@ -164,6 +172,7 @@
+ cc_test(
+     name = "compiler_library_subset_factory_test",
+     srcs = ["compiler_library_subset_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler",
+         ":compiler_factory",
+diff -urN orig/conformance/BUILD mod/conformance/BUILD
+--- orig/conformance/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/conformance/BUILD	2026-09-28 11:26:51.845138768 +0000
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ load("//conformance:run.bzl", "gen_conformance_tests")
+ 
+ package(default_visibility = ["//visibility:public"])
+@@ -24,6 +25,7 @@
+     testonly = True,
+     srcs = ["service.cc"],
+     hdrs = ["service.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:optional",
+         "//checker:standard_library",
+@@ -92,6 +94,7 @@
+     name = "run",
+     testonly = True,
+     srcs = ["run.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":service",
+         ":utils",
+@@ -120,6 +123,7 @@
+     name = "utils",
+     testonly = True,
+     hdrs = ["utils.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:testing_no_main",
+         "@com_google_absl//absl/log:absl_check",
+diff -urN orig/conformance/policy/BUILD mod/conformance/policy/BUILD
+--- orig/conformance/policy/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/conformance/policy/BUILD	2026-09-28 11:26:51.845138768 +0000
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ load(
+     "//conformance/policy:policy_conformance_test.bzl",
+     "cel_policy_conformance_test",
+@@ -24,6 +25,7 @@
+     name = "policy_conformance_test_lib",
+     testonly = True,
+     srcs = ["policy_conformance_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:source",
+diff -urN orig/env/BUILD mod/env/BUILD
+--- orig/env/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/env/BUILD	2026-09-28 11:26:51.846138773 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -27,6 +28,7 @@
+         "config.h",
+         "type_info.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:constant",
+@@ -49,6 +51,7 @@
+     name = "env",
+     srcs = ["env.cc"],
+     hdrs = ["env.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         "//checker:type_checker_builder",
+@@ -75,6 +78,7 @@
+     name = "env_runtime",
+     srcs = ["env_runtime.cc"],
+     hdrs = ["env_runtime.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         "//env/internal:runtime_ext_registry",
+@@ -96,6 +100,7 @@
+     name = "env_std_extensions",
+     srcs = ["env_std_extensions.cc"],
+     hdrs = ["env_std_extensions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":env",
+         "//checker:optional",
+@@ -118,7 +123,7 @@
+     hdrs = ["env_yaml.h"],
+     copts = [
+         "-fexceptions",
+-    ],
++    ] + CEL_COPTS,
+     features = ["-use_header_modules"],
+     deps = [
+         ":config",
+@@ -145,6 +150,7 @@
+     name = "runtime_std_extensions",
+     srcs = ["runtime_std_extensions.cc"],
+     hdrs = ["runtime_std_extensions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":env_runtime",
+         "//checker:optional",
+@@ -167,6 +173,7 @@
+ cc_test(
+     name = "config_test",
+     srcs = ["config_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         "//common:constant",
+@@ -179,6 +186,7 @@
+ cc_test(
+     name = "type_info_test",
+     srcs = ["type_info_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         "//common:type",
+@@ -195,6 +203,7 @@
+ cc_test(
+     name = "env_test",
+     srcs = ["env_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         ":env",
+@@ -234,6 +243,7 @@
+ cc_test(
+     name = "env_runtime_test",
+     srcs = ["env_runtime_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         ":env",
+@@ -262,6 +272,7 @@
+ cc_test(
+     name = "env_std_extensions_test",
+     srcs = ["env_std_extensions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         ":env",
+@@ -276,6 +287,7 @@
+ cc_test(
+     name = "env_yaml_test",
+     srcs = ["env_yaml_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         ":env_yaml",
+@@ -294,6 +306,7 @@
+ cc_test(
+     name = "runtime_std_extensions_test",
+     srcs = ["runtime_std_extensions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":config",
+         ":env",
+diff -urN orig/env/internal/BUILD mod/env/internal/BUILD
+--- orig/env/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/env/internal/BUILD	2026-09-28 11:26:51.846138773 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -21,6 +22,7 @@
+     name = "ext_registry",
+     srcs = ["ext_registry.cc"],
+     hdrs = ["ext_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//compiler",
+         "@com_google_absl//absl/functional:any_invocable",
+@@ -34,6 +36,7 @@
+     name = "runtime_ext_registry",
+     srcs = ["runtime_ext_registry.cc"],
+     hdrs = ["runtime_ext_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:runtime_builder",
+         "//runtime:runtime_options",
+@@ -46,6 +49,7 @@
+ cc_test(
+     name = "ext_registry_test",
+     srcs = ["ext_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ext_registry",
+         "//checker:type_checker_builder",
+@@ -60,6 +64,7 @@
+ cc_test(
+     name = "runtime_ext_registry_test",
+     srcs = ["runtime_ext_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_ext_registry",
+         "//common:ast",
+diff -urN orig/eval/compiler/BUILD mod/eval/compiler/BUILD
+--- orig/eval/compiler/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/compiler/BUILD	2026-09-28 11:26:51.848138784 +0000
+@@ -1,6 +1,10 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ 
++# This package contains code
++# that compiles Expr object into evaluatable CelExpression
++load("//bazel:copts.bzl", "CEL_COPTS")
++
+ DEFAULT_VISIBILITY = [
+     "//eval:__subpackages__",
+     "//runtime:__subpackages__",
+@@ -8,8 +12,6 @@
+     "//testing:__subpackages__",
+ ]
+ 
+-# This package contains code
+-# that compiles Expr object into evaluatable CelExpression
+ package(default_visibility = ["//visibility:public"])
+ 
+ licenses(["notice"])
+@@ -27,6 +29,7 @@
+     name = "flat_expr_builder_extensions",
+     srcs = ["flat_expr_builder_extensions.cc"],
+     hdrs = ["flat_expr_builder_extensions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":resolver",
+         "//base:ast",
+@@ -59,6 +62,7 @@
+ cc_test(
+     name = "flat_expr_builder_extensions_test",
+     srcs = ["flat_expr_builder_extensions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         ":resolver",
+@@ -94,6 +98,7 @@
+     hdrs = [
+         "flat_expr_builder.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":check_ast_extensions",
+         ":flat_expr_builder_extensions",
+@@ -162,6 +167,7 @@
+     srcs = [
+         "flat_expr_builder_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_builder_flat_impl",
+         ":constant_folding",
+@@ -222,6 +228,7 @@
+     srcs = [
+         "flat_expr_builder_comprehensions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_builder_flat_impl",
+         ":comprehension_vulnerability_check",
+@@ -255,6 +262,7 @@
+     hdrs = [
+         "cel_expression_builder_flat_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder",
+         "//base:ast",
+@@ -287,6 +295,7 @@
+     srcs = [
+         "cel_expression_builder_flat_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_builder_flat_impl",
+         ":constant_folding",
+@@ -328,6 +337,7 @@
+     hdrs = [
+         "constant_folding.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         ":resolver",
+@@ -355,6 +365,7 @@
+     srcs = [
+         "constant_folding_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant_folding",
+         ":flat_expr_builder_extensions",
+@@ -395,6 +406,7 @@
+     hdrs = [
+         "qualified_reference_resolver.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         ":resolver",
+@@ -419,6 +431,7 @@
+     name = "check_ast_extensions",
+     srcs = ["check_ast_extensions.cc"],
+     hdrs = ["check_ast_extensions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common/ast:metadata",
+@@ -432,6 +445,7 @@
+ cc_test(
+     name = "check_ast_extensions_test",
+     srcs = ["check_ast_extensions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":check_ast_extensions",
+         "//common:ast",
+@@ -446,6 +460,7 @@
+     name = "resolver",
+     srcs = ["resolver.cc"],
+     hdrs = ["resolver.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:kind",
+         "//common:type",
+@@ -468,6 +483,7 @@
+     srcs = [
+         "qualified_reference_resolver_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":qualified_reference_resolver",
+         ":resolver",
+@@ -500,6 +516,7 @@
+     srcs = [
+         "flat_expr_builder_short_circuiting_conformance_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_builder_flat_impl",
+         "//eval/public:activation",
+@@ -524,6 +541,7 @@
+     name = "resolver_test",
+     size = "small",
+     srcs = ["resolver_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":resolver",
+         "//common:value",
+@@ -543,6 +561,7 @@
+     name = "regex_precompilation_optimization",
+     srcs = ["regex_precompilation_optimization.cc"],
+     hdrs = ["regex_precompilation_optimization.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         "//base:builtins",
+@@ -571,6 +590,7 @@
+ cc_test(
+     name = "regex_precompilation_optimization_test",
+     srcs = ["regex_precompilation_optimization_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_builder_flat_impl",
+         ":constant_folding",
+@@ -606,6 +626,7 @@
+     name = "comprehension_vulnerability_check",
+     srcs = ["comprehension_vulnerability_check.cc"],
+     hdrs = ["comprehension_vulnerability_check.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         "//base:builtins",
+@@ -622,6 +643,7 @@
+     name = "instrumentation",
+     srcs = ["instrumentation.cc"],
+     hdrs = ["instrumentation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":flat_expr_builder_extensions",
+         "//common:ast",
+@@ -638,6 +660,7 @@
+ cc_test(
+     name = "instrumentation_test",
+     srcs = ["instrumentation_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":constant_folding",
+         ":flat_expr_builder",
+diff -urN orig/eval/eval/BUILD mod/eval/eval/BUILD
+--- orig/eval/eval/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/eval/BUILD	2026-09-28 11:26:51.851138799 +0000
+@@ -17,6 +17,8 @@
+ 
+ # This package contains implementation of expression evaluator
+ # internals.
++load("//bazel:copts.bzl", "CEL_COPTS")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ licenses(["notice"])
+@@ -40,6 +42,7 @@
+     hdrs = [
+         "evaluator_core.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_utility",
+         ":comprehension_slots",
+@@ -72,6 +75,7 @@
+     hdrs = [
+         "cel_expression_flat_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":comprehension_slots",
+@@ -101,6 +105,7 @@
+     hdrs = [
+         "comprehension_slots.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         "//common:value",
+@@ -118,6 +123,7 @@
+     srcs = [
+         "comprehension_slots_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":comprehension_slots",
+@@ -137,6 +143,7 @@
+     hdrs = [
+         "evaluator_stack.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         "//common:value",
+@@ -158,6 +165,7 @@
+     srcs = [
+         "evaluator_stack_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":evaluator_stack",
+         "//base:attributes",
+@@ -171,6 +179,7 @@
+     hdrs = [
+         "expression_step_base.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [":evaluator_core"],
+ )
+ 
+@@ -179,6 +188,7 @@
+     hdrs = [
+         "const_value_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler_constant_step",
+         ":direct_expression_step",
+@@ -196,6 +206,7 @@
+     hdrs = [
+         "container_access_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":attribute_utility",
+@@ -225,6 +236,7 @@
+     name = "regex_match_step",
+     srcs = ["regex_match_step.cc"],
+     hdrs = ["regex_match_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -248,6 +260,7 @@
+     hdrs = [
+         "ident_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":comprehension_slots",
+@@ -273,6 +286,7 @@
+     hdrs = [
+         "function_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -309,6 +323,7 @@
+     hdrs = [
+         "select_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -337,6 +352,7 @@
+     hdrs = [
+         "create_list_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":attribute_utility",
+@@ -362,6 +378,7 @@
+     hdrs = [
+         "create_struct_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -386,6 +403,7 @@
+     hdrs = [
+         "create_map_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -410,6 +428,7 @@
+     hdrs = [
+         "jump_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":evaluator_core",
+         ":expression_step_base",
+@@ -429,6 +448,7 @@
+     hdrs = [
+         "logic_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -456,6 +476,7 @@
+     hdrs = [
+         "equality_steps.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -478,6 +499,7 @@
+     srcs = [
+         "equality_steps_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -509,6 +531,7 @@
+     hdrs = [
+         "comprehension_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":comprehension_slots",
+@@ -536,6 +559,7 @@
+     srcs = [
+         "comprehension_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -578,6 +602,7 @@
+     srcs = [
+         "evaluator_core_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":evaluator_core",
+@@ -607,6 +632,7 @@
+     srcs = [
+         "container_access_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":container_access_step",
+@@ -646,6 +672,7 @@
+     srcs = [
+         "regex_match_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":regex_match_step",
+         "//eval/public:activation",
+@@ -668,6 +695,7 @@
+     srcs = [
+         "ident_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -698,6 +726,7 @@
+     srcs = [
+         "function_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":const_value_step",
+@@ -743,6 +772,7 @@
+     srcs = [
+         "logic_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -786,6 +816,7 @@
+     srcs = [
+         "select_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -845,6 +876,7 @@
+     srcs = [
+         "create_list_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -889,6 +921,7 @@
+     srcs = [
+         "create_struct_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":create_struct_step",
+@@ -928,6 +961,7 @@
+     srcs = [
+         "create_map_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":create_map_step",
+@@ -959,6 +993,7 @@
+     name = "attribute_trail",
+     srcs = ["attribute_trail.cc"],
+     hdrs = ["attribute_trail.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:attributes",
+         "@com_google_absl//absl/types:optional",
+@@ -972,6 +1007,7 @@
+     srcs = [
+         "attribute_trail_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         "//eval/public:cel_attribute",
+@@ -985,6 +1021,7 @@
+     name = "attribute_utility",
+     srcs = ["attribute_utility.cc"],
+     hdrs = ["attribute_utility.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         "//base:attributes",
+@@ -1011,6 +1048,7 @@
+     srcs = [
+         "attribute_utility_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":attribute_utility",
+@@ -1036,6 +1074,7 @@
+     hdrs = [
+         "ternary_step.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -1056,6 +1095,7 @@
+     srcs = [
+         "ternary_step_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":cel_expression_flat_impl",
+@@ -1092,6 +1132,7 @@
+     name = "shadowable_value_step",
+     srcs = ["shadowable_value_step.cc"],
+     hdrs = ["shadowable_value_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -1110,6 +1151,7 @@
+     name = "shadowable_value_step_test",
+     size = "small",
+     srcs = ["shadowable_value_step_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_flat_impl",
+         ":evaluator_core",
+@@ -1133,6 +1175,7 @@
+     name = "compiler_constant_step",
+     srcs = ["compiler_constant_step.cc"],
+     hdrs = ["compiler_constant_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -1147,6 +1190,7 @@
+ cc_test(
+     name = "compiler_constant_step_test",
+     srcs = ["compiler_constant_step_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":compiler_constant_step",
+         ":evaluator_core",
+@@ -1166,6 +1210,7 @@
+     name = "lazy_init_step",
+     srcs = ["lazy_init_step.cc"],
+     hdrs = ["lazy_init_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":comprehension_slots",
+@@ -1183,6 +1228,7 @@
+ cc_test(
+     name = "lazy_init_step_test",
+     srcs = ["lazy_init_step_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":const_value_step",
+         ":evaluator_core",
+@@ -1203,6 +1249,7 @@
+     name = "direct_expression_step",
+     srcs = ["direct_expression_step.cc"],
+     hdrs = ["direct_expression_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":evaluator_core",
+@@ -1217,6 +1264,7 @@
+ cc_library(
+     name = "trace_step",
+     hdrs = ["trace_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -1233,6 +1281,7 @@
+     name = "optional_or_step",
+     srcs = ["optional_or_step.cc"],
+     hdrs = ["optional_or_step.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":direct_expression_step",
+@@ -1254,6 +1303,7 @@
+ cc_test(
+     name = "optional_or_step_test",
+     srcs = ["optional_or_step_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_trail",
+         ":const_value_step",
+@@ -1280,6 +1330,7 @@
+ cc_library(
+     name = "iterator_stack",
+     hdrs = ["iterator_stack.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:value",
+         "@com_google_absl//absl/base:nullability",
+diff -urN orig/eval/internal/BUILD mod/eval/internal/BUILD
+--- orig/eval/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/internal/BUILD	2026-09-28 11:26:51.852138805 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -22,6 +23,7 @@
+ cc_library(
+     name = "interop",
+     hdrs = ["interop.h"],
++    copts = CEL_COPTS,
+     deps = ["//common:legacy_value"],
+ )
+ 
+@@ -29,6 +31,7 @@
+     name = "cel_value_equal",
+     srcs = ["cel_value_equal.cc"],
+     hdrs = ["cel_value_equal.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:kind",
+         "//eval/public:cel_number",
+@@ -46,6 +49,7 @@
+ cc_test(
+     name = "cel_value_equal_test",
+     srcs = ["cel_value_equal_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value_equal",
+         "//eval/public:cel_value",
+@@ -71,6 +75,7 @@
+     name = "errors",
+     srcs = ["errors.cc"],
+     hdrs = ["errors.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime/internal:errors",
+         "@com_google_absl//absl/status",
+@@ -83,6 +88,7 @@
+     name = "adapter_activation_impl",
+     srcs = ["adapter_activation_impl.cc"],
+     hdrs = ["adapter_activation_impl.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":interop",
+         "//base:attributes",
+diff -urN orig/eval/public/BUILD mod/eval/public/BUILD
+--- orig/eval/public/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/BUILD	2026-09-28 11:26:51.854138815 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -34,6 +35,7 @@
+     hdrs = [
+         "message_wrapper.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base/internal:message_wrapper",
+         "@com_google_absl//absl/base:core_headers",
+@@ -47,6 +49,7 @@
+     srcs = [
+         "message_wrapper_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":message_wrapper",
+         "//eval/public/structs:trivial_legacy_type_info",
+@@ -62,6 +65,7 @@
+     hdrs = [
+         "cel_value_internal.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":message_wrapper",
+         "//internal:casts",
+@@ -80,6 +84,7 @@
+     hdrs = [
+         "cel_value.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value_internal",
+         ":message_wrapper",
+@@ -115,6 +120,7 @@
+     hdrs = [
+         "cel_attribute.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         "//base:attributes",
+@@ -131,6 +137,7 @@
+     hdrs = [
+         "cel_value_producer.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [":cel_value"],
+ )
+ 
+@@ -139,6 +146,7 @@
+     hdrs = [
+         "unknown_attribute_set.h",
+     ],
++    copts = CEL_COPTS,
+     deps = ["//base:attributes"],
+ )
+ 
+@@ -150,6 +158,7 @@
+     hdrs = [
+         "activation.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":base_activation",
+         ":cel_attribute",
+@@ -174,6 +183,7 @@
+     hdrs = [
+         "activation_bind_helper.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         "//eval/public/containers:field_access",
+@@ -191,6 +201,7 @@
+     hdrs = [
+         "cel_function.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         "//common:function_descriptor",
+@@ -210,6 +221,7 @@
+     hdrs = [
+         "cel_function_adapter_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function",
+         ":cel_function_registry",
+@@ -226,6 +238,7 @@
+     hdrs = [
+         "cel_function_adapter.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_adapter_impl",
+         ":cel_value",
+@@ -240,6 +253,7 @@
+     hdrs = [
+         "portable_cel_function_adapter.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [":cel_function_adapter"],
+ )
+ 
+@@ -248,6 +262,7 @@
+     hdrs = [
+         "cel_builtins.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+     ],
+@@ -261,6 +276,7 @@
+     hdrs = [
+         "builtin_func_registrar.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -289,6 +305,7 @@
+     hdrs = [
+         "comparison_functions.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -305,6 +322,7 @@
+     srcs = [
+         "comparison_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_expr_builder_factory",
+@@ -334,6 +352,7 @@
+     hdrs = [
+         "equality_function_registrar.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -350,6 +369,7 @@
+     srcs = [
+         "equality_function_registrar_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_builtins",
+@@ -392,6 +412,7 @@
+     hdrs = [
+         "container_function_registrar.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -407,6 +428,7 @@
+     srcs = [
+         "container_function_registrar_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_expr_builder_factory",
+@@ -429,6 +451,7 @@
+     hdrs = [
+         "logical_function_registrar.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -443,6 +466,7 @@
+     srcs = [
+         "logical_function_registrar_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_expr_builder_factory",
+@@ -471,6 +495,7 @@
+     hdrs = [
+         "extension_func_registrar.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function",
+         ":cel_function_adapter",
+@@ -489,6 +514,7 @@
+     hdrs = [
+         "cel_expression.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":base_activation",
+         ":cel_function_registry",
+@@ -506,6 +532,7 @@
+     name = "source_position",
+     srcs = ["source_position.cc"],
+     hdrs = ["source_position.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_cel_spec//proto/cel/expr:syntax_cc_proto",
+     ],
+@@ -516,6 +543,7 @@
+     hdrs = [
+         "ast_visitor.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":source_position",
+         "@com_google_cel_spec//proto/cel/expr:syntax_cc_proto",
+@@ -527,6 +555,7 @@
+     hdrs = [
+         "ast_visitor_base.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         "@com_google_cel_spec//proto/cel/expr:syntax_cc_proto",
+@@ -541,6 +570,7 @@
+     hdrs = [
+         "ast_traverse.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         ":source_position",
+@@ -558,6 +588,7 @@
+     hdrs = [
+         "cel_options.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:runtime_options",
+         "@com_google_absl//absl/base:core_headers",
+@@ -573,6 +604,7 @@
+     hdrs = [
+         "cel_expr_builder_factory.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression",
+         ":cel_function",
+@@ -605,6 +637,7 @@
+     hdrs = [
+         "value_export_util.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         "//internal:proto_time_encoding",
+@@ -621,6 +654,7 @@
+     name = "cel_function_registry",
+     srcs = ["cel_function_registry.cc"],
+     hdrs = ["cel_function_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function",
+         ":cel_options",
+@@ -650,6 +684,7 @@
+     srcs = [
+         "cel_value_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         ":unknown_set",
+@@ -676,6 +711,7 @@
+     srcs = [
+         "cel_attribute_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_attribute",
+         ":cel_value",
+@@ -696,6 +732,7 @@
+     srcs = [
+         "activation_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_attribute",
+@@ -714,6 +751,7 @@
+     srcs = [
+         "ast_traverse_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_traverse",
+         ":ast_visitor",
+@@ -729,6 +767,7 @@
+     hdrs = [
+         "ast_rewrite.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_visitor",
+         ":source_position",
+@@ -744,6 +783,7 @@
+     srcs = [
+         "ast_rewrite_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_rewrite",
+         ":ast_visitor",
+@@ -761,6 +801,7 @@
+     srcs = [
+         "activation_bind_helper_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":activation_bind_helper",
+@@ -777,6 +818,7 @@
+     srcs = [
+         "cel_function_registry_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":cel_function",
+@@ -796,6 +838,7 @@
+     srcs = [
+         "cel_function_adapter_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_adapter",
+         "//internal:status_macros",
+@@ -807,6 +850,7 @@
+     name = "cel_type_registry",
+     srcs = ["cel_type_registry.cc"],
+     hdrs = ["cel_type_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:data",
+         "//eval/public/structs:legacy_type_adapter",
+@@ -825,6 +869,7 @@
+ cc_test(
+     name = "cel_type_registry_test",
+     srcs = ["cel_type_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_type_registry",
+         "//base:data",
+@@ -841,6 +886,7 @@
+ cc_test(
+     name = "cel_type_registry_protobuf_reflection_test",
+     srcs = ["cel_type_registry_protobuf_reflection_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_type_registry",
+         "//common:memory",
+@@ -859,6 +905,7 @@
+     srcs = [
+         "builtin_func_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":builtin_func_registrar",
+@@ -885,6 +932,7 @@
+     srcs = [
+         "extension_func_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":builtin_func_registrar",
+         ":cel_expr_builder_factory",
+@@ -910,6 +958,7 @@
+     srcs = [
+         "source_position_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":source_position",
+         "//internal:testing",
+@@ -923,6 +972,7 @@
+     srcs = [
+         "unknown_attribute_set_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_attribute",
+         ":cel_value",
+@@ -937,6 +987,7 @@
+     srcs = [
+         "value_export_util_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":value_export_util",
+         "//eval/public/containers:container_backed_list_impl",
+@@ -954,6 +1005,7 @@
+     name = "unknown_function_result_set",
+     srcs = ["unknown_function_result_set.cc"],
+     hdrs = ["unknown_function_result_set.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:function_result",
+         "//base:function_result_set",
+@@ -966,6 +1018,7 @@
+     srcs = [
+         "unknown_function_result_set_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function",
+         ":cel_value",
+@@ -987,6 +1040,7 @@
+ cc_library(
+     name = "unknown_set",
+     hdrs = ["unknown_set.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":unknown_attribute_set",
+         ":unknown_function_result_set",
+@@ -997,6 +1051,7 @@
+ cc_test(
+     name = "unknown_set_test",
+     srcs = ["unknown_set_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_attribute",
+         ":cel_function",
+@@ -1017,6 +1072,7 @@
+     hdrs = [
+         "transform_utility.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         "//eval/public/containers:container_backed_list_impl",
+@@ -1039,12 +1095,14 @@
+     name = "set_util",
+     srcs = ["set_util.cc"],
+     hdrs = ["set_util.h"],
++    copts = CEL_COPTS,
+     deps = [":cel_value"],
+ )
+ 
+ cc_library(
+     name = "base_activation",
+     hdrs = ["base_activation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_attribute",
+         ":cel_function",
+@@ -1062,6 +1120,7 @@
+     srcs = [
+         "set_util_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         ":set_util",
+@@ -1081,6 +1140,7 @@
+ cc_test(
+     name = "builtin_func_registrar_test",
+     srcs = ["builtin_func_registrar_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":builtin_func_registrar",
+@@ -1106,6 +1166,7 @@
+     name = "cel_number",
+     srcs = ["cel_number.cc"],
+     hdrs = ["cel_number.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_value",
+         "//internal:number",
+@@ -1116,6 +1177,7 @@
+ cc_test(
+     name = "cel_number_test",
+     srcs = ["cel_number_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_number",
+         ":cel_value",
+@@ -1128,6 +1190,7 @@
+     name = "string_extension_func_registrar",
+     srcs = ["string_extension_func_registrar.cc"],
+     hdrs = ["string_extension_func_registrar.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_function_registry",
+         ":cel_options",
+@@ -1139,6 +1202,7 @@
+ cc_test(
+     name = "string_extension_func_registrar_test",
+     srcs = ["string_extension_func_registrar_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":builtin_func_registrar",
+         ":cel_function_registry",
+diff -urN orig/eval/public/containers/BUILD mod/eval/public/containers/BUILD
+--- orig/eval/public/containers/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/containers/BUILD	2026-09-28 11:26:51.855138821 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -33,6 +34,7 @@
+     hdrs = [
+         "field_access.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_options",
+         "//eval/public:cel_value",
+@@ -51,6 +53,7 @@
+     hdrs = [
+         "container_backed_list_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "@com_google_protobuf//:protobuf",
+@@ -65,6 +68,7 @@
+     hdrs = [
+         "container_backed_map_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "@com_google_absl//absl/container:node_hash_map",
+@@ -81,6 +85,7 @@
+     hdrs = [
+         "field_backed_list_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":internal_field_backed_list_impl",
+         "//eval/public:cel_value",
+@@ -93,6 +98,7 @@
+     hdrs = [
+         "field_backed_map_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":internal_field_backed_map_impl",
+         "//eval/public:cel_value",
+@@ -108,6 +114,7 @@
+     srcs = [
+         "container_backed_map_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":container_backed_map_impl",
+         "//eval/public:cel_value",
+@@ -122,6 +129,7 @@
+     srcs = [
+         "field_backed_list_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_backed_list_impl",
+         "//eval/testutil:test_message_cc_proto",
+@@ -136,6 +144,7 @@
+     srcs = [
+         "field_backed_map_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_backed_map_impl",
+         "//eval/testutil:test_message_cc_proto",
+@@ -148,6 +157,7 @@
+ cc_test(
+     name = "field_access_test",
+     srcs = ["field_access_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":field_access",
+         "//eval/public:cel_value",
+@@ -172,6 +182,7 @@
+     hdrs = [
+         "internal_field_backed_list_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "//eval/public/structs:field_access_impl",
+@@ -185,6 +196,7 @@
+     srcs = [
+         "internal_field_backed_list_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":internal_field_backed_list_impl",
+         "//eval/public/structs:cel_proto_wrapper",
+@@ -202,6 +214,7 @@
+     hdrs = [
+         "internal_field_backed_map_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "//eval/public/structs:field_access_impl",
+@@ -220,6 +233,7 @@
+     srcs = [
+         "internal_field_backed_map_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     visibility = ["//visibility:private"],
+     deps = [
+         ":internal_field_backed_map_impl",
+diff -urN orig/eval/public/structs/BUILD mod/eval/public/structs/BUILD
+--- orig/eval/public/structs/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/structs/BUILD	2026-09-28 11:26:51.856138826 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -27,6 +28,7 @@
+     hdrs = [
+         "cel_proto_wrapper.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrap_util",
+         ":proto_message_type_adapter",
+@@ -45,6 +47,7 @@
+     hdrs = [
+         "protobuf_value_factory.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "@com_google_protobuf//:protobuf",
+@@ -59,6 +62,7 @@
+     hdrs = [
+         "cel_proto_wrap_util.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":protobuf_value_factory",
+         "//eval/public:cel_value",
+@@ -94,6 +98,7 @@
+     srcs = [
+         "cel_proto_wrap_util_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrap_util",
+         ":protobuf_value_factory",
+@@ -128,6 +133,7 @@
+     hdrs = [
+         "field_access_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrap_util",
+         ":protobuf_value_factory",
+@@ -149,6 +155,7 @@
+ cc_test(
+     name = "field_access_impl_test",
+     srcs = ["field_access_impl_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrapper",
+         ":field_access_impl",
+@@ -170,6 +177,7 @@
+     name = "cel_proto_descriptor_pool_builder",
+     srcs = ["cel_proto_descriptor_pool_builder.cc"],
+     hdrs = ["cel_proto_descriptor_pool_builder.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:proto_util",
+         "//internal:status_macros",
+@@ -189,6 +197,7 @@
+ cc_test(
+     name = "cel_proto_descriptor_pool_builder_test",
+     srcs = ["cel_proto_descriptor_pool_builder_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_descriptor_pool_builder",
+         "//eval/testutil:test_message_cc_proto",
+@@ -204,6 +213,7 @@
+     srcs = [
+         "cel_proto_wrapper_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrapper",
+         "//eval/public:cel_value",
+@@ -231,6 +241,7 @@
+     name = "legacy_type_provider",
+     srcs = ["legacy_type_provider.cc"],
+     hdrs = ["legacy_type_provider.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_adapter",
+         ":legacy_type_info_apis",
+@@ -255,6 +266,7 @@
+ cc_library(
+     name = "legacy_type_adapter",
+     hdrs = ["legacy_type_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:attributes",
+         "//common:memory",
+@@ -270,6 +282,7 @@
+ cc_test(
+     name = "legacy_type_adapter_test",
+     srcs = ["legacy_type_adapter_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_adapter",
+         ":trivial_legacy_type_info",
+@@ -287,6 +300,7 @@
+     name = "proto_message_type_adapter",
+     srcs = ["proto_message_type_adapter.cc"],
+     hdrs = ["proto_message_type_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_wrap_util",
+         ":field_access_impl",
+@@ -319,6 +333,7 @@
+ cc_test(
+     name = "proto_message_type_adapter_test",
+     srcs = ["proto_message_type_adapter_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_adapter",
+         ":legacy_type_info_apis",
+@@ -346,6 +361,7 @@
+     name = "protobuf_descriptor_type_provider",
+     srcs = ["protobuf_descriptor_type_provider.cc"],
+     hdrs = ["protobuf_descriptor_type_provider.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_adapter",
+         ":legacy_type_info_apis",
+@@ -363,6 +379,7 @@
+ cc_test(
+     name = "protobuf_descriptor_type_provider_test",
+     srcs = ["protobuf_descriptor_type_provider_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_info_apis",
+         ":protobuf_descriptor_type_provider",
+@@ -383,6 +400,7 @@
+ cc_library(
+     name = "legacy_type_info_apis",
+     hdrs = ["legacy_type_info_apis.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:message_wrapper",
+         "@com_google_absl//absl/base:nullability",
+@@ -396,6 +414,7 @@
+     name = "trivial_legacy_type_info",
+     testonly = True,
+     hdrs = ["trivial_legacy_type_info.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_info_apis",
+         "//eval/public:message_wrapper",
+@@ -407,6 +426,7 @@
+ cc_test(
+     name = "trivial_legacy_type_info_test",
+     srcs = ["trivial_legacy_type_info_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":trivial_legacy_type_info",
+         "//eval/public:message_wrapper",
+@@ -417,6 +437,7 @@
+ cc_test(
+     name = "legacy_type_provider_test",
+     srcs = ["legacy_type_provider_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":legacy_type_info_apis",
+         ":legacy_type_provider",
+@@ -430,6 +451,7 @@
+ cc_test(
+     name = "dynamic_descriptor_pool_end_to_end_test",
+     srcs = ["dynamic_descriptor_pool_end_to_end_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_proto_descriptor_pool_builder",
+         ":cel_proto_wrapper",
+@@ -454,6 +476,7 @@
+ cc_test(
+     name = "field_access_impl_benchmark_test",
+     srcs = ["field_access_impl_benchmark_test.cc"],
++    copts = CEL_COPTS,
+     tags = [
+         "benchmark",
+         "manual",
+diff -urN orig/eval/public/testing/BUILD mod/eval/public/testing/BUILD
+--- orig/eval/public/testing/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/testing/BUILD	2026-09-28 11:26:51.856138826 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     default_testonly = True,
+@@ -12,6 +13,7 @@
+     name = "matchers",
+     srcs = ["matchers.cc"],
+     hdrs = ["matchers.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "//eval/public:set_util",
+@@ -27,6 +29,7 @@
+ cc_test(
+     name = "matchers_test",
+     srcs = ["matchers_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":matchers",
+         "//eval/public/containers:container_backed_list_impl",
+diff -urN orig/eval/tests/BUILD mod/eval/tests/BUILD
+--- orig/eval/tests/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/tests/BUILD	2026-09-28 11:26:51.857138832 +0000
+@@ -6,6 +6,7 @@
+ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -18,6 +19,7 @@
+     srcs = [
+         "benchmark_test.cc",
+     ],
++    copts = CEL_COPTS,
+     tags = [
+         "benchmark",
+         "manual",
+@@ -62,6 +64,7 @@
+     srcs = [
+         "modern_benchmark_test.cc",
+     ],
++    copts = CEL_COPTS,
+     tags = [
+         "benchmark",
+         "manual",
+@@ -116,6 +119,7 @@
+     srcs = [
+         "allocation_benchmark_test.cc",
+     ],
++    copts = CEL_COPTS,
+     tags = [
+         "benchmark",
+         "manual",
+@@ -143,6 +147,7 @@
+     srcs = [
+         "memory_safety_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:activation",
+         "//eval/public:builtin_func_registrar",
+@@ -168,6 +173,7 @@
+     srcs = [
+         "expression_builder_benchmark_test.cc",
+     ],
++    copts = CEL_COPTS,
+     tags = [
+         "benchmark",
+         "manual",
+@@ -199,6 +205,7 @@
+     srcs = [
+         "end_to_end_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:activation",
+         "//eval/public:builtin_func_registrar",
+@@ -223,6 +230,7 @@
+     srcs = [
+         "unknowns_end_to_end_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:attributes",
+         "//base:function_result",
+@@ -270,6 +278,7 @@
+     name = "mock_cel_expression",
+     testonly = 1,
+     hdrs = ["mock_cel_expression.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:base_activation",
+         "//eval/public:cel_expression",
+diff -urN orig/extensions/BUILD mod/extensions/BUILD
+--- orig/extensions/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/BUILD	2026-09-28 11:26:51.860138848 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -7,6 +8,7 @@
+     name = "encoders",
+     srcs = ["encoders.cc"],
+     hdrs = ["encoders.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//common:decl",
+@@ -30,6 +32,7 @@
+ cc_test(
+     name = "encoders_test",
+     srcs = ["encoders_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":encoders",
+         "//checker:standard_library",
+@@ -51,6 +54,7 @@
+     name = "proto_ext",
+     srcs = ["proto_ext.cc"],
+     hdrs = ["proto_ext.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:expr",
+         "//compiler",
+@@ -74,6 +78,7 @@
+     name = "math_ext",
+     srcs = ["math_ext.cc"],
+     hdrs = ["math_ext.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":math_ext_decls",
+         "//common:casting",
+@@ -99,6 +104,7 @@
+     name = "math_ext_macros",
+     srcs = ["math_ext_macros.cc"],
+     hdrs = ["math_ext_macros.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:constant",
+@@ -121,6 +127,7 @@
+     name = "math_ext_decls",
+     srcs = ["math_ext_decls.cc"],
+     hdrs = ["math_ext_decls.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":math_ext_macros",
+         "//checker:type_checker_builder",
+@@ -140,6 +147,7 @@
+ cc_test(
+     name = "math_ext_test",
+     srcs = ["math_ext_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":math_ext",
+         ":math_ext_decls",
+@@ -185,6 +193,7 @@
+     name = "regex_functions",
+     srcs = ["regex_functions.cc"],
+     hdrs = ["regex_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker/internal:builtins_arena",
+@@ -214,6 +223,7 @@
+     name = "bindings_ext",
+     srcs = ["bindings_ext.cc"],
+     hdrs = ["bindings_ext.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//common:decl",
+@@ -238,6 +248,7 @@
+     srcs = [
+         "regex_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":regex_functions",
+         "//checker:standard_library",
+@@ -268,6 +279,7 @@
+ cc_test(
+     name = "bindings_ext_test",
+     srcs = ["bindings_ext_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":bindings_ext",
+         "//base:attributes",
+@@ -296,6 +308,7 @@
+ cc_test(
+     name = "bindings_ext_benchmark_test",
+     srcs = ["bindings_ext_benchmark_test.cc"],
++    copts = CEL_COPTS,
+     tags = ["benchmark"],
+     deps = [
+         ":bindings_ext",
+@@ -321,6 +334,7 @@
+     name = "select_optimization",
+     srcs = ["select_optimization.cc"],
+     hdrs = ["select_optimization.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:attributes",
+         "//base:builtins",
+@@ -365,6 +379,7 @@
+ cc_test(
+     name = "select_optimization_test",
+     srcs = ["select_optimization_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":select_optimization",
+         "//base:ast",
+@@ -429,6 +444,7 @@
+     name = "lists_functions",
+     srcs = ["lists_functions.cc"],
+     hdrs = ["lists_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker/internal:builtins_arena",
+@@ -466,6 +482,7 @@
+ cc_test(
+     name = "lists_functions_test",
+     srcs = ["lists_functions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lists_functions",
+         "//checker:type_check_issue",
+@@ -503,6 +520,7 @@
+     name = "sets_functions",
+     srcs = ["sets_functions.cc"],
+     hdrs = ["sets_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:function_adapter",
+         "//checker:type_checker_builder",
+@@ -525,6 +543,7 @@
+ cc_test(
+     name = "sets_functions_test",
+     srcs = ["sets_functions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":sets_functions",
+         "//checker:standard_library",
+@@ -550,6 +569,7 @@
+ cc_test(
+     name = "sets_functions_benchmark_test",
+     srcs = ["sets_functions_benchmark_test.cc"],
++    copts = CEL_COPTS,
+     tags = ["benchmark"],
+     deps = [
+         ":sets_functions",
+@@ -579,6 +599,7 @@
+     name = "strings",
+     srcs = ["strings.cc"],
+     hdrs = ["strings.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":formatting",
+         "//checker:type_checker_builder",
+@@ -607,6 +628,7 @@
+ cc_test(
+     name = "strings_test",
+     srcs = ["strings_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":strings",
+         "//checker:standard_library",
+@@ -643,6 +665,7 @@
+     name = "comprehensions_v2_functions",
+     srcs = ["comprehensions_v2_functions.cc"],
+     hdrs = ["comprehensions_v2_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:value",
+         "//eval/public:cel_function_registry",
+@@ -662,6 +685,7 @@
+     name = "comprehensions_v2_macros",
+     srcs = ["comprehensions_v2_macros.cc"],
+     hdrs = ["comprehensions_v2_macros.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:expr",
+         "//common:operators",
+@@ -685,6 +709,7 @@
+     name = "comprehensions_v2",
+     srcs = ["comprehensions_v2.cc"],
+     hdrs = ["comprehensions_v2.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":comprehensions_v2_functions",
+         ":comprehensions_v2_macros",
+@@ -705,6 +730,7 @@
+ cc_test(
+     name = "comprehensions_v2_test",
+     srcs = ["comprehensions_v2_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":bindings_ext",
+         ":comprehensions_v2",
+@@ -735,6 +761,7 @@
+     name = "formatting",
+     srcs = ["formatting.cc"],
+     hdrs = ["formatting.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:value",
+         "//common:value_kind",
+@@ -761,6 +788,7 @@
+     name = "regex_ext",
+     srcs = ["regex_ext.cc"],
+     hdrs = ["regex_ext.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker/internal:builtins_arena",
+@@ -795,6 +823,7 @@
+ cc_test(
+     name = "regex_ext_test",
+     srcs = ["regex_ext_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":regex_ext",
+         "//checker:standard_library",
+@@ -832,6 +861,7 @@
+ cc_test(
+     name = "formatting_test",
+     srcs = ["formatting_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":formatting",
+         "//common:value",
+diff -urN orig/extensions/protobuf/BUILD mod/extensions/protobuf/BUILD
+--- orig/extensions/protobuf/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/protobuf/BUILD	2026-09-28 11:26:51.861138853 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Under active development, not yet being released.
+@@ -26,6 +27,7 @@
+     name = "memory_manager",
+     srcs = ["memory_manager.cc"],
+     hdrs = ["memory_manager.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:memory",
+         "@com_google_absl//absl/base:core_headers",
+@@ -37,6 +39,7 @@
+ cc_test(
+     name = "memory_manager_test",
+     srcs = ["memory_manager_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":memory_manager",
+         "//common:memory",
+@@ -48,6 +51,7 @@
+ cc_library(
+     name = "ast_converters",
+     hdrs = ["ast_converters.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:ast_proto",
+@@ -62,6 +66,7 @@
+     name = "runtime_adapter",
+     srcs = ["runtime_adapter.cc"],
+     hdrs = ["runtime_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_converters",
+         "//internal:status_macros",
+@@ -79,6 +84,7 @@
+     name = "enum_adapter",
+     srcs = ["enum_adapter.cc"],
+     hdrs = ["enum_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:type_registry",
+         "@com_google_absl//absl/status",
+@@ -92,6 +98,7 @@
+     hdrs = [
+         "value.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:memory",
+         "//common:type",
+@@ -115,6 +122,7 @@
+     srcs = [
+         "value_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":value",
+         "//base:attributes",
+@@ -142,6 +150,7 @@
+ cc_test(
+     name = "value_end_to_end_test",
+     srcs = ["value_end_to_end_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_adapter",
+         "//common:value",
+@@ -164,6 +173,7 @@
+     name = "bind_proto_to_activation",
+     srcs = ["bind_proto_to_activation.cc"],
+     hdrs = ["bind_proto_to_activation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:casting",
+         "//common:value",
+@@ -181,6 +191,7 @@
+ cc_test(
+     name = "bind_proto_to_activation_test",
+     srcs = ["bind_proto_to_activation_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":bind_proto_to_activation",
+         "//common:casting",
+@@ -201,6 +212,7 @@
+     name = "value_testing",
+     testonly = True,
+     hdrs = ["value_testing.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":value",
+         "//common:value",
+@@ -213,6 +225,7 @@
+ cc_test(
+     name = "value_testing_test",
+     srcs = ["value_testing_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":value",
+         ":value_testing",
+diff -urN orig/extensions/protobuf/internal/BUILD mod/extensions/protobuf/internal/BUILD
+--- orig/extensions/protobuf/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/protobuf/internal/BUILD	2026-09-28 11:26:51.861138853 +0000
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Under active development, not yet being released.
+@@ -25,6 +26,7 @@
+     name = "map_reflection",
+     srcs = ["map_reflection.cc"],
+     hdrs = ["map_reflection.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/base:nullability",
+@@ -36,6 +38,7 @@
+     name = "qualify",
+     srcs = ["qualify.cc"],
+     hdrs = ["qualify.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":map_reflection",
+         "//base:attributes",
+diff -urN orig/internal/BUILD mod/internal/BUILD
+--- orig/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/BUILD	2026-09-28 11:26:51.863138863 +0000
+@@ -16,6 +16,7 @@
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//bazel:cel_cc_embed.bzl", "cel_cc_embed")
+ load("//bazel:cel_proto_transitive_descriptor_set.bzl", "cel_proto_transitive_descriptor_set")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -24,6 +25,7 @@
+ cc_library(
+     name = "align",
+     hdrs = ["align.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base",
+         "@com_google_absl//absl/base:config",
+@@ -35,6 +37,7 @@
+ cc_test(
+     name = "align_test",
+     srcs = ["align_test.cc"],
++    copts = CEL_COPTS,
+     tags = ["no_test_msvc"],
+     deps = [
+         ":align",
+@@ -46,6 +49,7 @@
+     name = "new",
+     srcs = ["new.cc"],
+     hdrs = ["new.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":align",
+         "@com_google_absl//absl/base:config",
+@@ -58,6 +62,7 @@
+ cc_test(
+     name = "new_test",
+     srcs = ["new_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":new",
+         ":testing",
+@@ -68,17 +73,20 @@
+     name = "benchmark",
+     testonly = True,
+     hdrs = ["benchmark.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_github_google_benchmark//:benchmark_main"],
+ )
+ 
+ cc_library(
+     name = "casts",
+     hdrs = ["casts.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "re2_options",
+     hdrs = ["re2_options.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings",
+@@ -90,6 +98,7 @@
+     name = "runfiles",
+     srcs = ["runfiles.cc"],
+     hdrs = ["runfiles.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/log:absl_check",
+         "@com_google_absl//absl/status",
+@@ -101,6 +110,7 @@
+ cc_library(
+     name = "status_builder",
+     hdrs = ["status_builder.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/status",
+@@ -111,6 +121,7 @@
+     name = "overflow",
+     srcs = ["overflow.cc"],
+     hdrs = ["overflow.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         ":time",
+@@ -123,6 +134,7 @@
+ cc_test(
+     name = "overflow_test",
+     srcs = ["overflow_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":overflow",
+         ":testing",
+@@ -135,12 +147,14 @@
+ cc_library(
+     name = "number",
+     hdrs = ["number.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_absl//absl/types:variant"],
+ )
+ 
+ cc_test(
+     name = "number_test",
+     srcs = ["number_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":number",
+         ":testing",
+@@ -150,12 +164,14 @@
+ cc_library(
+     name = "exceptions",
+     hdrs = ["exceptions.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_absl//absl/base:config"],
+ )
+ 
+ cc_library(
+     name = "status_macros",
+     hdrs = ["status_macros.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_builder",
+         "@com_google_absl//absl/base:core_headers",
+@@ -167,6 +183,7 @@
+     name = "string_pool",
+     srcs = ["string_pool.cc"],
+     hdrs = ["string_pool.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/base:nullability",
+@@ -181,6 +198,7 @@
+ cc_test(
+     name = "string_pool_test",
+     srcs = ["string_pool_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":string_pool",
+         ":testing",
+@@ -193,6 +211,7 @@
+     name = "strings",
+     srcs = ["strings.cc"],
+     hdrs = ["strings.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lexis",
+         ":unicode",
+@@ -208,6 +227,7 @@
+ cc_test(
+     name = "strings_test",
+     srcs = ["strings_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":strings",
+         ":testing",
+@@ -224,6 +244,7 @@
+     name = "lexis",
+     srcs = ["lexis.cc"],
+     hdrs = ["lexis.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base",
+         "@com_google_absl//absl/base:core_headers",
+@@ -235,6 +256,7 @@
+ cc_test(
+     name = "lexis_test",
+     srcs = ["lexis_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lexis",
+         ":testing",
+@@ -244,6 +266,7 @@
+ cc_library(
+     name = "proto_util",
+     hdrs = ["proto_util.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings:str_format",
+@@ -255,6 +278,7 @@
+ cc_test(
+     name = "proto_util_test",
+     srcs = ["proto_util_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":proto_util",
+         ":testing",
+@@ -269,6 +293,7 @@
+     name = "proto_time_encoding",
+     srcs = ["proto_time_encoding.cc"],
+     hdrs = ["proto_time_encoding.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         ":time",
+@@ -286,6 +311,7 @@
+ cc_test(
+     name = "proto_time_encoding_test",
+     srcs = ["proto_time_encoding_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":proto_time_encoding",
+         ":testing",
+@@ -305,6 +331,7 @@
+     hdrs = [
+         "testing.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         "@com_google_absl//absl/status:status_matchers",
+@@ -322,6 +349,7 @@
+     hdrs = [
+         "testing.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         "@com_google_absl//absl/status:status_matchers",
+@@ -334,6 +362,7 @@
+     name = "time",
+     srcs = ["time.cc"],
+     hdrs = ["time.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         "@com_google_absl//absl/status",
+@@ -348,6 +377,7 @@
+ cc_test(
+     name = "time_test",
+     srcs = ["time_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":testing",
+         ":time",
+@@ -360,12 +390,14 @@
+ cc_library(
+     name = "unicode",
+     hdrs = ["unicode.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "utf8",
+     srcs = ["utf8.cc"],
+     hdrs = ["utf8.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":unicode",
+         "@com_google_absl//absl/base:core_headers",
+@@ -379,6 +411,7 @@
+ cc_test(
+     name = "utf8_test",
+     srcs = ["utf8_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":benchmark",
+         ":testing",
+@@ -393,6 +426,7 @@
+     name = "proto_matchers",
+     testonly = True,
+     hdrs = ["proto_matchers.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":casts",
+         ":testing",
+@@ -407,6 +441,7 @@
+     name = "proto_file_util",
+     testonly = True,
+     hdrs = ["proto_file_util.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings:str_format",
+@@ -420,6 +455,7 @@
+     name = "names",
+     srcs = ["names.cc"],
+     hdrs = ["names.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lexis",
+         "@com_google_absl//absl/strings",
+@@ -430,6 +466,7 @@
+ cc_test(
+     name = "names_test",
+     srcs = ["names_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":names",
+         ":testing",
+@@ -439,6 +476,7 @@
+ cc_library(
+     name = "to_address",
+     hdrs = ["to_address.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/meta:type_traits",
+@@ -448,6 +486,7 @@
+ cc_test(
+     name = "to_address_test",
+     srcs = ["to_address_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":testing",
+         ":to_address",
+@@ -470,6 +509,7 @@
+     name = "empty_descriptors",
+     srcs = ["empty_descriptors.cc"],
+     hdrs = ["empty_descriptors.h"],
++    copts = CEL_COPTS,
+     textual_hdrs = [":empty_descriptor_set_embed"],
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+@@ -484,6 +524,7 @@
+ cc_test(
+     name = "empty_descriptors_test",
+     srcs = ["empty_descriptors_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":empty_descriptors",
+         ":testing",
+@@ -518,6 +559,7 @@
+         "minimal_descriptor_database.h",
+         "minimal_descriptor_pool.h",
+     ],
++    copts = CEL_COPTS,
+     textual_hdrs = [":minimal_descriptor_set_embed"],
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+@@ -565,6 +607,7 @@
+     testonly = True,
+     srcs = ["testing_descriptor_pool.cc"],
+     hdrs = ["testing_descriptor_pool.h"],
++    copts = CEL_COPTS,
+     textual_hdrs = [":testing_descriptor_set_embed"],
+     deps = [
+         ":noop_delete",
+@@ -579,6 +622,7 @@
+ cc_test(
+     name = "testing_descriptor_pool_test",
+     srcs = ["testing_descriptor_pool_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":testing",
+         ":testing_descriptor_pool",
+@@ -589,6 +633,7 @@
+ cc_library(
+     name = "message_type_name",
+     hdrs = ["message_type_name.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:no_destructor",
+         "@com_google_absl//absl/strings:string_view",
+@@ -599,6 +644,7 @@
+ cc_test(
+     name = "message_type_name_test",
+     srcs = ["message_type_name_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":message_type_name",
+         ":testing",
+@@ -610,6 +656,7 @@
+     name = "parse_text_proto",
+     testonly = True,
+     hdrs = ["parse_text_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":message_type_name",
+         ":testing_descriptor_pool",
+@@ -629,6 +676,7 @@
+     testonly = True,
+     srcs = ["equals_text_proto.cc"],
+     hdrs = ["equals_text_proto.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":parse_text_proto",
+         ":testing",
+@@ -649,6 +697,7 @@
+     testonly = True,
+     srcs = ["testing_message_factory.cc"],
+     hdrs = ["testing_message_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":testing_descriptor_pool",
+         "@com_google_absl//absl/base:no_destructor",
+@@ -661,6 +710,7 @@
+     name = "well_known_types",
+     srcs = ["well_known_types.cc"],
+     hdrs = ["well_known_types.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":protobuf_runtime_version",
+         ":status_macros",
+@@ -695,6 +745,7 @@
+ cc_test(
+     name = "well_known_types_test",
+     srcs = ["well_known_types_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":message_type_name",
+         ":minimal_descriptor_pool",
+@@ -729,6 +780,7 @@
+     name = "json",
+     srcs = ["json.cc"],
+     hdrs = ["json.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":status_macros",
+         ":strings",
+@@ -756,6 +808,7 @@
+ cc_test(
+     name = "json_test",
+     srcs = ["json_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":equals_text_proto",
+         ":json",
+@@ -784,6 +837,7 @@
+     name = "message_equality",
+     srcs = ["message_equality.cc"],
+     hdrs = ["message_equality.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":json",
+         ":number",
+@@ -809,6 +863,7 @@
+ cc_test(
+     name = "message_equality_test",
+     srcs = ["message_equality_test.cc"],
++    copts = CEL_COPTS,
+     tags = ["no_test_msvc"],
+     deps = [
+         ":message_equality",
+@@ -842,18 +897,21 @@
+ cc_library(
+     name = "protobuf_runtime_version",
+     hdrs = ["protobuf_runtime_version.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_protobuf//:protobuf"],
+ )
+ 
+ cc_library(
+     name = "noop_delete",
+     hdrs = ["noop_delete.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_absl//absl/base:nullability"],
+ )
+ 
+ cc_library(
+     name = "manual",
+     hdrs = ["manual.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/base:core_headers",
+         "@com_google_absl//absl/base:nullability",
+diff -urN orig/parser/BUILD mod/parser/BUILD
+--- orig/parser/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/parser/BUILD	2026-09-28 11:26:51.864138869 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -29,7 +30,7 @@
+     ],
+     copts = [
+         "-fexceptions",
+-    ],
++    ] + CEL_COPTS,
+     defines = [
+         "ANTLR4CPP_STATIC",
+     ],
+@@ -82,6 +83,7 @@
+     hdrs = [
+         "macro.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro_expr_factory",
+         "//common:expr",
+@@ -107,6 +109,7 @@
+     hdrs = [
+         "macro_registry.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         "@com_google_absl//absl/container:flat_hash_map",
+@@ -120,6 +123,7 @@
+ cc_test(
+     name = "macro_registry_test",
+     srcs = ["macro_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         ":macro_registry",
+@@ -133,6 +137,7 @@
+     name = "macro_expr_factory",
+     srcs = ["macro_expr_factory.cc"],
+     hdrs = ["macro_expr_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:constant",
+         "//common:expr",
+@@ -149,6 +154,7 @@
+ cc_test(
+     name = "macro_expr_factory_test",
+     srcs = ["macro_expr_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro_expr_factory",
+         "//common:expr",
+@@ -164,11 +170,13 @@
+     hdrs = [
+         "source_factory.h",
+     ],
++    copts = CEL_COPTS,
+ )
+ 
+ cc_library(
+     name = "options",
+     hdrs = ["options.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//parser/internal:options",
+         "@com_google_absl//absl/base:core_headers",
+@@ -178,6 +186,7 @@
+ cc_test(
+     name = "parser_test",
+     srcs = ["parser_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         ":options",
+@@ -202,6 +211,7 @@
+ cc_test(
+     name = "parser_benchmarks",
+     srcs = ["parser_benchmarks.cc"],
++    copts = CEL_COPTS,
+     tags = ["benchmark"],
+     deps = [
+         ":macro",
+@@ -229,6 +239,7 @@
+     name = "standard_macros",
+     srcs = ["standard_macros.cc"],
+     hdrs = ["standard_macros.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         ":macro_registry",
+@@ -241,6 +252,7 @@
+ cc_library(
+     name = "parser_interface",
+     hdrs = ["parser_interface.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         ":options",
+@@ -258,6 +270,7 @@
+     name = "parser_subset_factory",
+     srcs = ["parser_subset_factory.cc"],
+     hdrs = ["parser_subset_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro",
+         ":parser_interface",
+@@ -270,6 +283,7 @@
+ cc_test(
+     name = "standard_macros_test",
+     srcs = ["standard_macros_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":macro_registry",
+         ":options",
+diff -urN orig/parser/internal/BUILD mod/parser/internal/BUILD
+--- orig/parser/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/parser/internal/BUILD	2026-09-28 11:26:51.864138869 +0000
+@@ -15,6 +15,7 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//bazel:antlr.bzl", "antlr_cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -23,6 +24,7 @@
+ cc_library(
+     name = "ast_factory_interface",
+     hdrs = ["ast_factory_interface.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/functional:function_ref",
+         "@com_google_absl//absl/status:statusor",
+@@ -34,6 +36,7 @@
+     name = "ast_factory",
+     srcs = ["ast_factory.cc"],
+     hdrs = ["ast_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_factory_interface",
+         "//common:expr",
+@@ -54,6 +57,7 @@
+ cc_library(
+     name = "options",
+     hdrs = ["options.h"],
++    copts = CEL_COPTS,
+ )
+ 
+ antlr_cc_library(
+@@ -66,6 +70,7 @@
+     name = "lexer",
+     srcs = ["lexer.cc"],
+     hdrs = ["lexer.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:source",
+         "@com_google_absl//absl/base:core_headers",
+@@ -82,6 +87,7 @@
+     name = "pratt_parser_worker",
+     srcs = ["pratt_parser_worker.cc"],
+     hdrs = ["pratt_parser_worker.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_factory_interface",
+         ":lexer",
+@@ -106,6 +112,7 @@
+     name = "pratt_parser",
+     srcs = ["pratt_parser.cc"],
+     hdrs = ["pratt_parser.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_factory",
+         ":pratt_parser_worker",
+@@ -133,6 +140,7 @@
+ cc_test(
+     name = "ast_factory_test",
+     srcs = ["ast_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_factory",
+         ":ast_factory_interface",
+@@ -152,6 +160,7 @@
+ cc_test(
+     name = "lexer_test",
+     srcs = ["lexer_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lexer",
+         "//common:source",
+@@ -162,6 +171,7 @@
+ cc_test(
+     name = "pratt_parser_test",
+     srcs = ["pratt_parser_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":lexer",
+         ":pratt_parser",
+@@ -191,6 +201,7 @@
+ cc_test(
+     name = "pratt_parser_benchmark",
+     srcs = ["pratt_parser_benchmark.cc"],
++    copts = CEL_COPTS,
+     tags = ["benchmark"],
+     deps = [
+         ":pratt_parser",
+diff -urN orig/policy/BUILD mod/policy/BUILD
+--- orig/policy/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/policy/BUILD	2026-09-28 11:26:51.865138874 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -25,6 +26,7 @@
+     hdrs = [
+         "cel_policy.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:source",
+         "@com_google_absl//absl/base:nullability",
+@@ -37,6 +39,7 @@
+ cc_test(
+     name = "cel_policy_test",
+     srcs = ["cel_policy_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_policy",
+         "//common:source",
+@@ -56,6 +59,7 @@
+         "cel_policy_parse_result.h",
+         "cel_policy_parser.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_policy",
+         "//common:source",
+@@ -77,7 +81,7 @@
+         "yaml_policy_parser.cc",
+     ],
+     hdrs = ["yaml_policy_parser.h"],
+-    copts = ["-fexceptions"],
++    copts = ["-fexceptions"] + CEL_COPTS,
+     features = ["-use_header_modules"],
+     deps = [
+         ":cel_policy",
+@@ -100,6 +104,7 @@
+     hdrs = [
+         "cel_policy_validation_result.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_policy",
+         ":cel_policy_parser",
+@@ -116,6 +121,7 @@
+     name = "compiler",
+     srcs = ["compiler.cc"],
+     hdrs = ["compiler.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_policy",
+         ":cel_policy_parser",
+@@ -158,6 +164,7 @@
+         "test_custom_yaml_policy_parser.cc",
+         "yaml_policy_parser_test.cc",
+     ],
++    copts = CEL_COPTS,
+     data = [
+         "//policy/testdata:policy_testdata",
+     ],
+@@ -181,6 +188,7 @@
+ cc_test(
+     name = "compiler_test",
+     srcs = ["compiler_test.cc"],
++    copts = CEL_COPTS,
+     data = [
+         "//policy/testdata:policy_testdata",
+     ],
+@@ -227,7 +235,7 @@
+     testonly = True,
+     srcs = ["test_util.cc"],
+     hdrs = ["test_util.h"],
+-    copts = ["-fexceptions"],
++    copts = ["-fexceptions"] + CEL_COPTS,
+     features = ["-use_header_modules"],
+     deps = [
+         "//internal:status_macros",
+diff -urN orig/policy/internal/BUILD mod/policy/internal/BUILD
+--- orig/policy/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/policy/internal/BUILD	2026-09-28 11:26:51.866138879 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -7,6 +8,7 @@
+     name = "issue_reporter",
+     srcs = ["issue_reporter.cc"],
+     hdrs = ["issue_reporter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:source",
+         "//policy:cel_policy",
+@@ -19,6 +21,7 @@
+     name = "optimizer_expr_factory",
+     srcs = ["optimizer_expr_factory.cc"],
+     hdrs = ["optimizer_expr_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:ast_rewrite",
+@@ -41,6 +44,7 @@
+ cc_test(
+     name = "optimizer_expr_factory_test",
+     srcs = ["optimizer_expr_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":optimizer_expr_factory",
+         "//common:ast",
+@@ -71,6 +75,7 @@
+     name = "yaml_string_element_scanner",
+     srcs = ["yaml_string_element_scanner.cc"],
+     hdrs = ["yaml_string_element_scanner.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:source",
+         "//internal:utf8",
+@@ -81,6 +86,7 @@
+ cc_test(
+     name = "yaml_string_element_scanner_test",
+     srcs = ["yaml_string_element_scanner_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":yaml_string_element_scanner",
+         "//common:source",
+diff -urN orig/runtime/BUILD mod/runtime/BUILD
+--- orig/runtime/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/runtime/BUILD	2026-09-28 11:26:51.867138885 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Under active development, not yet being released.
+@@ -25,6 +26,7 @@
+ cc_library(
+     name = "activation_interface",
+     hdrs = ["activation_interface.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_overload_reference",
+         "//base:attributes",
+@@ -43,6 +45,7 @@
+ cc_library(
+     name = "function_overload_reference",
+     hdrs = ["function_overload_reference.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function",
+         "//common:function_descriptor",
+@@ -52,6 +55,7 @@
+ cc_library(
+     name = "function_provider",
+     hdrs = ["function_provider.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation_interface",
+         ":function_overload_reference",
+@@ -64,6 +68,7 @@
+     name = "activation",
+     srcs = ["activation.cc"],
+     hdrs = ["activation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation_interface",
+         ":function",
+@@ -90,6 +95,7 @@
+ cc_test(
+     name = "activation_test",
+     srcs = ["activation_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":function",
+@@ -114,6 +120,7 @@
+     name = "bind_proto_to_activation",
+     srcs = ["bind_proto_to_activation.cc"],
+     hdrs = ["bind_proto_to_activation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         "//common:value",
+@@ -130,6 +137,7 @@
+ cc_test(
+     name = "bind_proto_to_activation_test",
+     srcs = ["bind_proto_to_activation_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":bind_proto_to_activation",
+@@ -149,6 +157,7 @@
+ cc_library(
+     name = "register_function_helper",
+     hdrs = ["register_function_helper.h"],
++    copts = CEL_COPTS,
+     deps =
+         [
+             ":function_registry",
+@@ -162,6 +171,7 @@
+     name = "function_registry",
+     srcs = ["function_registry.cc"],
+     hdrs = ["function_registry.h"],
++    copts = CEL_COPTS,
+     deps =
+         [
+             ":activation_interface",
+@@ -183,6 +193,7 @@
+ cc_test(
+     name = "function_registry_test",
+     srcs = ["function_registry_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":function",
+@@ -203,6 +214,7 @@
+ cc_library(
+     name = "runtime_options",
+     hdrs = ["runtime_options.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_absl//absl/base:core_headers"],
+ )
+ 
+@@ -210,6 +222,7 @@
+     name = "type_registry",
+     srcs = ["type_registry.cc"],
+     hdrs = ["type_registry.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:data",
+         "//common:type",
+@@ -229,6 +242,7 @@
+ cc_library(
+     name = "runtime",
+     hdrs = ["runtime.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation_interface",
+         ":runtime_issue",
+@@ -248,6 +262,7 @@
+ cc_library(
+     name = "runtime_builder",
+     hdrs = ["runtime_builder.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_registry",
+         ":runtime",
+@@ -264,6 +279,7 @@
+     name = "runtime_builder_factory",
+     srcs = ["runtime_builder_factory.cc"],
+     hdrs = ["runtime_builder_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_builder",
+         ":runtime_options",
+@@ -283,6 +299,7 @@
+     name = "standard_runtime_builder_factory",
+     srcs = ["standard_runtime_builder_factory.cc"],
+     hdrs = ["standard_runtime_builder_factory.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_builder",
+         ":runtime_builder_factory",
+@@ -301,6 +318,7 @@
+ cc_test(
+     name = "standard_runtime_builder_factory_test",
+     srcs = ["standard_runtime_builder_factory_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":runtime",
+@@ -333,6 +351,7 @@
+     name = "standard_functions",
+     srcs = ["standard_functions.cc"],
+     hdrs = ["standard_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_registry",
+         ":runtime_options",
+@@ -355,6 +374,7 @@
+     name = "constant_folding",
+     srcs = ["constant_folding.cc"],
+     hdrs = ["constant_folding.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime",
+         ":runtime_builder",
+@@ -377,6 +397,7 @@
+ cc_test(
+     name = "constant_folding_test",
+     srcs = ["constant_folding_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":constant_folding",
+@@ -403,6 +424,7 @@
+     name = "regex_precompilation",
+     srcs = ["regex_precompilation.cc"],
+     hdrs = ["regex_precompilation.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime",
+         ":runtime_builder",
+@@ -421,6 +443,7 @@
+ cc_test(
+     name = "regex_precompilation_test",
+     srcs = ["regex_precompilation_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":constant_folding",
+@@ -448,6 +471,7 @@
+     name = "reference_resolver",
+     srcs = ["reference_resolver.cc"],
+     hdrs = ["reference_resolver.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime",
+         ":runtime_builder",
+@@ -467,6 +491,7 @@
+ cc_test(
+     name = "reference_resolver_test",
+     srcs = ["reference_resolver_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":reference_resolver",
+@@ -491,6 +516,7 @@
+ cc_library(
+     name = "runtime_issue",
+     hdrs = ["runtime_issue.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_absl//absl/status"],
+ )
+ 
+@@ -498,6 +524,7 @@
+     name = "comprehension_vulnerability_check",
+     srcs = ["comprehension_vulnerability_check.cc"],
+     hdrs = ["comprehension_vulnerability_check.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime",
+         ":runtime_builder",
+@@ -516,6 +543,7 @@
+ cc_test(
+     name = "comprehension_vulnerability_check_test",
+     srcs = ["comprehension_vulnerability_check_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":comprehension_vulnerability_check",
+         ":runtime_builder",
+@@ -535,6 +563,7 @@
+ cc_library(
+     name = "function_adapter",
+     hdrs = ["function_adapter.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function",
+         ":register_function_helper",
+@@ -555,6 +584,7 @@
+ cc_test(
+     name = "function_adapter_test",
+     srcs = ["function_adapter_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function",
+         ":function_adapter",
+@@ -574,6 +604,7 @@
+     name = "optional_types",
+     srcs = ["optional_types.cc"],
+     hdrs = ["optional_types.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_registry",
+         ":runtime_builder",
+@@ -601,6 +632,7 @@
+ cc_test(
+     name = "optional_types_test",
+     srcs = ["optional_types_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":function",
+@@ -634,6 +666,7 @@
+     hdrs = [
+         "function.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:value",
+         "@com_google_absl//absl/base:core_headers",
+@@ -647,6 +680,7 @@
+ cc_test(
+     name = "memory_safety_test",
+     srcs = ["memory_safety_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":activation",
+         ":constant_folding",
+@@ -687,6 +721,7 @@
+ cc_library(
+     name = "embedder_context",
+     hdrs = ["embedder_context.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:typeinfo",
+         "//common:value",
+@@ -699,6 +734,7 @@
+ cc_test(
+     name = "embedder_context_test",
+     srcs = ["embedder_context_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":embedder_context",
+         "//common:typeinfo",
+diff -urN orig/runtime/internal/BUILD mod/runtime/internal/BUILD
+--- orig/runtime/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/runtime/internal/BUILD	2026-09-28 11:26:51.868138890 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     # Internals for cel/runtime.
+@@ -25,6 +26,7 @@
+ cc_library(
+     name = "runtime_friend_access",
+     hdrs = ["runtime_friend_access.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:native_type",
+         "//runtime",
+@@ -36,6 +38,7 @@
+     name = "runtime_env",
+     srcs = ["runtime_env.cc"],
+     hdrs = ["runtime_env.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_function_registry",
+         "//eval/public:cel_type_registry",
+@@ -55,6 +58,7 @@
+     name = "runtime_impl",
+     srcs = ["runtime_impl.cc"],
+     hdrs = ["runtime_impl.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_env",
+         "//base:ast",
+@@ -86,6 +90,7 @@
+     name = "convert_constant",
+     srcs = ["convert_constant.cc"],
+     hdrs = ["convert_constant.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:allocator",
+         "//common:ast",
+@@ -103,6 +108,7 @@
+     name = "errors",
+     srcs = ["errors.cc"],
+     hdrs = ["errors.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings",
+@@ -114,6 +120,7 @@
+ cc_library(
+     name = "issue_collector",
+     hdrs = ["issue_collector.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//runtime:runtime_issue",
+         "@com_google_absl//absl/status",
+@@ -124,6 +131,7 @@
+ cc_test(
+     name = "issue_collector_test",
+     srcs = ["issue_collector_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":issue_collector",
+         "//internal:testing",
+@@ -137,6 +145,7 @@
+     hdrs = [
+         "function_adapter.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:casting",
+         "//common:kind",
+@@ -150,6 +159,7 @@
+ cc_test(
+     name = "function_adapter_test",
+     srcs = ["function_adapter_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":function_adapter",
+         "//common:kind",
+@@ -167,6 +177,7 @@
+     testonly = True,
+     srcs = ["runtime_env_testing.cc"],
+     hdrs = ["runtime_env_testing.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":runtime_env",
+         "//internal:noop_delete",
+@@ -182,6 +193,7 @@
+ cc_library(
+     name = "legacy_runtime_type_provider",
+     hdrs = ["legacy_runtime_type_provider.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public/structs:protobuf_descriptor_type_provider",
+         "@com_google_absl//absl/base:nullability",
+@@ -193,6 +205,7 @@
+     name = "runtime_type_provider",
+     srcs = ["runtime_type_provider.cc"],
+     hdrs = ["runtime_type_provider.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:descriptor_pool_type_introspector",
+         "//common:type",
+@@ -212,6 +225,7 @@
+ cc_library(
+     name = "attribute_matcher",
+     hdrs = ["attribute_matcher.h"],
++    copts = CEL_COPTS,
+     deps = ["//base:attributes"],
+ )
+ 
+@@ -219,6 +233,7 @@
+     name = "activation_attribute_matcher_access",
+     srcs = ["activation_attribute_matcher_access.cc"],
+     hdrs = ["activation_attribute_matcher_access.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":attribute_matcher",
+         "//eval/public:activation",
+diff -urN orig/runtime/standard/BUILD mod/runtime/standard/BUILD
+--- orig/runtime/standard/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/runtime/standard/BUILD	2026-09-28 11:26:51.870138901 +0000
+@@ -18,6 +18,8 @@
+ # Provides registrars for CEL standard definitions.
+ # TODO(uncreated-issue/41): CEL users shouldn't need to use these directly, instead they should prefer to
+ # use RegisterBuiltins when available.
++load("//bazel:copts.bzl", "CEL_COPTS")
++
+ package(
+     # Under active development, not yet being released.
+     default_visibility = ["//visibility:public"],
+@@ -31,6 +33,7 @@
+     hdrs = [
+         "comparison_functions.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -50,6 +53,7 @@
+     srcs = [
+         "comparison_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":comparison_functions",
+         "//base:builtins",
+@@ -67,6 +71,7 @@
+     hdrs = [
+         "container_membership_functions.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -90,6 +95,7 @@
+     srcs = [
+         "container_membership_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":container_membership_functions",
+         "//base:builtins",
+@@ -106,6 +112,7 @@
+     name = "equality_functions",
+     srcs = ["equality_functions.cc"],
+     hdrs = ["equality_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -134,6 +141,7 @@
+     srcs = [
+         "equality_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":equality_functions",
+         "//base:builtins",
+@@ -154,6 +162,7 @@
+     hdrs = [
+         "logical_functions.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -174,6 +183,7 @@
+     srcs = [
+         "logical_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":logical_functions",
+         "//base:builtins",
+@@ -200,6 +210,7 @@
+     name = "container_functions",
+     srcs = ["container_functions.cc"],
+     hdrs = ["container_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -220,6 +231,7 @@
+     srcs = [
+         "container_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":container_functions",
+         "//base:builtins",
+@@ -232,6 +244,7 @@
+     name = "type_conversion_functions",
+     srcs = ["type_conversion_functions.cc"],
+     hdrs = ["type_conversion_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -258,6 +271,7 @@
+     srcs = [
+         "type_conversion_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":type_conversion_functions",
+         "//base:builtins",
+@@ -270,6 +284,7 @@
+     name = "arithmetic_functions",
+     srcs = ["arithmetic_functions.cc"],
+     hdrs = ["arithmetic_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -289,6 +304,7 @@
+     srcs = [
+         "arithmetic_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":arithmetic_functions",
+         "//base:builtins",
+@@ -301,6 +317,7 @@
+     name = "time_functions",
+     srcs = ["time_functions.cc"],
+     hdrs = ["time_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -322,6 +339,7 @@
+     srcs = [
+         "time_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":time_functions",
+         "//base:builtins",
+@@ -334,6 +352,7 @@
+     name = "string_functions",
+     srcs = ["string_functions.cc"],
+     hdrs = ["string_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -355,6 +374,7 @@
+     srcs = [
+         "string_functions_test.cc",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         ":string_functions",
+         "//base:builtins",
+@@ -367,6 +387,7 @@
+     name = "regex_functions",
+     srcs = ["regex_functions.cc"],
+     hdrs = ["regex_functions.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//base:builtins",
+         "//base:function_adapter",
+@@ -384,6 +405,7 @@
+ cc_test(
+     name = "regex_functions_test",
+     srcs = ["regex_functions_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":regex_functions",
+         "//base:builtins",
+diff -urN orig/testing/testrunner/BUILD mod/testing/testrunner/BUILD
+--- orig/testing/testrunner/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/testing/testrunner/BUILD	2026-09-28 11:26:51.870138901 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(
+     default_testonly = True,
+@@ -11,6 +12,7 @@
+ cc_library(
+     name = "cel_test_context",
+     hdrs = ["cel_test_context.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_source",
+         "//common:value",
+@@ -34,6 +36,7 @@
+     name = "runner_lib",
+     srcs = ["runner_lib.cc"],
+     hdrs = ["runner_lib.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_source",
+         ":cel_test_context",
+@@ -69,6 +72,7 @@
+ cc_library(
+     name = "cel_test_factories",
+     hdrs = ["cel_test_factories.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_test_context",
+         "@com_google_absl//absl/base:no_destructor",
+@@ -84,6 +88,7 @@
+     args = [
+         "--test_cel_file_path=$(location //testing/testrunner/resources:test.cel)",
+     ],
++    copts = CEL_COPTS,
+     data = [
+         "//testing/testrunner/resources:test.cel",
+     ],
+@@ -131,6 +136,7 @@
+     name = "coverage_reporting",
+     srcs = ["coverage_reporting.cc"],
+     hdrs = ["coverage_reporting.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":coverage_index",
+         "//internal:testing_no_main",
+@@ -143,6 +149,7 @@
+ cc_library(
+     name = "runner",
+     srcs = ["runner_bin.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_expression_source",
+         ":cel_test_context",
+@@ -170,6 +177,7 @@
+ cc_library(
+     name = "cel_expression_source",
+     hdrs = ["cel_expression_source.h"],
++    copts = CEL_COPTS,
+     deps = ["@com_google_cel_spec//proto/cel/expr:checked_cc_proto"],
+ )
+ 
+@@ -177,6 +185,7 @@
+     name = "coverage_index",
+     srcs = ["coverage_index.cc"],
+     hdrs = ["coverage_index.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:value",
+@@ -201,6 +210,7 @@
+ cc_test(
+     name = "coverage_index_test",
+     srcs = ["coverage_index_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":coverage_index",
+         "//checker:type_checker_builder",
+diff -urN orig/testing/testrunner/user_tests/BUILD mod/testing/testrunner/user_tests/BUILD
+--- orig/testing/testrunner/user_tests/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/testing/testrunner/user_tests/BUILD	2026-09-28 11:26:51.871138906 +0000
+@@ -1,4 +1,5 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ load("//testing/testrunner:cel_cc_test.bzl", "cel_cc_test")
+ 
+ package(default_visibility = ["//visibility:public"])
+@@ -7,6 +8,7 @@
+     name = "simple_user_test",
+     testonly = True,
+     srcs = ["simple.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//checker:validation_result",
+@@ -38,6 +40,7 @@
+     name = "raw_expression_user_test",
+     testonly = True,
+     srcs = ["raw_expression_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//common:decl",
+@@ -66,6 +69,7 @@
+     name = "raw_expr_and_cel_file_test",
+     testonly = True,
+     srcs = ["raw_expr_and_cel_file_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_checker_builder",
+         "//common:decl",
+@@ -94,6 +98,7 @@
+     name = "checked_expr_user_test",
+     testonly = True,
+     srcs = ["checked_expr_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         "//internal:status_macros",
+         "//internal:testing_descriptor_pool",
+diff -urN orig/testutil/BUILD mod/testutil/BUILD
+--- orig/testutil/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/testutil/BUILD	2026-09-28 11:26:51.871138906 +0000
+@@ -15,6 +15,7 @@
+ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -26,6 +27,7 @@
+     hdrs = [
+         "util.h",
+     ],
++    copts = CEL_COPTS,
+     deps = ["//internal:proto_matchers"],
+ )
+ 
+@@ -34,6 +36,7 @@
+     testonly = True,
+     srcs = ["test_macros.cc"],
+     hdrs = ["test_macros.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:expr",
+         "//internal:status_macros",
+@@ -54,6 +57,7 @@
+     testonly = True,
+     srcs = ["baseline_tests.cc"],
+     hdrs = ["baseline_tests.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:expr",
+@@ -67,6 +71,7 @@
+ cc_test(
+     name = "baseline_tests_test",
+     srcs = ["baseline_tests_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":baseline_tests",
+         "//common:ast",
+diff -urN orig/tools/BUILD mod/tools/BUILD
+--- orig/tools/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/tools/BUILD	2026-09-28 11:26:51.872138911 +0000
+@@ -1,5 +1,6 @@
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -9,6 +10,7 @@
+     name = "cel_field_extractor",
+     srcs = ["cel_field_extractor.cc"],
+     hdrs = ["cel_field_extractor.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":navigable_ast",
+         "@com_google_absl//absl/container:flat_hash_set",
+@@ -20,6 +22,7 @@
+ cc_test(
+     name = "cel_field_extractor_test",
+     srcs = ["cel_field_extractor_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_field_extractor",
+         "//internal:testing",
+@@ -39,6 +42,7 @@
+     hdrs = [
+         "cel_unparser.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:operators",
+         "//internal:status_macros",
+@@ -61,6 +65,7 @@
+ cc_test(
+     name = "cel_unparser_test",
+     srcs = ["cel_unparser_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_unparser",
+         "//internal:proto_matchers",
+@@ -82,6 +87,7 @@
+     hdrs = [
+         "flatbuffers_backed_impl.h",
+     ],
++    copts = CEL_COPTS,
+     deps = [
+         "//eval/public:cel_value",
+         "@com_github_google_flatbuffers//:flatbuffers",
+@@ -98,6 +104,7 @@
+     srcs = [
+         "flatbuffers_backed_impl_test.cc",
+     ],
++    copts = CEL_COPTS,
+     data = [
+         "//tools/testdata:flatbuffers_reflection_out",
+     ],
+@@ -113,6 +120,7 @@
+     name = "navigable_ast",
+     srcs = ["navigable_ast.cc"],
+     hdrs = ["navigable_ast.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common/ast:navigable_ast_internal",
+         "//eval/public:ast_traverse",
+@@ -130,6 +138,7 @@
+ cc_test(
+     name = "navigable_ast_test",
+     srcs = ["navigable_ast_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":navigable_ast",
+         "//base:builtins",
+@@ -143,6 +152,7 @@
+     name = "branch_coverage",
+     srcs = ["branch_coverage.cc"],
+     hdrs = ["branch_coverage.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":navigable_ast",
+         "//common:value",
+@@ -165,6 +175,7 @@
+ cc_test(
+     name = "branch_coverage_test",
+     srcs = ["branch_coverage_test.cc"],
++    copts = CEL_COPTS,
+     data = [
+         "//tools/testdata:coverage_testdata",
+     ],
+@@ -192,6 +203,7 @@
+     name = "descriptor_pool_builder",
+     srcs = ["descriptor_pool_builder.cc"],
+     hdrs = ["descriptor_pool_builder.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:minimal_descriptor_database",
+         "//internal:status_macros",
+@@ -208,6 +220,7 @@
+     name = "proto_to_predicate",
+     srcs = ["proto_to_predicate.cc"],
+     hdrs = ["proto_to_predicate.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//common:ast",
+         "//common:expr",
+@@ -226,6 +239,7 @@
+ cc_test(
+     name = "proto_to_predicate_test",
+     srcs = ["proto_to_predicate_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":cel_unparser",
+         ":proto_to_predicate",
+@@ -257,6 +271,7 @@
+ cc_test(
+     name = "descriptor_pool_builder_test",
+     srcs = ["descriptor_pool_builder_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":descriptor_pool_builder",
+         "//internal:testing",
+diff -urN orig/tools/testdata/BUILD mod/tools/testdata/BUILD
+--- orig/tools/testdata/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/tools/testdata/BUILD	2026-09-28 11:26:51.872138911 +0000
+@@ -16,6 +16,7 @@
+ load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ licenses(["notice"])
+ 
+@@ -41,6 +42,7 @@
+     name = "flatbuffers_test_cc",
+     srcs = [":flatbuffers_test"],
+     hdrs = [":flatbuffers_test"],
++    copts = CEL_COPTS,
+     features = ["-parse_headers"],
+     linkstatic = True,
+     deps = ["@com_github_google_flatbuffers//:runtime_cc"],
+diff -urN orig/validator/BUILD mod/validator/BUILD
+--- orig/validator/BUILD	2026-08-13 22:12:09.000000000 +0000
++++ mod/validator/BUILD	2026-09-28 11:26:51.873138917 +0000
+@@ -14,6 +14,7 @@
+ 
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@rules_cc//cc:cc_test.bzl", "cc_test")
++load("//bazel:copts.bzl", "CEL_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -21,6 +22,7 @@
+     name = "validator",
+     srcs = ["validator.cc"],
+     hdrs = ["validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         "//checker:type_check_issue",
+         "//checker:validation_result",
+@@ -38,6 +40,7 @@
+ cc_test(
+     name = "validator_test",
+     srcs = ["validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "//checker:type_check_issue",
+@@ -52,6 +55,7 @@
+ cc_test(
+     name = "timestamp_literal_validator_test",
+     srcs = ["timestamp_literal_validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":timestamp_literal_validator",
+         ":validator",
+@@ -71,6 +75,7 @@
+     name = "timestamp_literal_validator",
+     srcs = ["timestamp_literal_validator.cc"],
+     hdrs = ["timestamp_literal_validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "//common:constant",
+@@ -90,6 +95,7 @@
+     name = "ast_depth_validator",
+     srcs = ["ast_depth_validator.cc"],
+     hdrs = ["ast_depth_validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "@com_google_absl//absl/strings",
+@@ -100,6 +106,7 @@
+     name = "homogeneous_literal_validator",
+     srcs = ["homogeneous_literal_validator.cc"],
+     hdrs = ["homogeneous_literal_validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "//common:ast",
+@@ -113,6 +120,7 @@
+     name = "regex_validator",
+     srcs = ["regex_validator.cc"],
+     hdrs = ["regex_validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "//common:ast",
+@@ -130,6 +138,7 @@
+ cc_test(
+     name = "homogeneous_literal_validator_test",
+     srcs = ["homogeneous_literal_validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":homogeneous_literal_validator",
+         ":validator",
+@@ -152,6 +161,7 @@
+ cc_test(
+     name = "ast_depth_validator_test",
+     srcs = ["ast_depth_validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":ast_depth_validator",
+         ":validator",
+@@ -168,6 +178,7 @@
+ cc_test(
+     name = "regex_validator_test",
+     srcs = ["regex_validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":regex_validator",
+         ":validator",
+@@ -186,6 +197,7 @@
+     name = "comprehension_nesting_validator",
+     srcs = ["comprehension_nesting_validator.cc"],
+     hdrs = ["comprehension_nesting_validator.h"],
++    copts = CEL_COPTS,
+     deps = [
+         ":validator",
+         "//common:expr",
+@@ -198,6 +210,7 @@
+ cc_test(
+     name = "comprehension_nesting_validator_test",
+     srcs = ["comprehension_nesting_validator_test.cc"],
++    copts = CEL_COPTS,
+     deps = [
+         ":comprehension_nesting_validator",
+         ":validator",
+diff -urN orig/common/values/value_variant.cc mod/common/values/value_variant.cc
+--- orig/common/values/value_variant.cc	2026-09-28 11:54:52.247949187 +0000
++++ mod/common/values/value_variant.cc	2026-09-28 11:55:16.231257965 +0000
+@@ -491,7 +491,8 @@
+     lhs.flags_ = rhs.flags_;
+     // This is acceptable. We know that both are trivially copyable at runtime.
+     // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-    std::memcpy(std::addressof(rhs), tmp, sizeof(ValueVariant));
++    std::memcpy(static_cast<void*>(std::addressof(rhs)), tmp,
++                sizeof(ValueVariant));
+   } else if (rhs_trivial) {
+     alignas(ValueVariant) std::byte tmp[sizeof(ValueVariant)];
+     // This is acceptable. We know that both are trivially copyable at runtime.
+@@ -526,7 +527,8 @@
+     rhs.flags_ = lhs.flags_;
+     // This is acceptable. We know that both are trivially copyable at runtime.
+     // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-    std::memcpy(std::addressof(lhs), tmp, sizeof(ValueVariant));
++    std::memcpy(static_cast<void*>(std::addressof(lhs)), tmp,
++                sizeof(ValueVariant));
+   } else {
+     ValueVariant tmp = std::move(lhs);
+     lhs = std::move(rhs);
+diff -urN orig/common/values/value_variant.h mod/common/values/value_variant.h
+--- orig/common/values/value_variant.h	2026-09-28 11:54:52.247984320 +0000
++++ mod/common/values/value_variant.h	2026-09-28 11:55:16.231431986 +0000
+@@ -745,10 +745,11 @@
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+         std::memcpy(tmp, std::addressof(lhs), sizeof(ValueVariant));
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-        std::memcpy(std::addressof(lhs), std::addressof(rhs),
+-                    sizeof(ValueVariant));
++        std::memcpy(static_cast<void*>(std::addressof(lhs)),
++                    std::addressof(rhs), sizeof(ValueVariant));
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-        std::memcpy(std::addressof(rhs), tmp, sizeof(ValueVariant));
++        std::memcpy(static_cast<void*>(std::addressof(rhs)), tmp,
++                    sizeof(ValueVariant));
+ #if defined(__GNUC__) && !defined(__clang__)
+ #pragma GCC diagnostic pop
+ #elif defined(__clang__) && __clang_major__ >= 20
