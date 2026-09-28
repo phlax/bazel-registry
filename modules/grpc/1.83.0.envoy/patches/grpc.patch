@@ -10,6 +10,18 @@ diff -ruN a/BUILD b/BUILD
          "parse_headers",
      ],
  )
+@@ -267,6 +267,11 @@
+ )
+ 
+ config_setting(
++    name = "clang_compiler",
++    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
++)
++
++config_setting(
+     name = "use_strict_warning",
+     values = {"define": "use_strict_warning=true"},
+ )
 diff -ruN a/MODULE.bazel b/MODULE.bazel
 --- a/MODULE.bazel	2026-07-21 09:16:28.000000000 +0000
 +++ b/MODULE.bazel	2026-09-25 08:03:48.928209503 +0000
@@ -29,6 +41,23 @@ diff -ruN a/MODULE.bazel b/MODULE.bazel
  # Regular dependencies
  # ====================
  
+diff -ruN a/bazel/copts.bzl b/bazel/copts.bzl
+--- a/bazel/copts.bzl	2026-07-21 09:16:28.000000000 +0000
++++ b/bazel/copts.bzl	2026-09-28 08:43:26.000000000 +0000
+@@ -173,5 +173,11 @@
+ GRPC_DEFAULT_COPTS = select({
+     "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+     "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+-    "//conditions:default": [],
+-})
++    "//conditions:default": [],
++}) + select({
++    "//:windows": [],
++    "//conditions:default": ["-Wno-deprecated-declarations"],
++}) + select({
++    "//:clang_compiler": ["-Wno-unneeded-internal-declaration"],
++    "//conditions:default": [],
++})
 diff -ruN a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
 --- a/bazel/grpc_build_system.bzl	2026-07-21 09:16:28.000000000 +0000
 +++ b/bazel/grpc_build_system.bzl	2026-09-25 08:01:31.138737643 +0000
