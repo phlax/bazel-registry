@@ -1,0 +1,15 @@
+diff --git a/proto_processing_lib/proto_scrubber/utility.cc b/proto_processing_lib/proto_scrubber/utility.cc
+index 51d7eac..65713a2 100644
+--- a/proto_processing_lib/proto_scrubber/utility.cc
++++ b/proto_processing_lib/proto_scrubber/utility.cc
+@@ -45,7 +45,9 @@ bool IsWellKnownTypeOrStructType(absl::string_view name) {
+ 
+ bool GetBoolFromAny(const google::protobuf::Any& any) {
+   google::protobuf::BoolValue b;
+-  b.ParseFromString(any.value());
++  if (!b.ParseFromString(any.value())) {
++    return false;
++  }
+   return b.value();
+ }
+ 

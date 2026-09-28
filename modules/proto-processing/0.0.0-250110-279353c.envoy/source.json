@@ -7,6 +7,7 @@
         "ocp.patch": "sha256-aaKu7VgG8nI6hYMdNqLRoFm9LcCy2lMUJEq9GOJUmV0=",
         "proto_scrubber_nodiscard.patch": "sha256-59iUMZnICtM9lp1Lxzmz2MBnxQuUetTAf4afp8k5b3k=",
         "warnings.patch": "sha256-Bbz/mzSUfBIUio7FiRUoKyS533fT5P2L4fRljgeR+SQ=",
-        "skipfield.patch": "sha256-Hh4dpnel0h5WQi53bZ5EYdqgn6NYuLrjurtnKTfKSGI="
+        "skipfield.patch": "sha256-Hh4dpnel0h5WQi53bZ5EYdqgn6NYuLrjurtnKTfKSGI=",
+        "utility.patch": "sha256-vKQ5MJ8fx3KUaWTiV8BDIDQUqkM6Ek8tTEEQL5kPC0A="
     }
 }
