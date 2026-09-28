@@ -4301,6 +4301,18 @@ diff -urN orig/parser/BUILD mod/parser/BUILD
      deps = [
          ":macro_registry",
          ":options",
+diff -urN orig/parser/parser.cc mod/parser/parser.cc
+--- orig/parser/parser.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/parser/parser.cc	2026-09-28 15:53:12.177505019 +0000
+@@ -90,7 +90,7 @@
+ 
+ namespace {
+ 
+-constexpr const char kHiddenAccumulatorVariableName[] = "@result";
++[[maybe_unused]] constexpr const char kHiddenAccumulatorVariableName[] = "@result";
+ 
+ std::any ExprPtrToAny(std::unique_ptr<Expr>&& expr) {
+   return std::make_any<Expr*>(expr.release());
 diff -urN orig/parser/internal/BUILD mod/parser/internal/BUILD
 --- orig/parser/internal/BUILD	2026-08-13 22:12:09.000000000 +0000
 +++ mod/parser/internal/BUILD	2026-09-28 11:26:51.864138869 +0000
