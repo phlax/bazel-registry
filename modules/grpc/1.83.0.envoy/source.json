@@ -4,6 +4,6 @@
     "url": "https://github.com/grpc/grpc/archive/v1.83.0.tar.gz",
     "patch_strip": 1,
     "patches": {
-        "grpc.patch": "sha256-rrjbNi7NeI5Zp40r5FZDplGzsuT3qotCf3fnkqjZt48="
+        "grpc.patch": "sha256-1mx3XEiipIryNqNChBoSSnvEs+KHNVmlSv8vvFkIWMw="
     }
 }

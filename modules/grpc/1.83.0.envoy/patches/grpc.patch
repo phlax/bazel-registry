@@ -1,6 +1,6 @@
 diff -ruN a/BUILD b/BUILD
 --- a/BUILD	2026-07-21 09:16:28.000000000 +0000
-+++ b/BUILD	2026-09-25 08:01:31.137387405 +0000
++++ b/BUILD	2026-09-28 11:49:12.442745652 +0000
 @@ -34,7 +34,7 @@
  package(
      default_visibility = ["//visibility:public"],
@@ -10,7 +10,7 @@ diff -ruN a/BUILD b/BUILD
          "parse_headers",
      ],
  )
-@@ -267,6 +267,11 @@
+@@ -268,6 +268,11 @@
  )
  
  config_setting(
@@ -24,7 +24,7 @@ diff -ruN a/BUILD b/BUILD
  )
 diff -ruN a/MODULE.bazel b/MODULE.bazel
 --- a/MODULE.bazel	2026-07-21 09:16:28.000000000 +0000
-+++ b/MODULE.bazel	2026-09-25 08:03:48.928209503 +0000
++++ b/MODULE.bazel	2026-09-28 11:49:12.443127192 +0000
 @@ -14,11 +14,14 @@
  
  module(
@@ -43,24 +43,21 @@ diff -ruN a/MODULE.bazel b/MODULE.bazel
  
 diff -ruN a/bazel/copts.bzl b/bazel/copts.bzl
 --- a/bazel/copts.bzl	2026-07-21 09:16:28.000000000 +0000
-+++ b/bazel/copts.bzl	2026-09-28 08:43:26.000000000 +0000
-@@ -173,5 +173,11 @@
- GRPC_DEFAULT_COPTS = select({
++++ b/bazel/copts.bzl	2026-09-28 11:49:12.443289560 +0000
+@@ -174,4 +174,10 @@
      "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
      "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
--    "//conditions:default": [],
--})
-+    "//conditions:default": [],
+     "//conditions:default": [],
 +}) + select({
 +    "//:windows": [],
 +    "//conditions:default": ["-Wno-deprecated-declarations"],
 +}) + select({
 +    "//:clang_compiler": ["-Wno-unneeded-internal-declaration"],
 +    "//conditions:default": [],
-+})
+ })
 diff -ruN a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
 --- a/bazel/grpc_build_system.bzl	2026-07-21 09:16:28.000000000 +0000
-+++ b/bazel/grpc_build_system.bzl	2026-09-25 08:01:31.138737643 +0000
++++ b/bazel/grpc_build_system.bzl	2026-09-28 11:49:12.443447422 +0000
 @@ -27,7 +27,6 @@
  Contains macros used throughout the repo.
  """
@@ -88,7 +85,7 @@ diff -ruN a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
          outs = [name + "_binary"],
 diff -ruN a/envoy_deps.bzl b/envoy_deps.bzl
 --- a/envoy_deps.bzl	1970-01-01 00:00:00.000000000 +0000
-+++ b/envoy_deps.bzl	2026-09-25 08:06:58.559065349 +0000
++++ b/envoy_deps.bzl	2026-09-28 11:49:12.443597222 +0000
 @@ -0,0 +1,57 @@
 +"""Shared dependency-injection helpers for Envoy registry modules.
 +
@@ -149,7 +146,7 @@ diff -ruN a/envoy_deps.bzl b/envoy_deps.bzl
 +    return default
 diff -ruN a/extensions.bzl b/extensions.bzl
 --- a/extensions.bzl	1970-01-01 00:00:00.000000000 +0000
-+++ b/extensions.bzl	2026-09-25 08:06:58.559363964 +0000
++++ b/extensions.bzl	2026-09-28 11:49:12.443671350 +0000
 @@ -0,0 +1,101 @@
 +"""Module extension for configuring grpc dependency aliases."""
 +
@@ -252,9 +249,375 @@ diff -ruN a/extensions.bzl b/extensions.bzl
 +    tag_classes = {"deps": deps},
 +    doc = "Creates @grpc_deps aliases for grpc's configurable deps.",
 +)
+diff -ruN a/include/grpcpp/completion_queue.h b/include/grpcpp/completion_queue.h
+--- a/include/grpcpp/completion_queue.h	2026-07-21 09:16:28.000000000 +0000
++++ b/include/grpcpp/completion_queue.h	2026-09-28 11:49:54.021021267 +0000
+@@ -387,20 +387,20 @@
+   void RegisterServer(const grpc::Server* server) {
+     (void)server;
+ #ifndef NDEBUG
+-    grpc::internal::MutexLock l(&server_list_mutex_);
++    grpc::internal::MutexLock l(server_list_mutex_);
+     server_list_.push_back(server);
+ #endif
+   }
+   void UnregisterServer(const grpc::Server* server) {
+     (void)server;
+ #ifndef NDEBUG
+-    grpc::internal::MutexLock l(&server_list_mutex_);
++    grpc::internal::MutexLock l(server_list_mutex_);
+     server_list_.remove(server);
+ #endif
+   }
+   bool ServerListEmpty() const {
+ #ifndef NDEBUG
+-    grpc::internal::MutexLock l(&server_list_mutex_);
++    grpc::internal::MutexLock l(server_list_mutex_);
+     return server_list_.empty();
+ #endif
+     return true;
+diff -ruN a/include/grpcpp/impl/sync.h b/include/grpcpp/impl/sync.h
+--- a/include/grpcpp/impl/sync.h	2026-07-21 09:16:28.000000000 +0000
++++ b/include/grpcpp/impl/sync.h	2026-09-28 11:49:54.020521944 +0000
+@@ -82,6 +82,9 @@
+   explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+     mu_->Lock();
+   }
++  explicit MutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(&mu) {
++    mu_->Lock();
++  }
+   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
+ 
+   MutexLock(const MutexLock&) = delete;
+@@ -97,6 +100,10 @@
+       : mu_(mu) {
+     mu_->Lock();
+   }
++  explicit ReleasableMutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
++      : mu_(&mu) {
++    mu_->Lock();
++  }
+   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
+     if (!released_) mu_->Unlock();
+   }
+diff -ruN a/include/grpcpp/server_context.h b/include/grpcpp/server_context.h
+--- a/include/grpcpp/server_context.h	2026-07-21 09:16:28.000000000 +0000
++++ b/include/grpcpp/server_context.h	2026-09-28 11:49:54.021285645 +0000
+@@ -424,7 +424,7 @@
+   void MarkInitialMetadataSent() {
+     // Lock prevents the session from transitioning to the lock-free read phase
+     // while a concurrent call to SetSessionContext is currently executing.
+-    grpc::internal::MutexLock lock(&metadata_mu_);
++    grpc::internal::MutexLock lock(metadata_mu_);
+     // Release-store synchronizes with the acquire-loads in
+     // Set/GetSessionContext to guarantee that all context writes made before
+     // initial metadata is sent are fully visible to subsequent read operations.
+@@ -502,7 +502,7 @@
+   template <typename T>
+   void SetSessionContext(std::shared_ptr<T> context) {
+     if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
+-      grpc::internal::MutexLock lock(&metadata_mu_);
++      grpc::internal::MutexLock lock(metadata_mu_);
+       if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
+         internal::ServerContextSetSessionContext(
+             call_.call, internal::SessionContextType<T>::id(),
+@@ -518,7 +518,7 @@
+           internal::ServerContextGetSessionContext(
+               call_.call, internal::SessionContextType<T>::id()));
+     } else {
+-      grpc::internal::MutexLock lock(&metadata_mu_);
++      grpc::internal::MutexLock lock(metadata_mu_);
+       return internal::SessionContextType<T>::Unwrap(
+           internal::ServerContextGetSessionContext(
+               call_.call, internal::SessionContextType<T>::id()));
+diff -ruN a/include/grpcpp/support/client_callback.h b/include/grpcpp/support/client_callback.h
+--- a/include/grpcpp/support/client_callback.h	2026-07-21 09:16:28.000000000 +0000
++++ b/include/grpcpp/support/client_callback.h	2026-09-28 11:49:54.021599615 +0000
+@@ -537,7 +537,7 @@
+     start_ops_.FillOps(&call_);
+ 
+     {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+ 
+       if (backlog_.read_ops) {
+         read_ops_.FillOps(&call_);
+@@ -563,7 +563,7 @@
+     read_ops_.RecvMessage(msg);
+     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.read_ops = true;
+         return;
+@@ -591,7 +591,7 @@
+     }
+ 
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.write_ops = true;
+         return;
+@@ -616,7 +616,7 @@
+       corked_write_needed_ = false;
+     }
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.writes_done_ops = true;
+         return;
+@@ -818,7 +818,7 @@
+     read_ops_.set_core_cq_tag(&read_tag_);
+ 
+     {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (backlog_.read_ops) {
+         read_ops_.FillOps(&call_);
+       }
+@@ -838,7 +838,7 @@
+     read_ops_.RecvMessage(msg);
+     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.read_ops = true;
+         return;
+@@ -964,7 +964,7 @@
+     start_ops_.FillOps(&call_);
+ 
+     {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+ 
+       if (backlog_.write_ops) {
+         write_ops_.FillOps(&call_);
+@@ -1003,7 +1003,7 @@
+     }
+ 
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.write_ops = true;
+         return;
+@@ -1031,7 +1031,7 @@
+     }
+ 
+     if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+-      grpc::internal::MutexLock lock(&start_mu_);
++      grpc::internal::MutexLock lock(start_mu_);
+       if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+         backlog_.writes_done_ops = true;
+         return;
+diff -ruN a/include/grpcpp/support/server_callback.h b/include/grpcpp/support/server_callback.h
+--- a/include/grpcpp/support/server_callback.h	2026-07-21 09:16:28.000000000 +0000
++++ b/include/grpcpp/support/server_callback.h	2026-09-28 11:49:54.021870253 +0000
+@@ -336,7 +336,7 @@
+     ServerCallbackReaderWriter<Request, Response>* stream =
+         stream_.load(std::memory_order_acquire);
+     if (stream == nullptr) {
+-      grpc::internal::MutexLock l(&stream_mu_);
++      grpc::internal::MutexLock l(stream_mu_);
+       stream = stream_.load(std::memory_order_relaxed);
+       if (stream == nullptr) {
+         backlog_.send_initial_metadata_wanted = true;
+@@ -354,7 +354,7 @@
+     ServerCallbackReaderWriter<Request, Response>* stream =
+         stream_.load(std::memory_order_acquire);
+     if (stream == nullptr) {
+-      grpc::internal::MutexLock l(&stream_mu_);
++      grpc::internal::MutexLock l(stream_mu_);
+       stream = stream_.load(std::memory_order_relaxed);
+       if (stream == nullptr) {
+         backlog_.read_wanted = req;
+@@ -384,7 +384,7 @@
+     ServerCallbackReaderWriter<Request, Response>* stream =
+         stream_.load(std::memory_order_acquire);
+     if (stream == nullptr) {
+-      grpc::internal::MutexLock l(&stream_mu_);
++      grpc::internal::MutexLock l(stream_mu_);
+       stream = stream_.load(std::memory_order_relaxed);
+       if (stream == nullptr) {
+         backlog_.write_wanted = resp;
+@@ -413,7 +413,7 @@
+     ServerCallbackReaderWriter<Request, Response>* stream =
+         stream_.load(std::memory_order_acquire);
+     if (stream == nullptr) {
+-      grpc::internal::MutexLock l(&stream_mu_);
++      grpc::internal::MutexLock l(stream_mu_);
+       stream = stream_.load(std::memory_order_relaxed);
+       if (stream == nullptr) {
+         backlog_.write_and_finish_wanted = true;
+@@ -448,7 +448,7 @@
+     ServerCallbackReaderWriter<Request, Response>* stream =
+         stream_.load(std::memory_order_acquire);
+     if (stream == nullptr) {
+-      grpc::internal::MutexLock l(&stream_mu_);
++      grpc::internal::MutexLock l(stream_mu_);
+       stream = stream_.load(std::memory_order_relaxed);
+       if (stream == nullptr) {
+         backlog_.finish_wanted = true;
+@@ -496,7 +496,7 @@
+   // customization point.
+   virtual void InternalBindStream(
+       ServerCallbackReaderWriter<Request, Response>* stream) {
+-    grpc::internal::MutexLock l(&stream_mu_);
++    grpc::internal::MutexLock l(stream_mu_);
+ 
+     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+       stream->SendInitialMetadata();
+@@ -551,7 +551,7 @@
+     ServerCallbackReader<Request>* reader =
+         reader_.load(std::memory_order_acquire);
+     if (reader == nullptr) {
+-      grpc::internal::MutexLock l(&reader_mu_);
++      grpc::internal::MutexLock l(reader_mu_);
+       reader = reader_.load(std::memory_order_relaxed);
+       if (reader == nullptr) {
+         backlog_.send_initial_metadata_wanted = true;
+@@ -564,7 +564,7 @@
+     ServerCallbackReader<Request>* reader =
+         reader_.load(std::memory_order_acquire);
+     if (reader == nullptr) {
+-      grpc::internal::MutexLock l(&reader_mu_);
++      grpc::internal::MutexLock l(reader_mu_);
+       reader = reader_.load(std::memory_order_relaxed);
+       if (reader == nullptr) {
+         backlog_.read_wanted = req;
+@@ -577,7 +577,7 @@
+     ServerCallbackReader<Request>* reader =
+         reader_.load(std::memory_order_acquire);
+     if (reader == nullptr) {
+-      grpc::internal::MutexLock l(&reader_mu_);
++      grpc::internal::MutexLock l(reader_mu_);
+       reader = reader_.load(std::memory_order_relaxed);
+       if (reader == nullptr) {
+         backlog_.finish_wanted = true;
+@@ -601,7 +601,7 @@
+   // customization point.
+   virtual void InternalBindReader(ServerCallbackReader<Request>* reader)
+       ABSL_LOCKS_EXCLUDED(reader_mu_) {
+-    grpc::internal::MutexLock l(&reader_mu_);
++    grpc::internal::MutexLock l(reader_mu_);
+ 
+     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+       reader->SendInitialMetadata();
+@@ -639,7 +639,7 @@
+     ServerCallbackWriter<Response>* writer =
+         writer_.load(std::memory_order_acquire);
+     if (writer == nullptr) {
+-      grpc::internal::MutexLock l(&writer_mu_);
++      grpc::internal::MutexLock l(writer_mu_);
+       writer = writer_.load(std::memory_order_relaxed);
+       if (writer == nullptr) {
+         backlog_.send_initial_metadata_wanted = true;
+@@ -656,7 +656,7 @@
+     ServerCallbackWriter<Response>* writer =
+         writer_.load(std::memory_order_acquire);
+     if (writer == nullptr) {
+-      grpc::internal::MutexLock l(&writer_mu_);
++      grpc::internal::MutexLock l(writer_mu_);
+       writer = writer_.load(std::memory_order_relaxed);
+       if (writer == nullptr) {
+         backlog_.write_wanted = resp;
+@@ -671,7 +671,7 @@
+     ServerCallbackWriter<Response>* writer =
+         writer_.load(std::memory_order_acquire);
+     if (writer == nullptr) {
+-      grpc::internal::MutexLock l(&writer_mu_);
++      grpc::internal::MutexLock l(writer_mu_);
+       writer = writer_.load(std::memory_order_relaxed);
+       if (writer == nullptr) {
+         backlog_.write_and_finish_wanted = true;
+@@ -690,7 +690,7 @@
+     ServerCallbackWriter<Response>* writer =
+         writer_.load(std::memory_order_acquire);
+     if (writer == nullptr) {
+-      grpc::internal::MutexLock l(&writer_mu_);
++      grpc::internal::MutexLock l(writer_mu_);
+       writer = writer_.load(std::memory_order_relaxed);
+       if (writer == nullptr) {
+         backlog_.finish_wanted = true;
+@@ -713,7 +713,7 @@
+   // customization point.
+   virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer)
+       ABSL_LOCKS_EXCLUDED(writer_mu_) {
+-    grpc::internal::MutexLock l(&writer_mu_);
++    grpc::internal::MutexLock l(writer_mu_);
+ 
+     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+       writer->SendInitialMetadata();
+@@ -757,7 +757,7 @@
+   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(call_mu_) {
+     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
+     if (call == nullptr) {
+-      grpc::internal::MutexLock l(&call_mu_);
++      grpc::internal::MutexLock l(call_mu_);
+       call = call_.load(std::memory_order_relaxed);
+       if (call == nullptr) {
+         backlog_.send_initial_metadata_wanted = true;
+@@ -772,7 +772,7 @@
+   void Finish(grpc::Status s) ABSL_LOCKS_EXCLUDED(call_mu_) {
+     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
+     if (call == nullptr) {
+-      grpc::internal::MutexLock l(&call_mu_);
++      grpc::internal::MutexLock l(call_mu_);
+       call = call_.load(std::memory_order_relaxed);
+       if (call == nullptr) {
+         backlog_.finish_wanted = true;
+@@ -794,7 +794,7 @@
+   // customization point.
+   virtual void InternalBindCall(ServerCallbackUnary* call)
+       ABSL_LOCKS_EXCLUDED(call_mu_) {
+-    grpc::internal::MutexLock l(&call_mu_);
++    grpc::internal::MutexLock l(call_mu_);
+ 
+     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+       call->SendInitialMetadata();
+@@ -827,7 +827,7 @@
+   void StartVirtualRPCs() ABSL_LOCKS_EXCLUDED(session_mu_) {
+     ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+     if (session == nullptr) {
+-      grpc::internal::MutexLock l(&session_mu_);
++      grpc::internal::MutexLock l(session_mu_);
+       session = session_.load(std::memory_order_relaxed);
+       if (session == nullptr) {
+         backlog_.send_initial_metadata_wanted = true;
+@@ -843,7 +843,7 @@
+   void Finish(grpc::Status s) ABSL_LOCKS_EXCLUDED(session_mu_) {
+     ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+     if (session == nullptr) {
+-      grpc::internal::MutexLock l(&session_mu_);
++      grpc::internal::MutexLock l(session_mu_);
+       session = session_.load(std::memory_order_relaxed);
+       if (session == nullptr) {
+         backlog_.finish_wanted = true;
+@@ -865,7 +865,7 @@
+       ABSL_LOCKS_EXCLUDED(session_mu_) {
+     ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+     if (session == nullptr) {
+-      grpc::internal::MutexLock l(&session_mu_);
++      grpc::internal::MutexLock l(session_mu_);
+       session = session_.load(std::memory_order_relaxed);
+       if (session == nullptr) {
+         backlog_.graceful_shutdown_wanted_callback = std::move(on_shutdown);
+@@ -886,7 +886,7 @@
+   // customization point.
+   virtual void InternalBindSession(ServerCallbackSession* session)
+       ABSL_LOCKS_EXCLUDED(session_mu_) {
+-    grpc::internal::MutexLock l(&session_mu_);
++    grpc::internal::MutexLock l(session_mu_);
+ 
+     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+       session->SendInitialMetadata();
 diff -ruN a/src/core/BUILD b/src/core/BUILD
 --- a/src/core/BUILD	2026-07-21 09:16:28.000000000 +0000
-+++ b/src/core/BUILD	2026-09-25 08:01:31.139341265 +0000
++++ b/src/core/BUILD	2026-09-28 11:49:12.444082234 +0000
 @@ -29,7 +29,7 @@
  package(
      default_visibility = ["//:__subpackages__"],
@@ -266,7 +629,7 @@ diff -ruN a/src/core/BUILD b/src/core/BUILD
  )
 diff -ruN a/src/core/lib/promise/detail/promise_factory.h b/src/core/lib/promise/detail/promise_factory.h
 --- a/src/core/lib/promise/detail/promise_factory.h	2026-07-21 09:16:28.000000000 +0000
-+++ b/src/core/lib/promise/detail/promise_factory.h	2026-09-25 08:01:31.139880367 +0000
++++ b/src/core/lib/promise/detail/promise_factory.h	2026-09-28 11:49:12.444641715 +0000
 @@ -126,7 +126,6 @@
  // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
  // capturing A.
@@ -419,7 +782,7 @@ diff -ruN a/src/core/lib/promise/detail/promise_factory.h b/src/core/lib/promise
  };
 diff -ruN a/src/core/tsi/ssl_transport_security.cc b/src/core/tsi/ssl_transport_security.cc
 --- a/src/core/tsi/ssl_transport_security.cc	2026-07-21 09:16:28.000000000 +0000
-+++ b/src/core/tsi/ssl_transport_security.cc	2026-09-25 08:01:31.140145219 +0000
++++ b/src/core/tsi/ssl_transport_security.cc	2026-09-28 11:49:12.445023936 +0000
 @@ -441,7 +441,8 @@
      }
  #if OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -430,9 +793,33 @@ diff -ruN a/src/core/tsi/ssl_transport_security.cc b/src/core/tsi/ssl_transport_
        LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
        return TSI_INTERNAL_ERROR;
      }
+diff -ruN a/src/core/util/sync.h b/src/core/util/sync.h
+--- a/src/core/util/sync.h	2026-07-21 09:16:28.000000000 +0000
++++ b/src/core/util/sync.h	2026-09-28 11:49:54.020768946 +0000
+@@ -89,6 +89,9 @@
+   explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+     mu_->Lock();
+   }
++  explicit MutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(&mu) {
++    mu_->Lock();
++  }
+   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
+ 
+   MutexLock(const MutexLock&) = delete;
+@@ -104,6 +107,10 @@
+       : mu_(mu) {
+     mu_->Lock();
+   }
++  explicit ReleasableMutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
++      : mu_(&mu) {
++    mu_->Lock();
++  }
+   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
+     if (!released_) mu_->Unlock();
+   }
 diff -ruN a/src/proto/grpc/gcp/BUILD b/src/proto/grpc/gcp/BUILD
 --- a/src/proto/grpc/gcp/BUILD	2026-07-21 09:16:28.000000000 +0000
-+++ b/src/proto/grpc/gcp/BUILD	2026-09-25 08:01:31.140547536 +0000
++++ b/src/proto/grpc/gcp/BUILD	2026-09-28 11:49:12.445339158 +0000
 @@ -12,7 +12,9 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
@@ -465,7 +852,7 @@ diff -ruN a/src/proto/grpc/gcp/BUILD b/src/proto/grpc/gcp/BUILD
 +)
 diff -ruN a/src/proto/grpc/health/v1/BUILD b/src/proto/grpc/health/v1/BUILD
 --- a/src/proto/grpc/health/v1/BUILD	2026-07-21 09:16:28.000000000 +0000
-+++ b/src/proto/grpc/health/v1/BUILD	2026-09-25 08:01:31.140397868 +0000
++++ b/src/proto/grpc/health/v1/BUILD	2026-09-28 11:49:12.445444944 +0000
 @@ -49,3 +49,10 @@
          "health.proto",
      ],
@@ -479,7 +866,7 @@ diff -ruN a/src/proto/grpc/health/v1/BUILD b/src/proto/grpc/health/v1/BUILD
 +)
 diff -ruN a/third_party/BUILD b/third_party/BUILD
 --- a/third_party/BUILD	2026-07-21 09:16:28.000000000 +0000
-+++ b/third_party/BUILD	2026-09-25 08:03:04.059790716 +0000
++++ b/third_party/BUILD	2026-09-28 11:49:12.445571770 +0000
 @@ -32,25 +32,19 @@
  
  alias(
