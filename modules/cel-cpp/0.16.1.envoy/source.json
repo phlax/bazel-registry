@@ -3,7 +3,7 @@
   "integrity": "sha256-aFcoLGgYTkLCLNtsqzMEOuU9+4e6mRJ97V9ZQxZm8z0=",
   "strip_prefix": "cel-cpp-0.16.1",
   "patches": {
-    "cel-cpp.patch": "sha256-kb8PIoUXXucKbY9hS51N6VnsuagaePWVozRyJDIcUjk="
+    "cel-cpp.patch": "sha256-STDYTL9pF97dkR9fj+VtdmaRNs1YFKw/odwHckYq09c="
   },
   "patch_strip": 1
 }
