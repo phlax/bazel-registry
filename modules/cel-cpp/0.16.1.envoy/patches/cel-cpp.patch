@@ -5527,3 +5527,44 @@ diff -urN orig/validator/BUILD mod/validator/BUILD
      deps = [
          ":comprehension_nesting_validator",
          ":validator",
+diff -urN orig/common/values/value_variant.cc mod/common/values/value_variant.cc
+--- orig/common/values/value_variant.cc	2026-09-28 11:54:52.247949187 +0000
++++ mod/common/values/value_variant.cc	2026-09-28 11:55:16.231257965 +0000
+@@ -491,7 +491,8 @@
+     lhs.flags_ = rhs.flags_;
+     // This is acceptable. We know that both are trivially copyable at runtime.
+     // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-    std::memcpy(std::addressof(rhs), tmp, sizeof(ValueVariant));
++    std::memcpy(static_cast<void*>(std::addressof(rhs)), tmp,
++                sizeof(ValueVariant));
+   } else if (rhs_trivial) {
+     alignas(ValueVariant) std::byte tmp[sizeof(ValueVariant)];
+     // This is acceptable. We know that both are trivially copyable at runtime.
+@@ -526,7 +527,8 @@
+     rhs.flags_ = lhs.flags_;
+     // This is acceptable. We know that both are trivially copyable at runtime.
+     // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-    std::memcpy(std::addressof(lhs), tmp, sizeof(ValueVariant));
++    std::memcpy(static_cast<void*>(std::addressof(lhs)), tmp,
++                sizeof(ValueVariant));
+   } else {
+     ValueVariant tmp = std::move(lhs);
+     lhs = std::move(rhs);
+diff -urN orig/common/values/value_variant.h mod/common/values/value_variant.h
+--- orig/common/values/value_variant.h	2026-09-28 11:54:52.247984320 +0000
++++ mod/common/values/value_variant.h	2026-09-28 11:55:16.231431986 +0000
+@@ -745,10 +745,11 @@
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+         std::memcpy(tmp, std::addressof(lhs), sizeof(ValueVariant));
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-        std::memcpy(std::addressof(lhs), std::addressof(rhs),
+-                    sizeof(ValueVariant));
++        std::memcpy(static_cast<void*>(std::addressof(lhs)),
++                    std::addressof(rhs), sizeof(ValueVariant));
+         // NOLINTNEXTLINE(bugprone-undefined-memory-manipulation)
+-        std::memcpy(std::addressof(rhs), tmp, sizeof(ValueVariant));
++        std::memcpy(static_cast<void*>(std::addressof(rhs)), tmp,
++                    sizeof(ValueVariant));
+ #if defined(__GNUC__) && !defined(__clang__)
+ #pragma GCC diagnostic pop
+ #elif defined(__clang__) && __clang_major__ >= 20
