@@ -4,6 +4,7 @@ quiche_copts = [
     # hpack_huffman_decoder.cc overloads operator<<.
     "-Wno-unused-function",
     "-Wno-old-style-cast",
+    "-Wno-deprecated-declarations",
     # Envoy build should not fail if a dependency has a warning.
     "-Wno-error",
 ] + select({
