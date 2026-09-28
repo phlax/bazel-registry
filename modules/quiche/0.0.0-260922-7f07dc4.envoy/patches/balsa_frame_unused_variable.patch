@@ -1,0 +1,12 @@
+diff --git a/quiche/balsa/balsa_frame.cc b/quiche/balsa/balsa_frame.cc
+--- a/quiche/balsa/balsa_frame.cc
++++ b/quiche/balsa/balsa_frame.cc
+@@ -940,7 +940,7 @@
+   if (!is_trailer) {
+     if (!is_request_) {
+       const int response_code = headers->parsed_response_code_;
+-      const bool response_code_forbids_body =
++      [[maybe_unused]] const bool response_code_forbids_body =
+           !BalsaHeaders::ResponseCanHaveBody(response_code);
+     }
+ 
