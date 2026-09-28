@@ -26,3 +26,3686 @@ diff -urN orig/common/value.h mod/common/value.h
    ABSL_DCHECK(descriptor_pool != nullptr);
    ABSL_DCHECK(message_factory != nullptr);
    ABSL_DCHECK(arena != nullptr);
+diff -urN orig/base/attribute.cc mod/base/attribute.cc
+--- orig/base/attribute.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/base/attribute.cc	2026-09-28 10:01:47.064912871 +0000
+@@ -23,7 +23,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/strings/str_cat.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/kind.h"
+ #include "internal/status_macros.h"
+ 
+@@ -213,35 +213,35 @@
+   const AttributeQualifier::Variant& rhs;
+ 
+   bool operator()(const Kind& lhs) const {
+-    return absl::visit(AttributeQualifierTypeComparator{lhs}, rhs);
++    return std::visit(AttributeQualifierTypeComparator{lhs}, rhs);
+   }
+ 
+   bool operator()(int64_t lhs) const {
+-    return absl::visit(AttributeQualifierIntComparator{lhs}, rhs);
++    return std::visit(AttributeQualifierIntComparator{lhs}, rhs);
+   }
+ 
+   bool operator()(uint64_t lhs) const {
+-    return absl::visit(AttributeQualifierUintComparator{lhs}, rhs);
++    return std::visit(AttributeQualifierUintComparator{lhs}, rhs);
+   }
+ 
+   bool operator()(const std::string& lhs) const {
+-    return absl::visit(AttributeQualifierStringComparator{lhs}, rhs);
++    return std::visit(AttributeQualifierStringComparator{lhs}, rhs);
+   }
+ 
+   bool operator()(bool lhs) const {
+-    return absl::visit(AttributeQualifierBoolComparator{lhs}, rhs);
++    return std::visit(AttributeQualifierBoolComparator{lhs}, rhs);
+   }
+ };
+ 
+ Kind AttributeQualifier::kind() const {
+-  return absl::visit(AttributeQualifierTypeVisitor{}, value_);
++  return std::visit(AttributeQualifierTypeVisitor{}, value_);
+ }
+ 
+ bool AttributeQualifier::operator<(const AttributeQualifier& other) const {
+   // The order is not publicly documented because it is subject to change.
+   // Currently we sort in the following order, with each type being sorted
+   // against itself: bool, int, uint, string, type.
+-  return absl::visit(ComparatorVisitor{other.value_}, value_);
++  return std::visit(ComparatorVisitor{other.value_}, value_);
+ }
+ 
+ bool Attribute::operator==(const Attribute& other) const {
+@@ -305,7 +305,7 @@
+   std::string result = std::string(variable_name());
+ 
+   for (const auto& qualifier : qualifier_path()) {
+-    CEL_RETURN_IF_ERROR(absl::visit(
++    CEL_RETURN_IF_ERROR(std::visit(
+         AttributeStringPrinter(&result, qualifier.kind()), qualifier.value_));
+   }
+ 
+@@ -313,8 +313,8 @@
+ }
+ 
+ bool AttributeQualifier::IsMatch(const AttributeQualifier& other) const {
+-  if (absl::holds_alternative<Kind>(value_) ||
+-      absl::holds_alternative<Kind>(other.value_)) {
++  if (std::holds_alternative<Kind>(value_) ||
++      std::holds_alternative<Kind>(other.value_)) {
+     return false;
+   }
+   return value_ == other.value_;
+@@ -323,7 +323,7 @@
+ absl::StatusOr<std::string> AttributeQualifier::AsString() const {
+   std::string result;
+   CEL_RETURN_IF_ERROR(
+-      absl::visit(AttributeQualifierStringPrinter(&result, kind()), value_));
++      std::visit(AttributeQualifierStringPrinter(&result, kind()), value_));
+   return result;
+ }
+ 
+diff -urN orig/base/attribute.h mod/base/attribute.h
+--- orig/base/attribute.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/base/attribute.h	2026-09-28 10:01:47.064447920 +0000
+@@ -26,7 +26,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/kind.h"
+ 
+ namespace cel {
+@@ -38,7 +38,7 @@
+  private:
+   struct ComparatorVisitor;
+ 
+-  using Variant = absl::variant<Kind, int64_t, uint64_t, std::string, bool>;
++  using Variant = std::variant<Kind, int64_t, uint64_t, std::string, bool>;
+ 
+  public:
+   static AttributeQualifier OfInt(int64_t value) {
+@@ -71,26 +71,26 @@
+   // Family of Get... methods. Return values if requested type matches the
+   // stored one.
+   absl::optional<int64_t> GetInt64Key() const {
+-    return absl::holds_alternative<int64_t>(value_)
+-               ? absl::optional<int64_t>(absl::get<1>(value_))
++    return std::holds_alternative<int64_t>(value_)
++               ? absl::optional<int64_t>(std::get<1>(value_))
+                : absl::nullopt;
+   }
+ 
+   absl::optional<uint64_t> GetUint64Key() const {
+-    return absl::holds_alternative<uint64_t>(value_)
+-               ? absl::optional<uint64_t>(absl::get<2>(value_))
++    return std::holds_alternative<uint64_t>(value_)
++               ? absl::optional<uint64_t>(std::get<2>(value_))
+                : absl::nullopt;
+   }
+ 
+   absl::optional<absl::string_view> GetStringKey() const {
+-    return absl::holds_alternative<std::string>(value_)
+-               ? absl::optional<absl::string_view>(absl::get<3>(value_))
++    return std::holds_alternative<std::string>(value_)
++               ? absl::optional<absl::string_view>(std::get<3>(value_))
+                : absl::nullopt;
+   }
+ 
+   absl::optional<bool> GetBoolKey() const {
+-    return absl::holds_alternative<bool>(value_)
+-               ? absl::optional<bool>(absl::get<4>(value_))
++    return std::holds_alternative<bool>(value_)
++               ? absl::optional<bool>(std::get<4>(value_))
+                : absl::nullopt;
+   }
+ 
+@@ -271,7 +271,7 @@
+   std::string name;
+ };
+ 
+-using SelectQualifier = absl::variant<FieldSpecifier, AttributeQualifier>;
++using SelectQualifier = std::variant<FieldSpecifier, AttributeQualifier>;
+ 
+ }  // namespace cel
+ 
+diff -urN orig/common/ast/constant_proto.cc mod/common/ast/constant_proto.cc
+--- orig/common/ast/constant_proto.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/constant_proto.cc	2026-09-28 10:01:47.122886876 +0000
+@@ -24,7 +24,7 @@
+ #include "absl/status/status.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ #include "internal/proto_time_encoding.h"
+ 
+@@ -34,7 +34,7 @@
+ 
+ absl::Status ConstantToProto(const Constant& constant,
+                              ConstantProto* absl_nonnull proto) {
+-  return absl::visit(absl::Overload(
++  return std::visit(absl::Overload(
+                          [proto](std::monostate) -> absl::Status {
+                            proto->clear_constant_kind();
+                            return absl::OkStatus();
+diff -urN orig/common/ast/expr_proto.cc mod/common/ast/expr_proto.cc
+--- orig/common/ast/expr_proto.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/expr_proto.cc	2026-09-28 10:01:47.122771240 +0000
+@@ -27,7 +27,7 @@
+ #include "absl/functional/overload.h"
+ #include "absl/status/status.h"
+ #include "absl/strings/str_cat.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast/constant_proto.h"
+ #include "common/constant.h"
+ #include "common/expr.h"
+@@ -62,7 +62,7 @@
+  private:
+   absl::Status ExprToProtoImpl(const Expr& expr,
+                                cel::expr::Expr* absl_nonnull proto) {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&expr, proto](const UnspecifiedExpr&) -> absl::Status {
+               proto->Clear();
+diff -urN orig/common/ast/metadata.cc mod/common/ast/metadata.cc
+--- orig/common/ast/metadata.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/metadata.cc	2026-09-28 10:01:47.122154446 +0000
+@@ -26,7 +26,7 @@
+ #include "absl/functional/overload.h"
+ #include "absl/log/absl_check.h"
+ #include "absl/strings/str_cat.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ 
+ namespace cel {
+ 
+@@ -128,7 +128,7 @@
+ }
+ 
+ TypeSpecKind CopyImpl(const TypeSpecKind& other) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](const std::unique_ptr<TypeSpec>& other) -> TypeSpecKind {
+             if (other == nullptr) {
+@@ -214,7 +214,7 @@
+ }
+ 
+ const TypeSpec& TypeSpec::type() const {
+-  auto* value = absl::get_if<std::unique_ptr<TypeSpec>>(&type_kind_);
++  auto* value = std::get_if<std::unique_ptr<TypeSpec>>(&type_kind_);
+   if (value != nullptr) {
+     if (*value != nullptr) return **value;
+   }
+diff -urN orig/common/ast/metadata.h mod/common/ast/metadata.h
+--- orig/common/ast/metadata.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/metadata.h	2026-09-28 10:01:47.122457002 +0000
+@@ -29,7 +29,7 @@
+ #include "absl/base/nullability.h"
+ #include "absl/container/flat_hash_map.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ #include "common/expr.h"
+ 
+@@ -528,7 +528,7 @@
+ // errors present in the expression.
+ enum class ErrorTypeSpec { kValue = 0 };
+ 
+-using UnsetTypeSpec = absl::monostate;
++using UnsetTypeSpec = std::monostate;
+ 
+ struct DynTypeSpec {};
+ 
+@@ -544,7 +544,7 @@
+ }
+ 
+ using TypeSpecKind =
+-    absl::variant<UnsetTypeSpec, DynTypeSpec, NullTypeSpec, PrimitiveType,
++    std::variant<UnsetTypeSpec, DynTypeSpec, NullTypeSpec, PrimitiveType,
+                   PrimitiveTypeWrapper, WellKnownTypeSpec, ListTypeSpec,
+                   MapTypeSpec, FunctionTypeSpec, MessageTypeSpec, ParamTypeSpec,
+                   absl_nullable std::unique_ptr<TypeSpec>, ErrorTypeSpec,
+@@ -574,63 +574,63 @@
+   TypeSpecKind& mutable_type_kind() { return type_kind_; }
+ 
+   bool is_specified() const {
+-    return !absl::holds_alternative<UnsetTypeSpec>(type_kind_);
++    return !std::holds_alternative<UnsetTypeSpec>(type_kind_);
+   }
+ 
+   bool has_dyn() const {
+-    return absl::holds_alternative<DynTypeSpec>(type_kind_);
++    return std::holds_alternative<DynTypeSpec>(type_kind_);
+   }
+ 
+   bool has_null() const {
+-    return absl::holds_alternative<NullTypeSpec>(type_kind_);
++    return std::holds_alternative<NullTypeSpec>(type_kind_);
+   }
+ 
+   bool has_primitive() const {
+-    return absl::holds_alternative<PrimitiveType>(type_kind_);
++    return std::holds_alternative<PrimitiveType>(type_kind_);
+   }
+ 
+   bool has_wrapper() const {
+-    return absl::holds_alternative<PrimitiveTypeWrapper>(type_kind_);
++    return std::holds_alternative<PrimitiveTypeWrapper>(type_kind_);
+   }
+ 
+   bool has_well_known() const {
+-    return absl::holds_alternative<WellKnownTypeSpec>(type_kind_);
++    return std::holds_alternative<WellKnownTypeSpec>(type_kind_);
+   }
+ 
+   bool has_list_type() const {
+-    return absl::holds_alternative<ListTypeSpec>(type_kind_);
++    return std::holds_alternative<ListTypeSpec>(type_kind_);
+   }
+ 
+   bool has_map_type() const {
+-    return absl::holds_alternative<MapTypeSpec>(type_kind_);
++    return std::holds_alternative<MapTypeSpec>(type_kind_);
+   }
+ 
+   bool has_function() const {
+-    return absl::holds_alternative<FunctionTypeSpec>(type_kind_);
++    return std::holds_alternative<FunctionTypeSpec>(type_kind_);
+   }
+ 
+   bool has_message_type() const {
+-    return absl::holds_alternative<MessageTypeSpec>(type_kind_);
++    return std::holds_alternative<MessageTypeSpec>(type_kind_);
+   }
+ 
+   bool has_type_param() const {
+-    return absl::holds_alternative<ParamTypeSpec>(type_kind_);
++    return std::holds_alternative<ParamTypeSpec>(type_kind_);
+   }
+ 
+   bool has_type() const {
+-    return absl::holds_alternative<std::unique_ptr<TypeSpec>>(type_kind_);
++    return std::holds_alternative<std::unique_ptr<TypeSpec>>(type_kind_);
+   }
+ 
+   bool has_error() const {
+-    return absl::holds_alternative<ErrorTypeSpec>(type_kind_);
++    return std::holds_alternative<ErrorTypeSpec>(type_kind_);
+   }
+ 
+   bool has_abstract_type() const {
+-    return absl::holds_alternative<AbstractType>(type_kind_);
++    return std::holds_alternative<AbstractType>(type_kind_);
+   }
+ 
+   NullTypeSpec null() const {
+-    auto* value = absl::get_if<NullTypeSpec>(&type_kind_);
++    auto* value = std::get_if<NullTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -638,7 +638,7 @@
+   }
+ 
+   PrimitiveType primitive() const {
+-    auto* value = absl::get_if<PrimitiveType>(&type_kind_);
++    auto* value = std::get_if<PrimitiveType>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -646,7 +646,7 @@
+   }
+ 
+   PrimitiveType wrapper() const {
+-    auto* value = absl::get_if<PrimitiveTypeWrapper>(&type_kind_);
++    auto* value = std::get_if<PrimitiveTypeWrapper>(&type_kind_);
+     if (value != nullptr) {
+       return value->type();
+     }
+@@ -654,7 +654,7 @@
+   }
+ 
+   WellKnownTypeSpec well_known() const {
+-    auto* value = absl::get_if<WellKnownTypeSpec>(&type_kind_);
++    auto* value = std::get_if<WellKnownTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -662,7 +662,7 @@
+   }
+ 
+   const ListTypeSpec& list_type() const {
+-    auto* value = absl::get_if<ListTypeSpec>(&type_kind_);
++    auto* value = std::get_if<ListTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -671,7 +671,7 @@
+   }
+ 
+   const MapTypeSpec& map_type() const {
+-    auto* value = absl::get_if<MapTypeSpec>(&type_kind_);
++    auto* value = std::get_if<MapTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -680,7 +680,7 @@
+   }
+ 
+   const FunctionTypeSpec& function() const {
+-    auto* value = absl::get_if<FunctionTypeSpec>(&type_kind_);
++    auto* value = std::get_if<FunctionTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -690,7 +690,7 @@
+   }
+ 
+   const MessageTypeSpec& message_type() const {
+-    auto* value = absl::get_if<MessageTypeSpec>(&type_kind_);
++    auto* value = std::get_if<MessageTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -699,7 +699,7 @@
+   }
+ 
+   const ParamTypeSpec& type_param() const {
+-    auto* value = absl::get_if<ParamTypeSpec>(&type_kind_);
++    auto* value = std::get_if<ParamTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -710,7 +710,7 @@
+   const TypeSpec& type() const;
+ 
+   ErrorTypeSpec error_type() const {
+-    auto* value = absl::get_if<ErrorTypeSpec>(&type_kind_);
++    auto* value = std::get_if<ErrorTypeSpec>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -718,7 +718,7 @@
+   }
+ 
+   const AbstractType& abstract_type() const {
+-    auto* value = absl::get_if<AbstractType>(&type_kind_);
++    auto* value = std::get_if<AbstractType>(&type_kind_);
+     if (value != nullptr) {
+       return *value;
+     }
+@@ -727,11 +727,11 @@
+   }
+ 
+   bool operator==(const TypeSpec& other) const {
+-    if (absl::holds_alternative<std::unique_ptr<TypeSpec>>(type_kind_) &&
+-        absl::holds_alternative<std::unique_ptr<TypeSpec>>(other.type_kind_)) {
+-      const auto& self_type = absl::get<std::unique_ptr<TypeSpec>>(type_kind_);
++    if (std::holds_alternative<std::unique_ptr<TypeSpec>>(type_kind_) &&
++        std::holds_alternative<std::unique_ptr<TypeSpec>>(other.type_kind_)) {
++      const auto& self_type = std::get<std::unique_ptr<TypeSpec>>(type_kind_);
+       const auto& other_type =
+-          absl::get<std::unique_ptr<TypeSpec>>(other.type_kind_);
++          std::get<std::unique_ptr<TypeSpec>>(other.type_kind_);
+       if (self_type == nullptr || other_type == nullptr) {
+         return self_type == other_type;
+       }
+diff -urN orig/common/ast/metadata_test.cc mod/common/ast/metadata_test.cc
+--- orig/common/ast/metadata_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast/metadata_test.cc	2026-09-28 10:01:47.122609939 +0000
+@@ -18,7 +18,7 @@
+ #include <string>
+ #include <utility>
+ 
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/expr.h"
+ #include "internal/testing.h"
+ 
+@@ -30,7 +30,7 @@
+ TEST(AstTest, ListTypeSpecMutableConstruction) {
+   ListTypeSpec type;
+   type.mutable_elem_type() = TypeSpec(PrimitiveType::kBool);
+-  EXPECT_EQ(absl::get<PrimitiveType>(type.elem_type().type_kind()),
++  EXPECT_EQ(std::get<PrimitiveType>(type.elem_type().type_kind()),
+             PrimitiveType::kBool);
+ }
+ 
+@@ -38,9 +38,9 @@
+   MapTypeSpec type;
+   type.mutable_key_type() = TypeSpec(PrimitiveType::kBool);
+   type.mutable_value_type() = TypeSpec(PrimitiveType::kBool);
+-  EXPECT_EQ(absl::get<PrimitiveType>(type.key_type().type_kind()),
++  EXPECT_EQ(std::get<PrimitiveType>(type.key_type().type_kind()),
+             PrimitiveType::kBool);
+-  EXPECT_EQ(absl::get<PrimitiveType>(type.value_type().type_kind()),
++  EXPECT_EQ(std::get<PrimitiveType>(type.value_type().type_kind()),
+             PrimitiveType::kBool);
+ }
+ 
+@@ -59,7 +59,7 @@
+ TEST(AstTest, FunctionTypeSpecMutableConstruction) {
+   FunctionTypeSpec type;
+   type.mutable_result_type() = TypeSpec(PrimitiveType::kBool);
+-  EXPECT_EQ(absl::get<PrimitiveType>(type.result_type().type_kind()),
++  EXPECT_EQ(std::get<PrimitiveType>(type.result_type().type_kind()),
+             PrimitiveType::kBool);
+ }
+ 
+diff -urN orig/common/ast_proto.cc mod/common/ast_proto.cc
+--- orig/common/ast_proto.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast_proto.cc	2026-09-28 10:01:47.088137015 +0000
+@@ -29,7 +29,7 @@
+ #include "absl/container/flat_hash_map.h"
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast.h"
+ #include "common/ast/constant_proto.h"
+ #include "common/ast/expr_proto.h"
+@@ -456,7 +456,7 @@
+ };
+ 
+ absl::Status TypeToProto(const TypeSpec& type, TypePb* result) {
+-  return absl::visit(TypeKindToProtoVisitor{result}, type.type_kind());
++  return std::visit(TypeKindToProtoVisitor{result}, type.type_kind());
+ }
+ 
+ }  // namespace
+diff -urN orig/common/ast_proto_test.cc mod/common/ast_proto_test.cc
+--- orig/common/ast_proto_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast_proto_test.cc	2026-09-28 10:01:47.087391475 +0000
+@@ -30,7 +30,7 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast.h"
+ #include "common/decl.h"
+ #include "common/expr.h"
+@@ -362,7 +362,7 @@
+   auto native_type = ConvertProtoTypeToNative(cel::expr::Type());
+ 
+   ASSERT_THAT(native_type, IsOk());
+-  EXPECT_TRUE(absl::holds_alternative<UnsetTypeSpec>(native_type->type_kind()));
++  EXPECT_TRUE(std::holds_alternative<UnsetTypeSpec>(native_type->type_kind()));
+ }
+ 
+ TEST(AstConvertersTest, ReferenceToNative) {
+diff -urN orig/common/ast_rewrite.cc mod/common/ast_rewrite.cc
+--- orig/common/ast_rewrite.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast_rewrite.cc	2026-09-28 10:01:47.080852164 +0000
+@@ -19,7 +19,7 @@
+ 
+ #include "absl/log/absl_log.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast_visitor.h"
+ #include "common/constant.h"
+ #include "common/expr.h"
+@@ -94,10 +94,10 @@
+     record_variant = record;
+   }
+ 
+-  Expr* expr() const { return absl::get<ExprRecord>(record_variant).expr; }
++  Expr* expr() const { return std::get<ExprRecord>(record_variant).expr; }
+ 
+   bool IsExprRecord() const {
+-    return absl::holds_alternative<ExprRecord>(record_variant);
++    return std::holds_alternative<ExprRecord>(record_variant);
+   }
+ 
+   StackRecordKind record_variant;
+@@ -138,7 +138,7 @@
+       }
+     } handler{visitor, record.expr};
+     visitor->PreVisitExpr(*record.expr);
+-    absl::visit(handler, record.expr->kind());
++    std::visit(handler, record.expr->kind());
+   }
+ 
+   // Do nothing for Arg variant.
+@@ -154,7 +154,7 @@
+ };
+ 
+ void PreVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PreVisitor{visitor}, record.record_variant);
++  std::visit(PreVisitor{visitor}, record.record_variant);
+ }
+ 
+ struct PostVisitor {
+@@ -190,7 +190,7 @@
+         ABSL_LOG(ERROR) << "Unsupported Expr kind";
+       }
+     } handler{visitor, record.expr};
+-    absl::visit(handler, record.expr->kind());
++    std::visit(handler, record.expr->kind());
+ 
+     visitor->PostVisitExpr(*record.expr);
+   }
+@@ -213,7 +213,7 @@
+ };
+ 
+ void PostVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PostVisitor{visitor}, record.record_variant);
++  std::visit(PostVisitor{visitor}, record.record_variant);
+ }
+ 
+ void PushSelectDeps(SelectExpr* select_expr, std::stack<StackRecord>* stack) {
+@@ -325,7 +325,7 @@
+       }
+       void operator()(const UnspecifiedExpr&) {}
+     } handler{stack, options, record};
+-    absl::visit(handler, record.expr->kind());
++    std::visit(handler, record.expr->kind());
+   }
+ 
+   void operator()(const ArgRecord& record) {
+@@ -342,7 +342,7 @@
+ 
+ void PushDependencies(const StackRecord& record, std::stack<StackRecord>& stack,
+                       const RewriteTraversalOptions& options) {
+-  absl::visit(PushDepsVisitor{stack, options}, record.record_variant);
++  std::visit(PushDepsVisitor{stack, options}, record.record_variant);
+ }
+ 
+ }  // namespace
+diff -urN orig/common/ast_traverse.cc mod/common/ast_traverse.cc
+--- orig/common/ast_traverse.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/ast_traverse.cc	2026-09-28 10:01:47.082485624 +0000
+@@ -18,7 +18,7 @@
+ #include <stack>
+ 
+ #include "absl/log/absl_log.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast_visitor.h"
+ #include "common/constant.h"
+ #include "common/expr.h"
+@@ -125,7 +125,7 @@
+ };
+ 
+ void PreVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PreVisitor{visitor}, record.record_variant);
++  std::visit(PreVisitor{visitor}, record.record_variant);
+ }
+ 
+ struct PostVisitor {
+@@ -162,7 +162,7 @@
+         ABSL_LOG(ERROR) << "Unsupported Expr kind";
+       }
+     } handler{visitor, record.expr};
+-    absl::visit(handler, record.expr->kind());
++    std::visit(handler, record.expr->kind());
+ 
+     visitor->PostVisitExpr(*expr);
+   }
+@@ -185,7 +185,7 @@
+ };
+ 
+ void PostVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PostVisitor{visitor}, record.record_variant);
++  std::visit(PostVisitor{visitor}, record.record_variant);
+ }
+ 
+ void PushSelectDeps(const SelectExpr* select_expr,
+@@ -297,7 +297,7 @@
+       }
+       void operator()(const UnspecifiedExpr&) {}
+     } handler{stack, options, record};
+-    absl::visit(handler, record.expr->kind());
++    std::visit(handler, record.expr->kind());
+   }
+ 
+   void operator()(const ArgRecord& record) {
+@@ -314,7 +314,7 @@
+ 
+ void PushDependencies(const StackRecord& record, std::stack<StackRecord>& stack,
+                       const TraversalOptions& options) {
+-  absl::visit(PushDepsVisitor{stack, options}, record.record_variant);
++  std::visit(PushDepsVisitor{stack, options}, record.record_variant);
+ }
+ 
+ }  // namespace
+diff -urN orig/common/constant.h mod/common/constant.h
+--- orig/common/constant.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/constant.h	2026-09-28 10:01:47.083515707 +0000
+@@ -25,7 +25,7 @@
+ #include "absl/functional/overload.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ 
+ namespace cel {
+ 
+@@ -104,12 +104,12 @@
+ struct ConstantKindIndexer<I, U, T> {
+   static constexpr size_t value = std::conditional_t<
+       std::is_same_v<U, T>, std::integral_constant<size_t, I>,
+-      std::integral_constant<size_t, absl::variant_npos>>::value;
++      std::integral_constant<size_t, std::variant_npos>>::value;
+ };
+ 
+ template <typename... Ts>
+ struct ConstantKindImpl {
+-  using VariantType = absl::variant<Ts...>;
++  using VariantType = std::variant<Ts...>;
+ 
+   template <typename U>
+   static constexpr size_t IndexOf() {
+@@ -118,11 +118,11 @@
+ };
+ 
+ using ConstantKind =
+-    ConstantKindImpl<absl::monostate, std::nullptr_t, bool, int64_t, uint64_t,
++    ConstantKindImpl<std::monostate, std::nullptr_t, bool, int64_t, uint64_t,
+                      double, BytesConstant, StringConstant, absl::Duration,
+                      absl::Time>;
+ 
+-static_assert(ConstantKind::IndexOf<absl::monostate>() == 0);
++static_assert(ConstantKind::IndexOf<std::monostate>() == 0);
+ static_assert(ConstantKind::IndexOf<std::nullptr_t>() == 1);
+ static_assert(ConstantKind::IndexOf<bool>() == 2);
+ static_assert(ConstantKind::IndexOf<int64_t>() == 3);
+@@ -132,7 +132,7 @@
+ static_assert(ConstantKind::IndexOf<StringConstant>() == 7);
+ static_assert(ConstantKind::IndexOf<absl::Duration>() == 8);
+ static_assert(ConstantKind::IndexOf<absl::Time>() == 9);
+-static_assert(ConstantKind::IndexOf<void>() == absl::variant_npos);
++static_assert(ConstantKind::IndexOf<void>() == std::variant_npos);
+ 
+ }  // namespace common_internal
+ 
+@@ -223,11 +223,11 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_value() const {
+-    return !absl::holds_alternative<absl::monostate>(kind());
++    return !std::holds_alternative<std::monostate>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_null_value() const {
+-    return absl::holds_alternative<std::nullptr_t>(kind());
++    return std::holds_alternative<std::nullptr_t>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT std::nullptr_t null_value() const { return nullptr; }
+@@ -237,7 +237,7 @@
+   void set_null_value(std::nullptr_t) { set_null_value(); }
+ 
+   ABSL_MUST_USE_RESULT bool has_bool_value() const {
+-    return absl::holds_alternative<bool>(kind());
++    return std::holds_alternative<bool>(kind());
+   }
+ 
+   void set_bool_value(bool value) { mutable_kind().emplace<bool>(value); }
+@@ -245,7 +245,7 @@
+   ABSL_MUST_USE_RESULT bool bool_value() const { return get_value<bool>(); }
+ 
+   ABSL_MUST_USE_RESULT bool has_int_value() const {
+-    return absl::holds_alternative<int64_t>(kind());
++    return std::holds_alternative<int64_t>(kind());
+   }
+ 
+   void set_int_value(int64_t value) { mutable_kind().emplace<int64_t>(value); }
+@@ -255,7 +255,7 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_uint_value() const {
+-    return absl::holds_alternative<uint64_t>(kind());
++    return std::holds_alternative<uint64_t>(kind());
+   }
+ 
+   void set_uint_value(uint64_t value) {
+@@ -287,7 +287,7 @@
+   ABSL_MUST_USE_RESULT uint64_t uint64_value() const { return uint_value(); }
+ 
+   ABSL_MUST_USE_RESULT bool has_double_value() const {
+-    return absl::holds_alternative<double>(kind());
++    return std::holds_alternative<double>(kind());
+   }
+ 
+   void set_double_value(double value) { mutable_kind().emplace<double>(value); }
+@@ -297,7 +297,7 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_bytes_value() const {
+-    return absl::holds_alternative<BytesConstant>(kind());
++    return std::holds_alternative<BytesConstant>(kind());
+   }
+ 
+   void set_bytes_value(BytesConstant value) {
+@@ -318,7 +318,7 @@
+ 
+   ABSL_MUST_USE_RESULT const std::string& bytes_value() const
+       ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (const auto* alt = absl::get_if<BytesConstant>(&kind()); alt) {
++    if (const auto* alt = std::get_if<BytesConstant>(&kind()); alt) {
+       return *alt;
+     }
+     return BytesConstant::default_instance();
+@@ -326,15 +326,15 @@
+ 
+   ABSL_MUST_USE_RESULT std::string release_bytes_value() {
+     std::string string;
+-    if (auto* alt = absl::get_if<BytesConstant>(&mutable_kind()); alt) {
++    if (auto* alt = std::get_if<BytesConstant>(&mutable_kind()); alt) {
+       string.swap(*alt);
+     }
+-    mutable_kind().emplace<absl::monostate>();
++    mutable_kind().emplace<std::monostate>();
+     return string;
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_string_value() const {
+-    return absl::holds_alternative<StringConstant>(kind());
++    return std::holds_alternative<StringConstant>(kind());
+   }
+ 
+   void set_string_value(StringConstant value) {
+@@ -355,7 +355,7 @@
+ 
+   ABSL_MUST_USE_RESULT const std::string& string_value() const
+       ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (const auto* alt = absl::get_if<StringConstant>(&kind()); alt) {
++    if (const auto* alt = std::get_if<StringConstant>(&kind()); alt) {
+       return *alt;
+     }
+     return StringConstant::default_instance();
+@@ -363,16 +363,16 @@
+ 
+   ABSL_MUST_USE_RESULT std::string release_string_value() {
+     std::string string;
+-    if (auto* alt = absl::get_if<StringConstant>(&mutable_kind()); alt) {
++    if (auto* alt = std::get_if<StringConstant>(&mutable_kind()); alt) {
+       string.swap(*alt);
+     }
+-    mutable_kind().emplace<absl::monostate>();
++    mutable_kind().emplace<std::monostate>();
+     return string;
+   }
+ 
+   ABSL_DEPRECATED("duration is no longer considered a builtin type")
+   ABSL_MUST_USE_RESULT bool has_duration_value() const {
+-    return absl::holds_alternative<absl::Duration>(kind());
++    return std::holds_alternative<absl::Duration>(kind());
+   }
+ 
+   ABSL_DEPRECATED("duration is no longer considered a builtin type")
+@@ -387,7 +387,7 @@
+ 
+   ABSL_DEPRECATED("timestamp is no longer considered a builtin type")
+   ABSL_MUST_USE_RESULT bool has_timestamp_value() const {
+-    return absl::holds_alternative<absl::Time>(kind());
++    return std::holds_alternative<absl::Time>(kind());
+   }
+ 
+   ABSL_DEPRECATED("timestamp is no longer considered a builtin type")
+@@ -414,7 +414,7 @@
+   }
+ 
+   ConstantKindCase kind_case() const {
+-    static_assert(absl::variant_size_v<ConstantKind> == 10);
++    static_assert(std::variant_size_v<ConstantKind> == 10);
+     if (kind_.index() <= 10) {
+       return static_cast<ConstantKindCase>(kind_.index());
+     }
+@@ -434,7 +434,7 @@
+ 
+   template <typename T>
+   T get_value() const {
+-    if (const auto* alt = absl::get_if<T>(&kind()); alt) {
++    if (const auto* alt = std::get_if<T>(&kind()); alt) {
+       return *alt;
+     }
+     return T{};
+@@ -453,9 +453,9 @@
+ 
+ template <typename Sink>
+ void AbslStringify(Sink& sink, const Constant& constant) {
+-  absl::visit(
++  std::visit(
+       absl::Overload(
+-          [&sink](absl::monostate) -> void { sink.Append("<unspecified>"); },
++          [&sink](std::monostate) -> void { sink.Append("<unspecified>"); },
+           [&sink](std::nullptr_t value) -> void {
+             sink.Append(FormatNullConstant(value));
+           },
+diff -urN orig/common/decl_proto.cc mod/common/decl_proto.cc
+--- orig/common/decl_proto.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/decl_proto.cc	2026-09-28 10:01:47.080988760 +0000
+@@ -22,7 +22,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/decl.h"
+ #include "common/type.h"
+ #include "common/type_proto.h"
+diff -urN orig/common/decl_proto.h mod/common/decl_proto.h
+--- orig/common/decl_proto.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/decl_proto.h	2026-09-28 10:01:47.084712348 +0000
+@@ -19,7 +19,7 @@
+ #include "absl/base/nullability.h"
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/decl.h"
+ #include "google/protobuf/arena.h"
+ #include "google/protobuf/descriptor.h"
+@@ -40,7 +40,7 @@
+     google::protobuf::Arena* absl_nonnull arena);
+ 
+ // Creates a VariableDecl or FunctionDecl from a google.api.expr.Decl proto.
+-absl::StatusOr<absl::variant<VariableDecl, FunctionDecl>> DeclFromProto(
++absl::StatusOr<std::variant<VariableDecl, FunctionDecl>> DeclFromProto(
+     const cel::expr::Decl& decl,
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::Arena* absl_nonnull arena);
+diff -urN orig/common/decl_proto_test.cc mod/common/decl_proto_test.cc
+--- orig/common/decl_proto_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/decl_proto_test.cc	2026-09-28 10:01:47.087695020 +0000
+@@ -19,7 +19,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/status_matchers.h"
+ #include "absl/status/statusor.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/decl.h"
+ #include "common/decl_proto_v1alpha1.h"
+ #include "internal/testing.h"
+@@ -54,12 +54,12 @@
+   switch (test_case.decl_type) {
+     case DeclType::kVariable: {
+       ASSERT_OK_AND_ASSIGN(auto decl, decl_or);
+-      EXPECT_TRUE(absl::holds_alternative<VariableDecl>(decl));
++      EXPECT_TRUE(std::holds_alternative<VariableDecl>(decl));
+       break;
+     }
+     case DeclType::kFunction: {
+       ASSERT_OK_AND_ASSIGN(auto decl, decl_or);
+-      EXPECT_TRUE(absl::holds_alternative<FunctionDecl>(decl));
++      EXPECT_TRUE(std::holds_alternative<FunctionDecl>(decl));
+       break;
+     }
+     case DeclType::kInvalid: {
+@@ -84,12 +84,12 @@
+   switch (test_case.decl_type) {
+     case DeclType::kVariable: {
+       ASSERT_OK_AND_ASSIGN(auto decl, decl_or);
+-      EXPECT_TRUE(absl::holds_alternative<VariableDecl>(decl));
++      EXPECT_TRUE(std::holds_alternative<VariableDecl>(decl));
+       break;
+     }
+     case DeclType::kFunction: {
+       ASSERT_OK_AND_ASSIGN(auto decl, decl_or);
+-      EXPECT_TRUE(absl::holds_alternative<FunctionDecl>(decl));
++      EXPECT_TRUE(std::holds_alternative<FunctionDecl>(decl));
+       break;
+     }
+     case DeclType::kInvalid: {
+diff -urN orig/common/decl_proto_v1alpha1.cc mod/common/decl_proto_v1alpha1.cc
+--- orig/common/decl_proto_v1alpha1.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/decl_proto_v1alpha1.cc	2026-09-28 10:01:47.081053399 +0000
+@@ -18,7 +18,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/decl.h"
+ #include "common/decl_proto.h"
+ #include "google/protobuf/arena.h"
+diff -urN orig/common/decl_proto_v1alpha1.h mod/common/decl_proto_v1alpha1.h
+--- orig/common/decl_proto_v1alpha1.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/decl_proto_v1alpha1.h	2026-09-28 10:01:47.088938182 +0000
+@@ -21,7 +21,7 @@
+ #include "absl/base/nullability.h"
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/decl.h"
+ #include "google/protobuf/arena.h"
+ #include "google/protobuf/descriptor.h"
+@@ -45,7 +45,7 @@
+ 
+ // Creates a VariableDecl or FunctionDecl from a google.api.expr.v1alpha1.Decl
+ // proto.
+-absl::StatusOr<absl::variant<VariableDecl, FunctionDecl>> DeclFromV1Alpha1Proto(
++absl::StatusOr<std::variant<VariableDecl, FunctionDecl>> DeclFromV1Alpha1Proto(
+     const google::api::expr::v1alpha1::Decl& decl,
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::Arena* absl_nonnull arena);
+diff -urN orig/common/expr.cc mod/common/expr.cc
+--- orig/common/expr.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/expr.cc	2026-09-28 10:01:47.084861032 +0000
+@@ -20,7 +20,7 @@
+ #include "absl/base/no_destructor.h"
+ #include "absl/functional/overload.h"
+ #include "absl/log/absl_check.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ 
+ namespace cel {
+@@ -36,7 +36,7 @@
+   const Expr* src = element.src;
+   Expr* dst = element.dst;
+   dst->set_id(src->id());
+-  absl::visit(
++  std::visit(
+       absl::Overload(
+           [=](const UnspecifiedExpr&) {
+             dst->mutable_kind().emplace<UnspecifiedExpr>();
+diff -urN orig/common/expr.h mod/common/expr.h
+--- orig/common/expr.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/expr.h	2026-09-28 10:01:47.086127252 +0000
+@@ -25,7 +25,7 @@
+ #include "absl/base/attributes.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ 
+ namespace cel {
+@@ -871,7 +871,7 @@
+ }
+ 
+ using ExprKind =
+-    absl::variant<UnspecifiedExpr, Constant, IdentExpr, SelectExpr, CallExpr,
++    std::variant<UnspecifiedExpr, Constant, IdentExpr, SelectExpr, CallExpr,
+                   ListExpr, StructExpr, MapExpr, ComprehensionExpr>;
+ 
+ enum class ExprKindCase {
+@@ -921,7 +921,7 @@
+   ABSL_MUST_USE_RESULT ExprKind release_kind();
+ 
+   ABSL_MUST_USE_RESULT bool has_const_expr() const {
+-    return absl::holds_alternative<Constant>(kind());
++    return std::holds_alternative<Constant>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const Constant& const_expr() const
+@@ -942,7 +942,7 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_ident_expr() const {
+-    return absl::holds_alternative<IdentExpr>(kind());
++    return std::holds_alternative<IdentExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const IdentExpr& ident_expr() const
+@@ -963,7 +963,7 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_select_expr() const {
+-    return absl::holds_alternative<SelectExpr>(kind());
++    return std::holds_alternative<SelectExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const SelectExpr& select_expr() const
+@@ -984,7 +984,7 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_call_expr() const {
+-    return absl::holds_alternative<CallExpr>(kind());
++    return std::holds_alternative<CallExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const CallExpr& call_expr() const
+@@ -1001,7 +1001,7 @@
+   ABSL_MUST_USE_RESULT CallExpr release_call_expr();
+ 
+   ABSL_MUST_USE_RESULT bool has_list_expr() const {
+-    return absl::holds_alternative<ListExpr>(kind());
++    return std::holds_alternative<ListExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const ListExpr& list_expr() const
+@@ -1018,7 +1018,7 @@
+   ABSL_MUST_USE_RESULT ListExpr release_list_expr();
+ 
+   ABSL_MUST_USE_RESULT bool has_struct_expr() const {
+-    return absl::holds_alternative<StructExpr>(kind());
++    return std::holds_alternative<StructExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const StructExpr& struct_expr() const
+@@ -1035,7 +1035,7 @@
+   ABSL_MUST_USE_RESULT StructExpr release_struct_expr();
+ 
+   ABSL_MUST_USE_RESULT bool has_map_expr() const {
+-    return absl::holds_alternative<MapExpr>(kind());
++    return std::holds_alternative<MapExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const MapExpr& map_expr() const
+@@ -1052,7 +1052,7 @@
+   ABSL_MUST_USE_RESULT MapExpr release_map_expr();
+ 
+   ABSL_MUST_USE_RESULT bool has_comprehension_expr() const {
+-    return absl::holds_alternative<ComprehensionExpr>(kind());
++    return std::holds_alternative<ComprehensionExpr>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const ComprehensionExpr& comprehension_expr() const
+@@ -1099,7 +1099,7 @@
+   template <typename T, typename... Args>
+   ABSL_MUST_USE_RESULT T& try_emplace_kind(Args&&... args)
+       ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (auto* alt = absl::get_if<T>(&mutable_kind()); alt) {
++    if (auto* alt = std::get_if<T>(&mutable_kind()); alt) {
+       return *alt;
+     }
+     return kind_.emplace<T>(std::forward<Args>(args)...);
+@@ -1107,7 +1107,7 @@
+ 
+   template <typename T>
+   ABSL_MUST_USE_RESULT const T& get_kind() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (const auto* alt = absl::get_if<T>(&kind()); alt) {
++    if (const auto* alt = std::get_if<T>(&kind()); alt) {
+       return *alt;
+     }
+     return T::default_instance();
+@@ -1415,7 +1415,7 @@
+ template <typename T>
+ ABSL_MUST_USE_RESULT T Expr::release_kind() {
+   T result;
+-  if (auto* alt = absl::get_if<T>(&mutable_kind()); alt) {
++  if (auto* alt = std::get_if<T>(&mutable_kind()); alt) {
+     result = std::move(*alt);
+   }
+   kind_.emplace<UnspecifiedExpr>();
+@@ -1423,7 +1423,7 @@
+ }
+ 
+ inline ExprKindCase Expr::kind_case() const {
+-  static_assert(absl::variant_size_v<ExprKind> == 9);
++  static_assert(std::variant_size_v<ExprKind> == 9);
+   if (kind_.index() <= 9) {
+     return static_cast<ExprKindCase>(kind_.index());
+   }
+diff -urN orig/common/legacy_value.cc mod/common/legacy_value.cc
+--- orig/common/legacy_value.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/legacy_value.cc	2026-09-28 10:01:47.081943803 +0000
+@@ -34,7 +34,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/attribute.h"
+ #include "common/casting.h"
+ #include "common/kind.h"
+@@ -1004,7 +1004,7 @@
+   const auto* access_apis =
+       message_wrapper.legacy_type_info()->GetAccessApis(message_wrapper);
+   if (ABSL_PREDICT_FALSE(access_apis == nullptr)) {
+-    absl::string_view field_name = absl::visit(
++    absl::string_view field_name = std::visit(
+         absl::Overload(
+             [](const FieldSpecifier& field) -> absl::string_view {
+               return field.name;
+diff -urN orig/common/reference.h mod/common/reference.h
+--- orig/common/reference.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/reference.h	2026-09-28 10:01:47.085826514 +0000
+@@ -22,7 +22,7 @@
+ #include "absl/algorithm/container.h"
+ #include "absl/base/attributes.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ 
+ namespace cel {
+@@ -31,7 +31,7 @@
+ class VariableReference;
+ class FunctionReference;
+ 
+-using ReferenceKind = absl::variant<VariableReference, FunctionReference>;
++using ReferenceKind = std::variant<VariableReference, FunctionReference>;
+ 
+ // `VariableReference` is a resolved reference to a `VariableDecl`.
+ class VariableReference final {
+@@ -157,12 +157,12 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_variable() const {
+-    return absl::holds_alternative<VariableReference>(kind());
++    return std::holds_alternative<VariableReference>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const VariableReference& variable() const
+       ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (const auto* alt = absl::get_if<VariableReference>(&kind()); alt) {
++    if (const auto* alt = std::get_if<VariableReference>(&kind()); alt) {
+       return *alt;
+     }
+     return VariableReference::default_instance();
+@@ -176,12 +176,12 @@
+     if (!has_variable()) {
+       mutable_kind().emplace<VariableReference>();
+     }
+-    return absl::get<VariableReference>(mutable_kind());
++    return std::get<VariableReference>(mutable_kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT VariableReference release_variable() {
+     VariableReference variable_reference;
+-    if (auto* alt = absl::get_if<VariableReference>(&mutable_kind()); alt) {
++    if (auto* alt = std::get_if<VariableReference>(&mutable_kind()); alt) {
+       variable_reference = std::move(*alt);
+     }
+     mutable_kind().emplace<VariableReference>();
+@@ -189,12 +189,12 @@
+   }
+ 
+   ABSL_MUST_USE_RESULT bool has_function() const {
+-    return absl::holds_alternative<FunctionReference>(kind());
++    return std::holds_alternative<FunctionReference>(kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT const FunctionReference& function() const
+       ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-    if (const auto* alt = absl::get_if<FunctionReference>(&kind()); alt) {
++    if (const auto* alt = std::get_if<FunctionReference>(&kind()); alt) {
+       return *alt;
+     }
+     return FunctionReference::default_instance();
+@@ -208,12 +208,12 @@
+     if (!has_function()) {
+       mutable_kind().emplace<FunctionReference>();
+     }
+-    return absl::get<FunctionReference>(mutable_kind());
++    return std::get<FunctionReference>(mutable_kind());
+   }
+ 
+   ABSL_MUST_USE_RESULT FunctionReference release_function() {
+     FunctionReference function_reference;
+-    if (auto* alt = absl::get_if<FunctionReference>(&mutable_kind()); alt) {
++    if (auto* alt = std::get_if<FunctionReference>(&mutable_kind()); alt) {
+       function_reference = std::move(*alt);
+     }
+     mutable_kind().emplace<VariableReference>();
+diff -urN orig/common/source.cc mod/common/source.cc
+--- orig/common/source.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/source.cc	2026-09-28 10:01:47.083324521 +0000
+@@ -38,14 +38,14 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "internal/unicode.h"
+ #include "internal/utf8.h"
+ 
+ namespace cel {
+ 
+ SourcePosition SourceContentView::size() const {
+-  return static_cast<SourcePosition>(absl::visit(
++  return static_cast<SourcePosition>(std::visit(
+       absl::Overload(
+           [](absl::Span<const char> view) { return view.size(); },
+           [](absl::Span<const uint8_t> view) { return view.size(); },
+@@ -55,7 +55,7 @@
+ }
+ 
+ bool SourceContentView::empty() const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](absl::Span<const char> view) { return view.empty(); },
+           [](absl::Span<const uint8_t> view) { return view.empty(); },
+@@ -67,7 +67,7 @@
+ char32_t SourceContentView::at(SourcePosition position) const {
+   ABSL_DCHECK_GE(position, 0);
+   ABSL_DCHECK_LT(position, size());
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [position =
+                static_cast<size_t>(position)](absl::Span<const char> view) {
+@@ -93,7 +93,7 @@
+   ABSL_DCHECK_GE(begin, 0);
+   ABSL_DCHECK_LE(end, size());
+   ABSL_DCHECK_LE(begin, end);
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [begin = static_cast<size_t>(begin),
+            end = static_cast<size_t>(end)](absl::Span<const char> view) {
+@@ -137,7 +137,7 @@
+ }
+ 
+ void SourceContentView::AppendToString(std::string& dest) const {
+-  absl::visit(absl::Overload(
++  std::visit(absl::Overload(
+                   [&dest](absl::Span<const char> view) {
+                     dest.append(view.data(), view.size());
+                   },
+@@ -640,7 +640,7 @@
+   if (parent_content.empty() || range_.begin >= range_.end) {
+     return EmptyContentView();
+   }
+-  return absl::visit(
++  return std::visit(
+       [this](auto view) {
+         return SourceContentView(
+             view.subspan(static_cast<size_t>(range_.begin),
+diff -urN orig/common/source.h mod/common/source.h
+--- orig/common/source.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/source.h	2026-09-28 10:01:47.081326631 +0000
+@@ -28,7 +28,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ 
+ namespace cel {
+ 
+@@ -112,7 +112,7 @@
+   constexpr explicit SourceContentView(absl::Span<const char32_t> view)
+       : view_(view) {}
+ 
+-  absl::variant<absl::Span<const char>, absl::Span<const uint8_t>,
++  std::variant<absl::Span<const char>, absl::Span<const uint8_t>,
+                 absl::Span<const char16_t>, absl::Span<const char32_t>>
+       view_;
+ };
+diff -urN orig/common/type.cc mod/common/type.cc
+--- orig/common/type.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/type.cc	2026-09-28 10:01:47.084013480 +0000
+@@ -26,7 +26,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/type_kind.h"
+ #include "common/types/types.h"
+ #include "google/protobuf/descriptor.h"
+@@ -105,7 +105,7 @@
+ TypeKind Type::kind() const { return kTypeToKindArray[variant_.index()]; }
+ 
+ absl::string_view Type::name() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> absl::string_view {
+         return alternative.name();
+       },
+@@ -113,7 +113,7 @@
+ }
+ 
+ std::string Type::DebugString() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> std::string {
+         return alternative.DebugString();
+       },
+@@ -121,7 +121,7 @@
+ }
+ 
+ TypeParameters Type::GetParameters() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> TypeParameters {
+         return alternative.GetParameters();
+       },
+@@ -139,12 +139,12 @@
+ }
+ 
+ common_internal::StructTypeVariant Type::ToStructTypeVariant() const {
+-  if (const auto* other = absl::get_if<MessageType>(&variant_);
++  if (const auto* other = std::get_if<MessageType>(&variant_);
+       other != nullptr) {
+     return common_internal::StructTypeVariant(*other);
+   }
+   if (const auto* other =
+-          absl::get_if<common_internal::BasicStructType>(&variant_);
++          std::get_if<common_internal::BasicStructType>(&variant_);
+       other != nullptr) {
+     return common_internal::StructTypeVariant(*other);
+   }
+@@ -155,7 +155,7 @@
+ 
+ template <typename T>
+ absl::optional<T> GetOrNullopt(const common_internal::TypeVariant& variant) {
+-  if (const auto* alt = absl::get_if<T>(&variant); alt != nullptr) {
++  if (const auto* alt = std::get_if<T>(&variant); alt != nullptr) {
+     return *alt;
+   }
+   return std::nullopt;
+@@ -256,11 +256,11 @@
+ 
+ absl::optional<StructType> Type::AsStruct() const {
+   if (const auto* alt =
+-          absl::get_if<common_internal::BasicStructType>(&variant_);
++          std::get_if<common_internal::BasicStructType>(&variant_);
+       alt != nullptr) {
+     return *alt;
+   }
+-  if (const auto* alt = absl::get_if<MessageType>(&variant_); alt != nullptr) {
++  if (const auto* alt = std::get_if<MessageType>(&variant_); alt != nullptr) {
+     return *alt;
+   }
+   return std::nullopt;
+@@ -294,7 +294,7 @@
+ 
+ template <typename T>
+ T GetOrDie(const common_internal::TypeVariant& variant) {
+-  return absl::get<T>(variant);
++  return std::get<T>(variant);
+ }
+ 
+ }  // namespace
+@@ -412,11 +412,11 @@
+ StructType Type::GetStruct() const {
+   ABSL_DCHECK(IsStruct()) << DebugString();
+   if (const auto* alt =
+-          absl::get_if<common_internal::BasicStructType>(&variant_);
++          std::get_if<common_internal::BasicStructType>(&variant_);
+       alt != nullptr) {
+     return *alt;
+   }
+-  if (const auto* alt = absl::get_if<MessageType>(&variant_); alt != nullptr) {
++  if (const auto* alt = std::get_if<MessageType>(&variant_); alt != nullptr) {
+     return *alt;
+   }
+   return StructType();
+@@ -563,7 +563,7 @@
+ }
+ 
+ std::string StructTypeField::DebugString() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> std::string {
+         return alternative.DebugString();
+       },
+@@ -571,7 +571,7 @@
+ }
+ 
+ absl::string_view StructTypeField::name() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> absl::string_view {
+         return alternative.name();
+       },
+@@ -579,19 +579,19 @@
+ }
+ 
+ int32_t StructTypeField::number() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> int32_t { return alternative.number(); },
+       variant_);
+ }
+ 
+ Type StructTypeField::GetType() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> Type { return alternative.GetType(); },
+       variant_);
+ }
+ 
+ StructTypeField::operator bool() const {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& alternative) -> bool {
+         return static_cast<bool>(alternative);
+       },
+@@ -599,7 +599,7 @@
+ }
+ 
+ absl::optional<MessageTypeField> StructTypeField::AsMessage() const {
+-  if (const auto* alternative = absl::get_if<MessageTypeField>(&variant_);
++  if (const auto* alternative = std::get_if<MessageTypeField>(&variant_);
+       alternative != nullptr) {
+     return *alternative;
+   }
+@@ -608,12 +608,12 @@
+ 
+ MessageTypeField StructTypeField::GetMessage() const {
+   ABSL_DCHECK(IsMessage());
+-  return absl::get<MessageTypeField>(variant_);
++  return std::get<MessageTypeField>(variant_);
+ }
+ 
+ StructTypeField::operator MessageTypeField() const {
+   ABSL_DCHECK(IsMessage());
+-  return absl::get<MessageTypeField>(variant_);
++  return std::get<MessageTypeField>(variant_);
+ }
+ 
+ TypeParameters::TypeParameters(absl::Span<const Type> types)
+diff -urN orig/common/type.h mod/common/type.h
+--- orig/common/type.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/type.h	2026-09-28 10:01:47.086888020 +0000
+@@ -33,7 +33,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "absl/utility/utility.h"
+ #include "common/type_kind.h"
+ #include "common/types/any_type.h"   // IWYU pragma: export
+@@ -155,7 +155,7 @@
+ 
+   template <typename H>
+   friend H AbslHashValue(H state, const Type& type) {
+-    return absl::visit(
++    return std::visit(
+         [state = std::move(state)](const auto& alternative) mutable -> H {
+           return H::combine(std::move(state), alternative, alternative.kind());
+         },
+@@ -165,103 +165,103 @@
+   friend bool operator==(const Type& lhs, const Type& rhs);
+ 
+   friend std::ostream& operator<<(std::ostream& out, const Type& type) {
+-    return absl::visit(
++    return std::visit(
+         [&out](const auto& alternative) -> std::ostream& {
+           return out << alternative;
+         },
+         type.variant_);
+   }
+ 
+-  bool IsAny() const { return absl::holds_alternative<AnyType>(variant_); }
++  bool IsAny() const { return std::holds_alternative<AnyType>(variant_); }
+ 
+-  bool IsBool() const { return absl::holds_alternative<BoolType>(variant_); }
++  bool IsBool() const { return std::holds_alternative<BoolType>(variant_); }
+ 
+   bool IsBoolWrapper() const {
+-    return absl::holds_alternative<BoolWrapperType>(variant_);
++    return std::holds_alternative<BoolWrapperType>(variant_);
+   }
+ 
+-  bool IsBytes() const { return absl::holds_alternative<BytesType>(variant_); }
++  bool IsBytes() const { return std::holds_alternative<BytesType>(variant_); }
+ 
+   bool IsBytesWrapper() const {
+-    return absl::holds_alternative<BytesWrapperType>(variant_);
++    return std::holds_alternative<BytesWrapperType>(variant_);
+   }
+ 
+   bool IsDouble() const {
+-    return absl::holds_alternative<DoubleType>(variant_);
++    return std::holds_alternative<DoubleType>(variant_);
+   }
+ 
+   bool IsDoubleWrapper() const {
+-    return absl::holds_alternative<DoubleWrapperType>(variant_);
++    return std::holds_alternative<DoubleWrapperType>(variant_);
+   }
+ 
+   bool IsDuration() const {
+-    return absl::holds_alternative<DurationType>(variant_);
++    return std::holds_alternative<DurationType>(variant_);
+   }
+ 
+-  bool IsDyn() const { return absl::holds_alternative<DynType>(variant_); }
++  bool IsDyn() const { return std::holds_alternative<DynType>(variant_); }
+ 
+-  bool IsEnum() const { return absl::holds_alternative<EnumType>(variant_); }
++  bool IsEnum() const { return std::holds_alternative<EnumType>(variant_); }
+ 
+-  bool IsError() const { return absl::holds_alternative<ErrorType>(variant_); }
++  bool IsError() const { return std::holds_alternative<ErrorType>(variant_); }
+ 
+   bool IsFunction() const {
+-    return absl::holds_alternative<FunctionType>(variant_);
++    return std::holds_alternative<FunctionType>(variant_);
+   }
+ 
+-  bool IsInt() const { return absl::holds_alternative<IntType>(variant_); }
++  bool IsInt() const { return std::holds_alternative<IntType>(variant_); }
+ 
+   bool IsIntWrapper() const {
+-    return absl::holds_alternative<IntWrapperType>(variant_);
++    return std::holds_alternative<IntWrapperType>(variant_);
+   }
+ 
+-  bool IsList() const { return absl::holds_alternative<ListType>(variant_); }
++  bool IsList() const { return std::holds_alternative<ListType>(variant_); }
+ 
+-  bool IsMap() const { return absl::holds_alternative<MapType>(variant_); }
++  bool IsMap() const { return std::holds_alternative<MapType>(variant_); }
+ 
+   bool IsMessage() const {
+-    return absl::holds_alternative<MessageType>(variant_);
++    return std::holds_alternative<MessageType>(variant_);
+   }
+ 
+-  bool IsNull() const { return absl::holds_alternative<NullType>(variant_); }
++  bool IsNull() const { return std::holds_alternative<NullType>(variant_); }
+ 
+   bool IsOpaque() const {
+-    return absl::holds_alternative<OpaqueType>(variant_);
++    return std::holds_alternative<OpaqueType>(variant_);
+   }
+ 
+   bool IsOptional() const { return IsOpaque() && GetOpaque().IsOptional(); }
+ 
+   bool IsString() const {
+-    return absl::holds_alternative<StringType>(variant_);
++    return std::holds_alternative<StringType>(variant_);
+   }
+ 
+   bool IsStringWrapper() const {
+-    return absl::holds_alternative<StringWrapperType>(variant_);
++    return std::holds_alternative<StringWrapperType>(variant_);
+   }
+ 
+   bool IsStruct() const {
+-    return absl::holds_alternative<common_internal::BasicStructType>(
++    return std::holds_alternative<common_internal::BasicStructType>(
+                variant_) ||
+-           absl::holds_alternative<MessageType>(variant_);
++           std::holds_alternative<MessageType>(variant_);
+   }
+ 
+   bool IsTimestamp() const {
+-    return absl::holds_alternative<TimestampType>(variant_);
++    return std::holds_alternative<TimestampType>(variant_);
+   }
+ 
+   bool IsTypeParam() const {
+-    return absl::holds_alternative<TypeParamType>(variant_);
++    return std::holds_alternative<TypeParamType>(variant_);
+   }
+ 
+-  bool IsType() const { return absl::holds_alternative<TypeType>(variant_); }
++  bool IsType() const { return std::holds_alternative<TypeType>(variant_); }
+ 
+-  bool IsUint() const { return absl::holds_alternative<UintType>(variant_); }
++  bool IsUint() const { return std::holds_alternative<UintType>(variant_); }
+ 
+   bool IsUintWrapper() const {
+-    return absl::holds_alternative<UintWrapperType>(variant_);
++    return std::holds_alternative<UintWrapperType>(variant_);
+   }
+ 
+   bool IsUnknown() const {
+-    return absl::holds_alternative<UnknownType>(variant_);
++    return std::holds_alternative<UnknownType>(variant_);
+   }
+ 
+   bool IsWrapper() const {
+@@ -1136,7 +1136,7 @@
+   explicit operator bool() const;
+ 
+   bool IsMessage() const {
+-    return absl::holds_alternative<MessageTypeField>(variant_);
++    return std::holds_alternative<MessageTypeField>(variant_);
+   }
+ 
+   absl::optional<MessageTypeField> AsMessage() const;
+@@ -1145,7 +1145,7 @@
+   explicit operator MessageTypeField() const;
+ 
+  private:
+-  absl::variant<common_internal::BasicStructTypeField, MessageTypeField>
++  std::variant<common_internal::BasicStructTypeField, MessageTypeField>
+       variant_;
+ };
+ 
+diff -urN orig/common/types/struct_type.cc mod/common/types/struct_type.cc
+--- orig/common/types/struct_type.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/types/struct_type.cc	2026-09-28 10:01:47.132581701 +0000
+@@ -18,7 +18,7 @@
+ #include "absl/log/absl_check.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/type.h"
+ #include "common/types/types.h"
+ 
+@@ -26,7 +26,7 @@
+ 
+ absl::string_view StructType::name() const {
+   ABSL_DCHECK(*this);
+-  return absl::visit(
++  return std::visit(
+       absl::Overload([](std::monostate) { return absl::string_view(); },
+                      [](const common_internal::BasicStructType& alt) {
+                        return alt.name();
+@@ -37,7 +37,7 @@
+ 
+ TypeParameters StructType::GetParameters() const {
+   ABSL_DCHECK(*this);
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) { return TypeParameters(); },
+           [](const common_internal::BasicStructType& alt) {
+@@ -48,7 +48,7 @@
+ }
+ 
+ std::string StructType::DebugString() const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload([](std::monostate) { return std::string(); },
+                      [](common_internal::BasicStructType alt) {
+                        return alt.DebugString();
+@@ -58,7 +58,7 @@
+ }
+ 
+ absl::optional<MessageType> StructType::AsMessage() const {
+-  if (const auto* alt = absl::get_if<MessageType>(&variant_); alt != nullptr) {
++  if (const auto* alt = std::get_if<MessageType>(&variant_); alt != nullptr) {
+     return *alt;
+   }
+   return std::nullopt;
+@@ -66,11 +66,11 @@
+ 
+ MessageType StructType::GetMessage() const {
+   ABSL_DCHECK(IsMessage()) << DebugString();
+-  return absl::get<MessageType>(variant_);
++  return std::get<MessageType>(variant_);
+ }
+ 
+ common_internal::TypeVariant StructType::ToTypeVariant() const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) { return common_internal::TypeVariant(); },
+           [](common_internal::BasicStructType alt) {
+diff -urN orig/common/types/struct_type.h mod/common/types/struct_type.h
+--- orig/common/types/struct_type.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/types/struct_type.h	2026-09-28 10:01:47.132138381 +0000
+@@ -27,7 +27,7 @@
+ #include "absl/base/optimization.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/type_kind.h"
+ #include "common/types/basic_struct_type.h"
+ #include "common/types/message_type.h"
+@@ -61,7 +61,7 @@
+     if (ABSL_PREDICT_TRUE(other)) {
+       variant_.emplace<MessageType>(other);
+     } else {
+-      variant_.emplace<absl::monostate>();
++      variant_.emplace<std::monostate>();
+     }
+     return *this;
+   }
+@@ -71,7 +71,7 @@
+     if (ABSL_PREDICT_TRUE(other)) {
+       variant_.emplace<common_internal::BasicStructType>(other);
+     } else {
+-      variant_.emplace<absl::monostate>();
++      variant_.emplace<std::monostate>();
+     }
+     return *this;
+   }
+@@ -91,7 +91,7 @@
+   std::string DebugString() const;
+ 
+   bool IsMessage() const {
+-    return absl::holds_alternative<MessageType>(variant_);
++    return std::holds_alternative<MessageType>(variant_);
+   }
+ 
+   template <typename T>
+@@ -115,7 +115,7 @@
+   }
+ 
+   explicit operator bool() const {
+-    return !absl::holds_alternative<absl::monostate>(variant_);
++    return !std::holds_alternative<std::monostate>(variant_);
+   }
+ 
+  private:
+diff -urN orig/common/types/types.h mod/common/types/types.h
+--- orig/common/types/types.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/types/types.h	2026-09-28 10:01:47.130629480 +0000
+@@ -20,7 +20,7 @@
+ #include <type_traits>
+ 
+ #include "absl/meta/type_traits.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ 
+ namespace cel {
+ 
+@@ -81,7 +81,7 @@
+ inline constexpr bool IsTypeAlternativeV = IsTypeAlternative<T>::value;
+ 
+ using TypeVariant =
+-    absl::variant<DynType, AnyType, BoolType, BoolWrapperType, BytesType,
++    std::variant<DynType, AnyType, BoolType, BoolWrapperType, BytesType,
+                   BytesWrapperType, DoubleType, DoubleWrapperType, DurationType,
+                   EnumType, ErrorType, FunctionType, IntType, IntWrapperType,
+                   ListType, MapType, NullType, OpaqueType, StringType,
+@@ -90,7 +90,7 @@
+                   UintWrapperType, UnknownType>;
+ 
+ using StructTypeVariant =
+-    absl::variant<absl::monostate, BasicStructType, MessageType>;
++    std::variant<std::monostate, BasicStructType, MessageType>;
+ 
+ }  // namespace common_internal
+ 
+diff -urN orig/common/value.cc mod/common/value.cc
+--- orig/common/value.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/value.cc	2026-09-28 10:01:47.085673009 +0000
+@@ -38,7 +38,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/allocator.h"
+ #include "common/memory.h"
+ #include "common/optional_ref.h"
+@@ -934,7 +934,7 @@
+   ABSL_DCHECK_LT(index, reflection->FieldSize(*message, field));
+ 
+   std::string scratch;
+-  absl::visit(
++  std::visit(
+       absl::Overload(
+           [&](absl::string_view string) {
+             if (string.data() == scratch.data() &&
+@@ -1001,7 +1001,7 @@
+   ABSL_DCHECK_LT(index, reflection->FieldSize(*message, field));
+ 
+   std::string scratch;
+-  absl::visit(
++  std::visit(
+       absl::Overload(
+           [&](absl::string_view string) {
+             if (string.data() == scratch.data() &&
+@@ -1155,7 +1155,7 @@
+   std::string* absl_nonnull scratch;
+ 
+   Value operator()(well_known_types::BytesValue&& value) const {
+-    return absl::visit(absl::Overload(
++    return std::visit(absl::Overload(
+                            [&](absl::string_view string) -> BytesValue {
+                              if (string.empty()) {
+                                return BytesValue();
+@@ -1176,7 +1176,7 @@
+   }
+ 
+   Value operator()(well_known_types::StringValue&& value) const {
+-    return absl::visit(absl::Overload(
++    return std::visit(absl::Overload(
+                            [&](absl::string_view string) -> StringValue {
+                              if (string.empty()) {
+                                return StringValue();
+@@ -1197,7 +1197,7 @@
+   }
+ 
+   Value operator()(well_known_types::ListValue&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](well_known_types::ListValueConstRef value) -> ListValue {
+               auto* cloned = value.get().New(arena);
+@@ -1216,7 +1216,7 @@
+   }
+ 
+   Value operator()(well_known_types::Struct&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](well_known_types::StructConstRef value) -> MapValue {
+               auto* cloned = value.get().New(arena);
+@@ -1255,7 +1255,7 @@
+   std::string* absl_nonnull scratch;
+ 
+   Value operator()(well_known_types::BytesValue&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](absl::string_view string) -> BytesValue {
+               if (string.data() == scratch->data() &&
+@@ -1273,7 +1273,7 @@
+   }
+ 
+   Value operator()(well_known_types::StringValue&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](absl::string_view string) -> StringValue {
+               if (string.data() == scratch->data() &&
+@@ -1291,7 +1291,7 @@
+   }
+ 
+   Value operator()(well_known_types::ListValue&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](well_known_types::ListValueConstRef value)
+                 -> ParsedJsonListValue {
+@@ -1310,7 +1310,7 @@
+   }
+ 
+   Value operator()(well_known_types::Struct&& value) const {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](well_known_types::StructConstRef value) -> ParsedJsonMapValue {
+               return ParsedJsonMapValue(&value.get(),
+@@ -1361,7 +1361,7 @@
+   if (ABSL_PREDICT_FALSE(!status_or_adapted.ok())) {
+     return ErrorValue(std::move(status_or_adapted).status());
+   }
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(OwningWellKnownTypesValueVisitor{
+                          /* .arena = */ arena, /* .scratch = */ &scratch},
+                      [&](std::monostate) -> Value {
+@@ -1389,7 +1389,7 @@
+   if (ABSL_PREDICT_FALSE(!status_or_adapted.ok())) {
+     return ErrorValue(std::move(status_or_adapted).status());
+   }
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(OwningWellKnownTypesValueVisitor{
+                          /* .arena = */ arena, /* .scratch = */ &scratch},
+                      [&](std::monostate) -> Value {
+@@ -1419,7 +1419,7 @@
+   if (ABSL_PREDICT_FALSE(!adapted_value.ok())) {
+     return ErrorValue(std::move(adapted_value).status());
+   }
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(BorrowingWellKnownTypesValueVisitor{
+                          /* .message = */ message, /* .arena = */ arena,
+                          /* .scratch = */ &scratch},
+@@ -1453,7 +1453,7 @@
+   if (ABSL_PREDICT_FALSE(!adapted_value.ok())) {
+     return ErrorValue(std::move(adapted_value).status());
+   }
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(BorrowingWellKnownTypesValueVisitor{
+                          /* .message = */ message, /* .arena = */ arena,
+                          /* .scratch = */ &scratch},
+@@ -1553,7 +1553,7 @@
+       return BoolValue(reflection->GetBool(*message, field));
+     case google::protobuf::FieldDescriptor::TYPE_STRING: {
+       std::string scratch;
+-      return absl::visit(
++      return std::visit(
+           absl::Overload(
+               [&](absl::string_view string) -> StringValue {
+                 if (string.data() == scratch.data() &&
+@@ -1591,7 +1591,7 @@
+       }
+     case google::protobuf::FieldDescriptor::TYPE_BYTES: {
+       std::string scratch;
+-      return absl::visit(
++      return std::visit(
+           absl::Overload(
+               [&](absl::string_view string) -> BytesValue {
+                 if (string.data() == scratch.data() &&
+@@ -1682,7 +1682,7 @@
+       return BoolValue(reflection->GetRepeatedBool(*message, field, index));
+     case google::protobuf::FieldDescriptor::TYPE_STRING: {
+       std::string scratch;
+-      return absl::visit(
++      return std::visit(
+           absl::Overload(
+               [&](absl::string_view string) -> StringValue {
+                 if (string.data() == scratch.data() &&
+@@ -1716,7 +1716,7 @@
+       }
+     case google::protobuf::FieldDescriptor::TYPE_BYTES: {
+       std::string scratch;
+-      return absl::visit(
++      return std::visit(
+           absl::Overload(
+               [&](absl::string_view string) -> BytesValue {
+                 if (string.data() == scratch.data() &&
+@@ -2385,10 +2385,10 @@
+ }
+ 
+ #ifdef ABSL_HAVE_EXCEPTIONS
+-#define CEL_VALUE_THROW_BAD_VARIANT_ACCESS() throw absl::bad_variant_access()
++#define CEL_VALUE_THROW_BAD_VARIANT_ACCESS() throw std::bad_variant_access()
+ #else
+ #define CEL_VALUE_THROW_BAD_VARIANT_ACCESS() \
+-  ABSL_LOG(FATAL) << absl::bad_variant_access().what() /* Crash OK */
++  ABSL_LOG(FATAL) << std::bad_variant_access().what() /* Crash OK */
+ #endif
+ 
+ ListValue Value::GetList() const& {
+diff -urN orig/common/values/bytes_value_input_stream.h mod/common/values/bytes_value_input_stream.h
+--- orig/common/values/bytes_value_input_stream.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/bytes_value_input_stream.h	2026-09-28 10:01:47.125864787 +0000
+@@ -28,7 +28,7 @@
+ #include "absl/log/absl_check.h"
+ #include "absl/strings/cord.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "absl/utility/utility.h"
+ #include "common/internal/byte_string.h"
+ #include "common/values/bytes_value.h"
+@@ -47,7 +47,7 @@
+   ~BytesValueInputStream() override { AsVariant().~variant(); }
+ 
+   bool Next(const void** data, int* size) override {
+-    return absl::visit(
++    return std::visit(
+         [&data, &size](auto& alternative) -> bool {
+           return alternative.Next(data, size);
+         },
+@@ -55,19 +55,19 @@
+   }
+ 
+   void BackUp(int count) override {
+-    absl::visit(
++    std::visit(
+         [&count](auto& alternative) -> void { alternative.BackUp(count); },
+         AsVariant());
+   }
+ 
+   bool Skip(int count) override {
+-    return absl::visit(
++    return std::visit(
+         [&count](auto& alternative) -> bool { return alternative.Skip(count); },
+         AsVariant());
+   }
+ 
+   int64_t ByteCount() const override {
+-    return absl::visit(
++    return std::visit(
+         [](const auto& alternative) -> int64_t {
+           return alternative.ByteCount();
+         },
+@@ -75,7 +75,7 @@
+   }
+ 
+   bool ReadCord(absl::Cord* cord, int count) override {
+-    return absl::visit(
++    return std::visit(
+         [&cord, &count](auto& alternative) -> bool {
+           return alternative.ReadCord(cord, count);
+         },
+@@ -84,7 +84,7 @@
+ 
+  private:
+   using Variant =
+-      absl::variant<google::protobuf::io::ArrayInputStream, google::protobuf::io::CordInputStream>;
++      std::variant<google::protobuf::io::ArrayInputStream, google::protobuf::io::CordInputStream>;
+ 
+   void Construct(const BytesValue* absl_nonnull value) {
+     ABSL_DCHECK(value != nullptr);
+diff -urN orig/common/values/bytes_value_output_stream.h mod/common/values/bytes_value_output_stream.h
+--- orig/common/values/bytes_value_output_stream.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/bytes_value_output_stream.h	2026-09-28 10:01:47.123494049 +0000
+@@ -28,7 +28,7 @@
+ #include "absl/functional/overload.h"
+ #include "absl/strings/cord.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "absl/utility/utility.h"
+ #include "common/internal/byte_string.h"
+ #include "common/values/bytes_value.h"
+@@ -49,7 +49,7 @@
+   }
+ 
+   bool Next(void** data, int* size) override {
+-    return absl::visit(absl::Overload(
++    return std::visit(absl::Overload(
+                            [&data, &size](String& string) -> bool {
+                              return string.stream.Next(data, size);
+                            },
+@@ -60,7 +60,7 @@
+   }
+ 
+   void BackUp(int count) override {
+-    absl::visit(
++    std::visit(
+         absl::Overload(
+             [&count](String& string) -> void { string.stream.BackUp(count); },
+             [&count](Cord& cord) -> void { cord.BackUp(count); }),
+@@ -68,7 +68,7 @@
+   }
+ 
+   int64_t ByteCount() const override {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [](const String& string) -> int64_t {
+               return string.stream.ByteCount();
+@@ -78,7 +78,7 @@
+   }
+ 
+   bool WriteAliasedRaw(const void* data, int size) override {
+-    return absl::visit(absl::Overload(
++    return std::visit(absl::Overload(
+                            [&data, &size](String& string) -> bool {
+                              return string.stream.WriteAliasedRaw(data, size);
+                            },
+@@ -89,7 +89,7 @@
+   }
+ 
+   bool AllowsAliasing() const override {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [](const String& string) -> bool {
+               return string.stream.AllowsAliasing();
+@@ -99,7 +99,7 @@
+   }
+ 
+   bool WriteCord(const absl::Cord& out) override {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&out](String& string) -> bool {
+               return string.stream.WriteCord(out);
+@@ -109,7 +109,7 @@
+   }
+ 
+   BytesValue Consume() && {
+-    return absl::visit(absl::Overload(
++    return std::visit(absl::Overload(
+                            [](String& string) -> BytesValue {
+                              return BytesValue(string.arena,
+                                                std::move(string.target));
+@@ -132,7 +132,7 @@
+ 
+   using Cord = google::protobuf::io::CordOutputStream;
+ 
+-  using Variant = absl::variant<String, Cord>;
++  using Variant = std::variant<String, Cord>;
+ 
+   void Construct(const BytesValue& value, google::protobuf::Arena* absl_nullable arena) {
+     switch (value.value_.GetKind()) {
+diff -urN orig/common/values/message_value.cc mod/common/values/message_value.cc
+--- orig/common/values/message_value.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/message_value.cc	2026-09-28 10:01:47.123738328 +0000
+@@ -27,7 +27,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/attribute.h"
+ #include "common/optional_ref.h"
+ #include "common/value.h"
+@@ -44,7 +44,7 @@
+ 
+ const google::protobuf::Descriptor* absl_nonnull MessageValue::GetDescriptor() const {
+   ABSL_CHECK(*this);  // Crash OK
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> const google::protobuf::Descriptor* absl_nonnull {
+             ABSL_UNREACHABLE();
+@@ -57,7 +57,7 @@
+ }
+ 
+ std::string MessageValue::DebugString() const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload([](std::monostate) -> std::string { return "INVALID"; },
+                      [](const ParsedMessageValue& alternative) -> std::string {
+                        return alternative.DebugString();
+@@ -67,7 +67,7 @@
+ 
+ bool MessageValue::IsZeroValue() const {
+   ABSL_DCHECK(*this);
+-  return absl::visit(
++  return std::visit(
+       absl::Overload([](std::monostate) -> bool { return true; },
+                      [](const ParsedMessageValue& alternative) -> bool {
+                        return alternative.IsZeroValue();
+@@ -79,7 +79,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::io::ZeroCopyOutputStream* absl_nonnull output) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -97,7 +97,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Message* absl_nonnull json) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -115,7 +115,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Message* absl_nonnull json) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -134,7 +134,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena, Value* absl_nonnull result) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -153,7 +153,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena, Value* absl_nonnull result) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -173,7 +173,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena, Value* absl_nonnull result) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -190,7 +190,7 @@
+ 
+ absl::StatusOr<bool> MessageValue::HasFieldByName(
+     absl::string_view name) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::StatusOr<bool> {
+             return absl::InternalError(
+@@ -204,7 +204,7 @@
+ }
+ 
+ absl::StatusOr<bool> MessageValue::HasFieldByNumber(int64_t number) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::StatusOr<bool> {
+             return absl::InternalError(
+@@ -222,7 +222,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -242,7 +242,7 @@
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena, Value* absl_nonnull result,
+     int* absl_nonnull count) const {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](std::monostate) -> absl::Status {
+             return absl::InternalError(
+@@ -258,7 +258,7 @@
+ }
+ 
+ cel::optional_ref<const ParsedMessageValue> MessageValue::AsParsed() const& {
+-  if (const auto* alternative = absl::get_if<ParsedMessageValue>(&variant_);
++  if (const auto* alternative = std::get_if<ParsedMessageValue>(&variant_);
+       alternative != nullptr) {
+     return *alternative;
+   }
+@@ -266,7 +266,7 @@
+ }
+ 
+ absl::optional<ParsedMessageValue> MessageValue::AsParsed() && {
+-  if (auto* alternative = absl::get_if<ParsedMessageValue>(&variant_);
++  if (auto* alternative = std::get_if<ParsedMessageValue>(&variant_);
+       alternative != nullptr) {
+     return std::move(*alternative);
+   }
+@@ -275,32 +275,32 @@
+ 
+ const ParsedMessageValue& MessageValue::GetParsed() const& {
+   ABSL_DCHECK(IsParsed());
+-  return absl::get<ParsedMessageValue>(variant_);
++  return std::get<ParsedMessageValue>(variant_);
+ }
+ 
+ ParsedMessageValue MessageValue::GetParsed() && {
+   ABSL_DCHECK(IsParsed());
+-  return absl::get<ParsedMessageValue>(std::move(variant_));
++  return std::get<ParsedMessageValue>(std::move(variant_));
+ }
+ 
+ common_internal::ValueVariant MessageValue::ToValueVariant() const& {
+-  return common_internal::ValueVariant(absl::get<ParsedMessageValue>(variant_));
++  return common_internal::ValueVariant(std::get<ParsedMessageValue>(variant_));
+ }
+ 
+ common_internal::ValueVariant MessageValue::ToValueVariant() && {
+   return common_internal::ValueVariant(
+-      absl::get<ParsedMessageValue>(std::move(variant_)));
++      std::get<ParsedMessageValue>(std::move(variant_)));
+ }
+ 
+ common_internal::StructValueVariant MessageValue::ToStructValueVariant()
+     const& {
+   return common_internal::StructValueVariant(
+-      absl::get<ParsedMessageValue>(variant_));
++      std::get<ParsedMessageValue>(variant_));
+ }
+ 
+ common_internal::StructValueVariant MessageValue::ToStructValueVariant() && {
+   return common_internal::StructValueVariant(
+-      absl::get<ParsedMessageValue>(std::move(variant_)));
++      std::get<ParsedMessageValue>(std::move(variant_)));
+ }
+ 
+ }  // namespace cel
+diff -urN orig/common/values/message_value.h mod/common/values/message_value.h
+--- orig/common/values/message_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/message_value.h	2026-09-28 10:01:47.126346486 +0000
+@@ -36,7 +36,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "absl/utility/utility.h"
+ #include "base/attribute.h"
+ #include "common/arena.h"
+@@ -150,7 +150,7 @@
+   using StructValueMixin::Qualify;
+ 
+   bool IsParsed() const {
+-    return absl::holds_alternative<ParsedMessageValue>(variant_);
++    return std::holds_alternative<ParsedMessageValue>(variant_);
+   }
+ 
+   template <typename T>
+@@ -225,7 +225,7 @@
+   }
+ 
+   explicit operator bool() const {
+-    return !absl::holds_alternative<absl::monostate>(variant_);
++    return !std::holds_alternative<std::monostate>(variant_);
+   }
+ 
+   friend void swap(MessageValue& lhs, MessageValue& rhs) noexcept {
+@@ -245,7 +245,7 @@
+   common_internal::StructValueVariant ToStructValueVariant() const&;
+   common_internal::StructValueVariant ToStructValueVariant() &&;
+ 
+-  absl::variant<absl::monostate, ParsedMessageValue> variant_;
++  std::variant<std::monostate, ParsedMessageValue> variant_;
+ };
+ 
+ inline std::ostream& operator<<(std::ostream& out, const MessageValue& value) {
+@@ -255,7 +255,7 @@
+ template <>
+ struct ArenaTraits<MessageValue> {
+   static bool trivially_destructible(const MessageValue& value) {
+-    return absl::visit(
++    return std::visit(
+         [](const auto& alternative) -> bool {
+           return ArenaTraits<>::trivially_destructible(alternative);
+         },
+diff -urN orig/common/values/parsed_json_list_value.cc mod/common/values/parsed_json_list_value.cc
+--- orig/common/values/parsed_json_list_value.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/parsed_json_list_value.cc	2026-09-28 10:01:47.130339677 +0000
+@@ -27,7 +27,7 @@
+ #include "absl/strings/cord.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/memory.h"
+ #include "common/value.h"
+ #include "common/values/parsed_json_value.h"
+@@ -427,7 +427,7 @@
+       for (const auto& element : reflection.Values(*value_)) {
+         if (value_reflection.GetKindCase(element) ==
+                 google::protobuf::Value::kStringValue &&
+-            absl::visit(
++            std::visit(
+                 [&](const auto& alternative) -> bool {
+                   return *other_value == alternative;
+                 },
+diff -urN orig/common/values/parsed_json_value.cc mod/common/values/parsed_json_value.cc
+--- orig/common/values/parsed_json_value.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/parsed_json_value.cc	2026-09-28 10:01:47.127724609 +0000
+@@ -24,7 +24,7 @@
+ #include "absl/strings/cord.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/allocator.h"
+ #include "common/memory.h"
+ #include "common/value.h"
+@@ -66,7 +66,7 @@
+       return DoubleValue(reflection.GetNumberValue(*message));
+     case google::protobuf::Value::kStringValue: {
+       std::string scratch;
+-      return absl::visit(
++      return std::visit(
+           absl::Overload(
+               [&](absl::string_view string) -> StringValue {
+                 if (string.empty()) {
+diff -urN orig/eval/compiler/comprehension_vulnerability_check.cc mod/eval/compiler/comprehension_vulnerability_check.cc
+--- orig/eval/compiler/comprehension_vulnerability_check.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/compiler/comprehension_vulnerability_check.cc	2026-09-28 10:01:47.099913976 +0000
+@@ -20,7 +20,7 @@
+ 
+ #include "absl/status/status.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/builtins.h"
+ #include "common/ast.h"
+ #include "common/constant.h"
+@@ -236,7 +236,7 @@
+ 
+     int operator()(const UnspecifiedExpr&) { return 0; }
+   } handler{expr, var_name};
+-  return absl::visit(handler, expr.kind());
++  return std::visit(handler, expr.kind());
+ }
+ 
+ bool ComprehensionHasMemoryExhaustionVulnerability(
+diff -urN orig/eval/compiler/flat_expr_builder.cc mod/eval/compiler/flat_expr_builder.cc
+--- orig/eval/compiler/flat_expr_builder.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/compiler/flat_expr_builder.cc	2026-09-28 10:01:47.100683304 +0000
+@@ -45,7 +45,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/strings/strip.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/ast.h"
+ #include "base/builtins.h"
+ #include "base/type_provider.h"
+@@ -622,7 +622,7 @@
+   }
+ 
+   void PreVisitExpr(const cel::Expr& expr) override {
+-    ValidateOrError(!absl::holds_alternative<cel::UnspecifiedExpr>(expr.kind()),
++    ValidateOrError(!std::holds_alternative<cel::UnspecifiedExpr>(expr.kind()),
+                     "Invalid empty expression");
+     if (!progress_status_.ok()) {
+       return;
+diff -urN orig/eval/compiler/flat_expr_builder_extensions.cc mod/eval/compiler/flat_expr_builder_extensions.cc
+--- orig/eval/compiler/flat_expr_builder_extensions.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/compiler/flat_expr_builder_extensions.cc	2026-09-28 10:01:47.102281528 +0000
+@@ -28,7 +28,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/expr.h"
+ #include "eval/eval/direct_expression_step.h"
+ #include "eval/eval/evaluator_core.h"
+@@ -49,7 +49,7 @@
+     return;
+   }
+   auto* child_alternative =
+-      absl::get_if<Subexpression*>(&parent->elements()[0]);
++      std::get_if<Subexpression*>(&parent->elements()[0]);
+   if (child_alternative == nullptr) {
+     return;
+   }
+@@ -88,7 +88,7 @@
+       continue;
+     }
+     for (const auto& elem : expr->elements()) {
+-      if (auto* child = absl::get_if<Subexpression*>(&elem); child != nullptr) {
++      if (auto* child = std::get_if<Subexpression*>(&elem); child != nullptr) {
+         to_expand.push_back(*child);
+       } else {
+         size += 1;
+@@ -99,13 +99,13 @@
+ }
+ 
+ std::optional<int> Subexpression::RecursiveDependencyDepth() const {
+-  auto* tree = absl::get_if<TreePlan>(&program_);
++  auto* tree = std::get_if<TreePlan>(&program_);
+   int depth = 0;
+   if (tree == nullptr) {
+     return std::nullopt;
+   }
+   for (const auto& element : *tree) {
+-    auto* subexpression = absl::get_if<Subexpression*>(&element);
++    auto* subexpression = std::get_if<Subexpression*>(&element);
+     if (subexpression == nullptr) {
+       return std::nullopt;
+     }
+@@ -119,13 +119,13 @@
+ 
+ std::vector<std::unique_ptr<DirectExpressionStep>>
+ Subexpression::ExtractRecursiveDependencies() const {
+-  auto* tree = absl::get_if<TreePlan>(&program_);
++  auto* tree = std::get_if<TreePlan>(&program_);
+   std::vector<std::unique_ptr<DirectExpressionStep>> dependencies;
+   if (tree == nullptr) {
+     return {};
+   }
+   for (const auto& element : *tree) {
+-    auto* subexpression = absl::get_if<Subexpression*>(&element);
++    auto* subexpression = std::get_if<Subexpression*>(&element);
+     if (subexpression == nullptr) {
+       return {};
+     }
+@@ -144,10 +144,10 @@
+   }
+   for (auto iter = elements().begin(); iter != elements().end(); ++iter) {
+     Subexpression::Element& element = *iter;
+-    if (!absl::holds_alternative<Subexpression*>(element)) {
++    if (!std::holds_alternative<Subexpression*>(element)) {
+       continue;
+     }
+-    Subexpression* candidate = absl::get<Subexpression*>(element);
++    Subexpression* candidate = std::get<Subexpression*>(element);
+     if (candidate != child) {
+       continue;
+     }
+@@ -183,7 +183,7 @@
+   int sum = 0;
+   for (int i = start; i < end; ++i) {
+     const auto& element = elements()[i];
+-    if (auto* subexpr = absl::get_if<Subexpression*>(&element);
++    if (auto* subexpr = std::get_if<Subexpression*>(&element);
+         subexpr != nullptr) {
+       sum += (*subexpr)->ComputeSize();
+     } else {
+@@ -231,14 +231,14 @@
+     size_t i = offset;
+     for (; i < size; ++i) {
+       auto& element = elements[i];
+-      if (auto* child = absl::get_if<Subexpression*>(&element);
++      if (auto* child = std::get_if<Subexpression*>(&element);
+           child != nullptr) {
+         // push resume then child so child elements are processed first.
+         flatten_stack.push_back({subexpr, i + 1});
+         flatten_stack.push_back({*child, 0});
+         break;
+       } else if (auto* step =
+-                     absl::get_if<std::unique_ptr<ExpressionStep>>(&element);
++                     std::get_if<std::unique_ptr<ExpressionStep>>(&element);
+                  step != nullptr) {
+         flat.push_back(std::move(*step));
+       } else {
+@@ -254,7 +254,7 @@
+ 
+ Subexpression::RecursiveProgram Subexpression::ExtractRecursiveProgram() {
+   ABSL_DCHECK(IsRecursive());
+-  auto result = std::move(absl::get<RecursiveProgram>(program_));
++  auto result = std::move(std::get<RecursiveProgram>(program_));
+   program_.emplace<std::vector<Subexpression::Element>>();
+   return result;
+ }
+diff -urN orig/eval/compiler/flat_expr_builder_extensions.h mod/eval/compiler/flat_expr_builder_extensions.h
+--- orig/eval/compiler/flat_expr_builder_extensions.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/compiler/flat_expr_builder_extensions.h	2026-09-28 10:01:47.101113302 +0000
+@@ -35,7 +35,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/ast.h"
+ #include "base/type_provider.h"
+ #include "common/expr.h"
+@@ -84,7 +84,7 @@
+   // Must be tied to a ProgramBuilder to coordinate relationships.
+   class Subexpression {
+    private:
+-    using Element = absl::variant<std::unique_ptr<ExpressionStep>,
++    using Element = std::variant<std::unique_ptr<ExpressionStep>,
+                                   Subexpression* absl_nonnull>;
+ 
+     using TreePlan = std::vector<Element>;
+@@ -120,7 +120,7 @@
+     }
+ 
+     void AddSubexpression(Subexpression* absl_nonnull expr) {
+-      ABSL_DCHECK(absl::holds_alternative<TreePlan>(program_));
++      ABSL_DCHECK(std::holds_alternative<TreePlan>(program_));
+       ABSL_DCHECK(owner_ == expr->owner_);
+       elements().push_back(expr);
+     }
+@@ -129,13 +129,13 @@
+     //
+     // Value is undefined if in the expression has already been flattened.
+     std::vector<Element>& elements() {
+-      ABSL_DCHECK(absl::holds_alternative<TreePlan>(program_));
+-      return absl::get<TreePlan>(program_);
++      ABSL_DCHECK(std::holds_alternative<TreePlan>(program_));
++      return std::get<TreePlan>(program_);
+     }
+ 
+     const std::vector<Element>& elements() const {
+-      ABSL_DCHECK(absl::holds_alternative<TreePlan>(program_));
+-      return absl::get<TreePlan>(program_);
++      ABSL_DCHECK(std::holds_alternative<TreePlan>(program_));
++      return std::get<TreePlan>(program_);
+     }
+ 
+     // Accessor for program steps.
+@@ -143,13 +143,13 @@
+     // Value is undefined if in the expression has not yet been flattened.
+     std::vector<std::unique_ptr<const ExpressionStep>>& flattened_elements() {
+       ABSL_DCHECK(IsFlattened());
+-      return absl::get<FlattenedPlan>(program_);
++      return std::get<FlattenedPlan>(program_);
+     }
+ 
+     const std::vector<std::unique_ptr<const ExpressionStep>>&
+     flattened_elements() const {
+       ABSL_DCHECK(IsFlattened());
+-      return absl::get<FlattenedPlan>(program_);
++      return std::get<FlattenedPlan>(program_);
+     }
+ 
+     void set_recursive_program(std::unique_ptr<DirectExpressionStep> step,
+@@ -159,7 +159,7 @@
+ 
+     const RecursiveProgram& recursive_program() const {
+       ABSL_DCHECK(IsRecursive());
+-      return absl::get<RecursiveProgram>(program_);
++      return std::get<RecursiveProgram>(program_);
+     }
+ 
+     absl::optional<int> RecursiveDependencyDepth() const;
+@@ -170,7 +170,7 @@
+     RecursiveProgram ExtractRecursiveProgram();
+ 
+     bool IsRecursive() const {
+-      return absl::holds_alternative<RecursiveProgram>(program_);
++      return std::holds_alternative<RecursiveProgram>(program_);
+     }
+ 
+     // Compute the current number of program steps in this subexpression and
+@@ -195,7 +195,7 @@
+     void Flatten();
+ 
+     bool IsFlattened() const {
+-      return absl::holds_alternative<FlattenedPlan>(program_);
++      return std::holds_alternative<FlattenedPlan>(program_);
+     }
+ 
+     // Extract a flattened subexpression into the given vector. Transferring
+@@ -213,7 +213,7 @@
+     //
+     // This adds complexity, but supports swapping to a flat representation as
+     // needed.
+-    absl::variant<TreePlan, FlattenedPlan, RecursiveProgram> program_;
++    std::variant<TreePlan, FlattenedPlan, RecursiveProgram> program_;
+ 
+     const cel::Expr* self_;
+     const cel::Expr* absl_nullable parent_;
+diff -urN orig/eval/internal/cel_value_equal_test.cc mod/eval/internal/cel_value_equal_test.cc
+--- orig/eval/internal/cel_value_equal_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/internal/cel_value_equal_test.cc	2026-09-28 10:01:47.113286814 +0000
+@@ -31,7 +31,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/cel_value.h"
+ #include "eval/public/containers/container_backed_list_impl.h"
+ #include "eval/public/containers/container_backed_map_impl.h"
+diff -urN orig/eval/public/ast_rewrite.cc mod/eval/public/ast_rewrite.cc
+--- orig/eval/public/ast_rewrite.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/ast_rewrite.cc	2026-09-28 10:01:47.107536985 +0000
+@@ -19,7 +19,7 @@
+ 
+ #include "cel/expr/syntax.pb.h"
+ #include "absl/log/absl_log.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/ast_visitor.h"
+ #include "eval/public/source_position.h"
+ 
+@@ -113,14 +113,14 @@
+     record_variant = record;
+   }
+ 
+-  Expr* expr() const { return absl::get<ExprRecord>(record_variant).expr; }
++  Expr* expr() const { return std::get<ExprRecord>(record_variant).expr; }
+ 
+   const SourceInfo* source_info() const {
+-    return absl::get<ExprRecord>(record_variant).source_info;
++    return std::get<ExprRecord>(record_variant).source_info;
+   }
+ 
+   bool IsExprRecord() const {
+-    return absl::holds_alternative<ExprRecord>(record_variant);
++    return std::holds_alternative<ExprRecord>(record_variant);
+   }
+ 
+   StackRecordKind record_variant;
+@@ -163,7 +163,7 @@
+ };
+ 
+ void PreVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PreVisitor{visitor}, record.record_variant);
++  std::visit(PreVisitor{visitor}, record.record_variant);
+ }
+ 
+ struct PostVisitor {
+@@ -223,7 +223,7 @@
+ };
+ 
+ void PostVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PostVisitor{visitor}, record.record_variant);
++  std::visit(PostVisitor{visitor}, record.record_variant);
+ }
+ 
+ void PushSelectDeps(Select* select_expr, const SourceInfo* source_info,
+@@ -337,7 +337,7 @@
+ 
+ void PushDependencies(const StackRecord& record, std::stack<StackRecord>& stack,
+                       const RewriteTraversalOptions& options) {
+-  absl::visit(PushDepsVisitor{stack, options}, record.record_variant);
++  std::visit(PushDepsVisitor{stack, options}, record.record_variant);
+ }
+ 
+ }  // namespace
+diff -urN orig/eval/public/ast_traverse.cc mod/eval/public/ast_traverse.cc
+--- orig/eval/public/ast_traverse.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/ast_traverse.cc	2026-09-28 10:01:47.108444797 +0000
+@@ -19,7 +19,7 @@
+ 
+ #include "cel/expr/syntax.pb.h"
+ #include "absl/log/absl_log.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/ast_visitor.h"
+ #include "eval/public/source_position.h"
+ 
+@@ -167,7 +167,7 @@
+ };
+ 
+ void PreVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PreVisitor{visitor}, record.record_variant);
++  std::visit(PreVisitor{visitor}, record.record_variant);
+ }
+ 
+ struct PostVisitor {
+@@ -225,7 +225,7 @@
+ };
+ 
+ void PostVisit(const StackRecord& record, AstVisitor* visitor) {
+-  absl::visit(PostVisitor{visitor}, record.record_variant);
++  std::visit(PostVisitor{visitor}, record.record_variant);
+ }
+ 
+ void PushSelectDeps(const Select* select_expr, const SourceInfo* source_info,
+@@ -340,7 +340,7 @@
+ 
+ void PushDependencies(const StackRecord& record, std::stack<StackRecord>& stack,
+                       const TraversalOptions& options) {
+-  absl::visit(PushDepsVisitor{stack, options}, record.record_variant);
++  std::visit(PushDepsVisitor{stack, options}, record.record_variant);
+ }
+ 
+ }  // namespace
+diff -urN orig/eval/public/cel_attribute.cc mod/eval/public/cel_attribute.cc
+--- orig/eval/public/cel_attribute.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/cel_attribute.cc	2026-09-28 10:01:47.111100945 +0000
+@@ -82,7 +82,7 @@
+   std::vector<CelAttributeQualifierPattern> path;
+   path.reserve(path_spec.size());
+   for (const auto& spec_elem : path_spec) {
+-    path.emplace_back(absl::visit(QualifierVisitor(), spec_elem));
++    path.emplace_back(std::visit(QualifierVisitor(), spec_elem));
+   }
+   return CelAttributePattern(std::string(variable), std::move(path));
+ }
+diff -urN orig/eval/public/cel_attribute.h mod/eval/public/cel_attribute.h
+--- orig/eval/public/cel_attribute.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/cel_attribute.h	2026-09-28 10:01:47.110343336 +0000
+@@ -20,7 +20,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/strings/substitute.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/attribute.h"
+ #include "eval/public/cel_value.h"
+ 
+@@ -55,7 +55,7 @@
+ // must outlive the returned pattern.
+ CelAttributePattern CreateCelAttributePattern(
+     absl::string_view variable,
+-    std::initializer_list<absl::variant<absl::string_view, int64_t, uint64_t,
++    std::initializer_list<std::variant<absl::string_view, int64_t, uint64_t,
+                                         bool, CelAttributeQualifierPattern>>
+         path_spec = {});
+ 
+diff -urN orig/eval/public/cel_value.h mod/eval/public/cel_value.h
+--- orig/eval/public/cel_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/cel_value.h	2026-09-28 10:01:47.111738384 +0000
+@@ -31,7 +31,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/kind.h"
+ #include "common/memory.h"
+ #include "common/native_type.h"
+@@ -121,8 +121,8 @@
+   using CelTypeHolder = StringHolderBase<2>;
+ 
+   // Type for CEL Null values. Implemented as a monostate to behave well in
+-  // absl::variant.
+-  using NullType = absl::monostate;
++  // std::variant.
++  using NullType = std::monostate;
+ 
+   // GCC: fully qualified to avoid change of meaning error.
+   using MessageWrapper = google::api::expr::runtime::MessageWrapper;
+diff -urN orig/eval/public/cel_value_internal.h mod/eval/public/cel_value_internal.h
+--- orig/eval/public/cel_value_internal.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/cel_value_internal.h	2026-09-28 10:01:47.110590803 +0000
+@@ -20,7 +20,7 @@
+ #include <utility>
+ 
+ #include "absl/base/macros.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/message_wrapper.h"
+ #include "google/protobuf/message.h"
+ 
+@@ -48,7 +48,7 @@
+ struct TypeIndexer<N, 1, Type, TypeToTest>
+     : public IndexDef<N, std::is_same<Type, TypeToTest>::value> {};
+ 
+-// ValueHolder class wraps absl::variant, adding IndexOf metafunction to it.
++// ValueHolder class wraps std::variant, adding IndexOf metafunction to it.
+ template <class... Args>
+ class ValueHolder {
+  public:
+@@ -61,23 +61,23 @@
+ 
+   template <class T>
+   const T* get() const {
+-    return absl::get_if<T>(&value_);
++    return std::get_if<T>(&value_);
+   }
+ 
+   template <class T>
+   bool is() const {
+-    return absl::holds_alternative<T>(value_);
++    return std::holds_alternative<T>(value_);
+   }
+ 
+   int index() const { return value_.index(); }
+ 
+   template <class ReturnType, class Op>
+   ReturnType Visit(Op&& op) const {
+-    return absl::visit(std::forward<Op>(op), value_);
++    return std::visit(std::forward<Op>(op), value_);
+   }
+ 
+  private:
+-  absl::variant<Args...> value_;
++  std::variant<Args...> value_;
+ };
+ 
+ // Adapter for visitor clients that depend on google::protobuf::Message as a variant type.
+diff -urN orig/eval/public/equality_function_registrar_test.cc mod/eval/public/equality_function_registrar_test.cc
+--- orig/eval/public/equality_function_registrar_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/equality_function_registrar_test.cc	2026-09-28 10:01:47.108278557 +0000
+@@ -34,7 +34,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/activation.h"
+ #include "eval/public/cel_builtins.h"
+ #include "eval/public/cel_expr_builder_factory.h"
+@@ -618,10 +618,10 @@
+   ASSERT_OK_AND_ASSIGN(auto result,
+                        Evaluate(test_case.expr, test_case.lhs, test_case.rhs));
+ 
+-  if (absl::holds_alternative<bool>(test_case.result)) {
+-    EXPECT_THAT(result, test::IsCelBool(absl::get<bool>(test_case.result)));
++  if (std::holds_alternative<bool>(test_case.result)) {
++    EXPECT_THAT(result, test::IsCelBool(std::get<bool>(test_case.result)));
+   } else {
+-    switch (absl::get<EqualityTestCase::ErrorKind>(test_case.result)) {
++    switch (std::get<EqualityTestCase::ErrorKind>(test_case.result)) {
+       case EqualityTestCase::ErrorKind::kMissingOverload:
+         EXPECT_THAT(result, test::IsCelError(
+                                 StatusIs(absl::StatusCode::kUnknown,
+diff -urN orig/eval/public/structs/cel_proto_wrap_util.cc mod/eval/public/structs/cel_proto_wrap_util.cc
+--- orig/eval/public/structs/cel_proto_wrap_util.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/structs/cel_proto_wrap_util.cc	2026-09-28 10:01:47.115873380 +0000
+@@ -40,7 +40,7 @@
+ #include "absl/synchronization/mutex.h"
+ #include "absl/time/time.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "eval/public/cel_value.h"
+ #include "eval/public/structs/protobuf_value_factory.h"
+ #include "internal/overflow.h"
+@@ -291,7 +291,7 @@
+                         const DescriptorPool* descriptor_pool,
+                         MessageFactory* message_factory) {
+     std::string type_url_string_scratch;
+-    absl::string_view type_url_string = absl::visit(
++    absl::string_view type_url_string = std::visit(
+         absl::Overload([](absl::string_view string)
+                            -> absl::string_view { return string; },
+                        [&type_url_string_scratch](
+@@ -329,7 +329,7 @@
+ 
+     Message* nested_message = prototype->New(arena_);
+     bool ok =
+-        absl::visit(absl::Overload(
++        std::visit(absl::Overload(
+                         [nested_message](absl::string_view string) -> bool {
+                           return nested_message->ParsePartialFromString(string);
+                         },
+@@ -475,7 +475,7 @@
+                              message->GetDescriptor()),
+                          _.With(ReturnCelValueError(arena_)));
+     std::string scratch;
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](absl::string_view string) -> CelValue {
+               if (string.data() == scratch.data() &&
+@@ -515,7 +515,7 @@
+                              message->GetDescriptor()),
+                          _.With(ReturnCelValueError(arena_)));
+     std::string scratch;
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](absl::string_view string) -> CelValue {
+               if (string.data() == scratch.data() &&
+diff -urN orig/extensions/math_ext_macros.cc mod/extensions/math_ext_macros.cc
+--- orig/extensions/math_ext_macros.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/math_ext_macros.cc	2026-09-28 10:01:47.066512313 +0000
+@@ -23,7 +23,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/ast.h"
+ #include "common/constant.h"
+ #include "parser/macro.h"
+@@ -46,7 +46,7 @@
+ }
+ 
+ bool IsValidArgType(const Expr &arg) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload([](const UnspecifiedExpr &) -> bool { return false; },
+                      [](const Constant &const_expr) -> bool {
+                        return const_expr.has_double_value() ||
+diff -urN orig/extensions/proto_ext.cc mod/extensions/proto_ext.cc
+--- orig/extensions/proto_ext.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/proto_ext.cc	2026-09-28 10:01:47.066172332 +0000
+@@ -24,7 +24,7 @@
+ #include "absl/strings/str_cat.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/expr.h"
+ #include "compiler/compiler.h"
+ #include "internal/status_macros.h"
+@@ -41,7 +41,7 @@
+ static constexpr char kHasExt[] = "hasExt";
+ 
+ absl::optional<std::string> ValidateExtensionIdentifier(const Expr& expr) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](const SelectExpr& select_expr) -> absl::optional<std::string> {
+             if (select_expr.test_only()) {
+diff -urN orig/extensions/protobuf/internal/qualify.cc mod/extensions/protobuf/internal/qualify.cc
+--- orig/extensions/protobuf/internal/qualify.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/protobuf/internal/qualify.cc	2026-09-28 10:01:47.096297647 +0000
+@@ -23,7 +23,7 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/attribute.h"
+ #include "base/builtins.h"
+ #include "common/kind.h"
+@@ -175,7 +175,7 @@
+ 
+ absl::Status ProtoQualifyState::ApplySelectQualifier(
+     const cel::SelectQualifier& qualifier, MemoryManagerRef memory_manager) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [&](const cel::AttributeQualifier& qualifier) -> absl::Status {
+             if (repeated_field_desc_ == nullptr) {
+@@ -197,8 +197,8 @@
+ absl::Status ProtoQualifyState::ApplyLastQualifierHas(
+     const cel::SelectQualifier& qualifier, MemoryManagerRef memory_manager) {
+   const cel::FieldSpecifier* specifier =
+-      absl::get_if<cel::FieldSpecifier>(&qualifier);
+-  return absl::visit(
++      std::get_if<cel::FieldSpecifier>(&qualifier);
++  return std::visit(
+       absl::Overload(
+           [&](const cel::AttributeQualifier& qualifier) mutable
+           -> absl::Status {
+@@ -231,7 +231,7 @@
+ 
+ absl::Status ProtoQualifyState::ApplyLastQualifierGet(
+     const cel::SelectQualifier& qualifier, MemoryManagerRef memory_manager) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [&](const cel::AttributeQualifier& attr_qualifier) mutable
+           -> absl::Status {
+diff -urN orig/extensions/select_optimization.cc mod/extensions/select_optimization.cc
+--- orig/extensions/select_optimization.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/extensions/select_optimization.cc	2026-09-28 10:01:47.067839140 +0000
+@@ -33,7 +33,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "base/attribute.h"
+ #include "base/builtins.h"
+ #include "common/ast.h"
+@@ -145,7 +145,7 @@
+       });
+ 
+   for (const auto& instruction : select_instructions) {
+-    absl::visit(visitor, instruction);
++    std::visit(visitor, instruction);
+   }
+   return result;
+ }
+@@ -272,7 +272,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [&](const FieldSpecifier& field_specifier) -> absl::StatusOr<Value> {
+             if (!operand.Is<StructValue>()) {
+@@ -328,7 +328,7 @@
+ 
+   const auto& last_instruction = select_path.back();
+   if (presence_test) {
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [&](const FieldSpecifier& field_specifier)
+                 -> absl::StatusOr<Value> {
+@@ -520,7 +520,7 @@
+   // Called on post visit.
+   bool HasOptimizeableRoot(const Expr* expr,
+                            const QualifierInstruction& candidate) {
+-    if (absl::holds_alternative<SelectInstruction>(candidate)) {
++    if (std::holds_alternative<SelectInstruction>(candidate)) {
+       return true;
+     }
+     const Expr* operand = nullptr;
+@@ -853,7 +853,7 @@
+   qualifiers.reserve(instructions.size());
+   for (const auto& instruction : instructions) {
+     qualifiers.push_back(
+-        absl::visit(absl::Overload(
++        std::visit(absl::Overload(
+                         [](const FieldSpecifier& field) {
+                           return AttributeQualifier::OfString(field.name);
+                         },
+diff -urN orig/internal/json.cc mod/internal/json.cc
+--- orig/internal/json.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/json.cc	2026-09-28 10:01:47.091794651 +0000
+@@ -40,7 +40,7 @@
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/str_join.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "extensions/protobuf/internal/map_reflection.h"
+ #include "internal/status_macros.h"
+ #include "internal/strings.h"
+@@ -108,7 +108,7 @@
+ 
+ absl::Status SnakeCaseToCamelCase(const well_known_types::StringValue& input,
+                                   std::string* absl_nonnull output) {
+-  return absl::visit(absl::Overload(
++  return std::visit(absl::Overload(
+                          [&](absl::string_view string) -> absl::Status {
+                            return SnakeCaseToCamelCaseImpl(string, output);
+                          },
+@@ -712,7 +712,7 @@
+     ABSL_DCHECK(!field->is_map() && field->is_repeated());
+     ABSL_DCHECK_EQ(field->type(), FieldDescriptor::TYPE_BYTES);
+     ABSL_DCHECK_EQ(field->cpp_type(), FieldDescriptor::CPPTYPE_STRING);
+-    absl::visit(absl::Overload(
++    std::visit(absl::Overload(
+                     [&](absl::string_view string) -> void {
+                       SetStringValueFromBytes(result, string);
+                     },
+@@ -733,7 +733,7 @@
+     ABSL_DCHECK(!field->is_map() && field->is_repeated());
+     ABSL_DCHECK_EQ(field->type(), FieldDescriptor::TYPE_STRING);
+     ABSL_DCHECK_EQ(field->cpp_type(), FieldDescriptor::CPPTYPE_STRING);
+-    absl::visit(
++    std::visit(
+         absl::Overload(
+             [&](absl::string_view string) -> void {
+               SetStringValue(result, string);
+@@ -927,7 +927,7 @@
+ 
+   void StringValueToJson(const well_known_types::StringValue& value,
+                          google::protobuf::MessageLite* absl_nonnull result) const {
+-    absl::visit(absl::Overload([&](absl::string_view string)
++    std::visit(absl::Overload([&](absl::string_view string)
+                                    -> void { SetStringValue(result, string); },
+                                [&](const absl::Cord& cord) -> void {
+                                  SetStringValue(result, cord);
+@@ -937,7 +937,7 @@
+ 
+   void BytesValueToJson(const well_known_types::BytesValue& value,
+                         google::protobuf::MessageLite* absl_nonnull result) const {
+-    absl::visit(absl::Overload(
++    std::visit(absl::Overload(
+                     [&](absl::string_view string) -> void {
+                       SetStringValueFromBytes(result, string);
+                     },
+@@ -1398,7 +1398,7 @@
+ 
+   Value Next(std::string& scratch ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+     Value result;
+-    absl::visit(absl::Overload(
++    std::visit(absl::Overload(
+                     [&](Generated& generated) -> void {
+                       result = std::pair{absl::string_view(generated->first),
+                                          &generated->second};
+@@ -1608,7 +1608,7 @@
+ };
+ 
+ std::string JsonStringDebugString(const well_known_types::StringValue& value) {
+-  return absl::visit(absl::Overload(
++  return std::visit(absl::Overload(
+                          [&](absl::string_view string) -> std::string {
+                            return FormatStringLiteral(string);
+                          },
+@@ -1852,7 +1852,7 @@
+     for (int i = 0; i < lhs_size; ++i) {
+       std::tie(lhs_key, lhs_value) = lhs_iterator.Next(lhs_key_scratch);
+       if (const auto* rhs_value = rhs_accessor_->FindField(
+-              rhs, absl::visit(
++              rhs, std::visit(
+                        absl::Overload(
+                            [](absl::string_view string) -> absl::string_view {
+                              return string;
+diff -urN orig/internal/message_equality.cc mod/internal/message_equality.cc
+--- orig/internal/message_equality.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/message_equality.cc	2026-09-28 10:01:47.093110630 +0000
+@@ -32,7 +32,7 @@
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/memory.h"
+ #include "extensions/protobuf/internal/map_reflection.h"
+ #include "internal/json.h"
+@@ -576,7 +576,7 @@
+ // Compare two `EquatableValue` for equality.
+ bool EquatableValueEquals(const EquatableValue& lhs,
+                           const EquatableValue& rhs) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(NullValueEqualer{}, BoolValueEqualer{},
+                      BytesValueEqualer{}, IntValueEqualer{}, UintValueEqualer{},
+                      DoubleValueEqualer{}, StringValueEqualer{},
+diff -urN orig/internal/number.h mod/internal/number.h
+--- orig/internal/number.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/number.h	2026-09-28 10:01:47.094903665 +0000
+@@ -18,7 +18,7 @@
+ #include <cstdint>
+ #include <limits>
+ 
+-#include "absl/types/variant.h"
++#include <variant>
+ 
+ namespace cel::internal {
+ 
+@@ -45,7 +45,7 @@
+ 
+ #define CEL_ABSL_VISIT_CONSTEXPR
+ 
+-using NumberVariant = absl::variant<double, uint64_t, int64_t>;
++using NumberVariant = std::variant<double, uint64_t, int64_t>;
+ 
+ enum class ComparisonResult {
+   kLesser,
+@@ -168,15 +168,15 @@
+   explicit constexpr CompareVisitor(NumberVariant rhs) : rhs(rhs) {}
+ 
+   CEL_ABSL_VISIT_CONSTEXPR ComparisonResult operator()(double v) {
+-    return absl::visit(DoubleCompareVisitor(v), rhs);
++    return std::visit(DoubleCompareVisitor(v), rhs);
+   }
+ 
+   CEL_ABSL_VISIT_CONSTEXPR ComparisonResult operator()(uint64_t v) {
+-    return absl::visit(UintCompareVisitor(v), rhs);
++    return std::visit(UintCompareVisitor(v), rhs);
+   }
+ 
+   CEL_ABSL_VISIT_CONSTEXPR ComparisonResult operator()(int64_t v) {
+-    return absl::visit(IntCompareVisitor(v), rhs);
++    return std::visit(IntCompareVisitor(v), rhs);
+   }
+   NumberVariant rhs;
+ };
+@@ -223,31 +223,31 @@
+ 
+   // Return a double representation of the value.
+   CEL_ABSL_VISIT_CONSTEXPR double AsDouble() const {
+-    return absl::visit(internal::ConversionVisitor<double>(), value_);
++    return std::visit(internal::ConversionVisitor<double>(), value_);
+   }
+ 
+   // Return signed int64 representation for the value.
+   // Caller must guarantee the underlying value is representatble as an
+   // int.
+   CEL_ABSL_VISIT_CONSTEXPR int64_t AsInt() const {
+-    return absl::visit(internal::ConversionVisitor<int64_t>(), value_);
++    return std::visit(internal::ConversionVisitor<int64_t>(), value_);
+   }
+ 
+   // Return unsigned int64 representation for the value.
+   // Caller must guarantee the underlying value is representable as an
+   // uint.
+   CEL_ABSL_VISIT_CONSTEXPR uint64_t AsUint() const {
+-    return absl::visit(internal::ConversionVisitor<uint64_t>(), value_);
++    return std::visit(internal::ConversionVisitor<uint64_t>(), value_);
+   }
+ 
+   // For key lookups, check if the conversion to signed int is lossless.
+   CEL_ABSL_VISIT_CONSTEXPR bool LosslessConvertibleToInt() const {
+-    return absl::visit(internal::LosslessConvertibleToIntVisitor(), value_);
++    return std::visit(internal::LosslessConvertibleToIntVisitor(), value_);
+   }
+ 
+   // For key lookups, check if the conversion to unsigned int is lossless.
+   CEL_ABSL_VISIT_CONSTEXPR bool LosslessConvertibleToUint() const {
+-    return absl::visit(internal::LosslessConvertibleToUintVisitor(), value_);
++    return std::visit(internal::LosslessConvertibleToUintVisitor(), value_);
+   }
+ 
+   CEL_ABSL_VISIT_CONSTEXPR bool operator<(Number other) const {
+@@ -282,7 +282,7 @@
+   // or int64_t.
+   template <typename T, typename Op>
+   T visit(Op&& op) const {
+-    return absl::visit(std::forward<Op>(op), value_);
++    return std::visit(std::forward<Op>(op), value_);
+   }
+ 
+  private:
+@@ -290,7 +290,7 @@
+ 
+   CEL_ABSL_VISIT_CONSTEXPR internal::ComparisonResult Compare(
+       Number other) const {
+-    return absl::visit(internal::CompareVisitor(other.value_), value_);
++    return std::visit(internal::CompareVisitor(other.value_), value_);
+   }
+ };
+ 
+diff -urN orig/internal/well_known_types.cc mod/internal/well_known_types.cc
+--- orig/internal/well_known_types.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/well_known_types.cc	2026-09-28 10:01:47.091300091 +0000
+@@ -44,7 +44,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/strings/strip.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/json.h"
+ #include "common/memory.h"
+ #include "extensions/protobuf/internal/map_reflection.h"
+@@ -85,7 +85,7 @@
+ absl::string_view FlatStringValue(
+     const StringValue& value ABSL_ATTRIBUTE_LIFETIME_BOUND,
+     std::string& scratch ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [](absl::string_view string) -> absl::string_view { return string; },
+           [&](const absl::Cord& cord) -> absl::string_view {
+@@ -101,7 +101,7 @@
+ StringValue CopyStringValue(const StringValue& value,
+                             std::string& scratch
+                                 ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [&](absl::string_view string) -> StringValue {
+             if (string.data() != scratch.data()) {
+@@ -116,7 +116,7 @@
+ 
+ BytesValue CopyBytesValue(const BytesValue& value,
+                           std::string& scratch ABSL_ATTRIBUTE_LIFETIME_BOUND) {
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [&](absl::string_view string) -> BytesValue {
+             if (string.data() != scratch.data()) {
+@@ -381,7 +381,7 @@
+ }  // namespace
+ 
+ bool StringValue::ConsumePrefix(absl::string_view prefix) {
+-  return absl::visit(absl::Overload(
++  return std::visit(absl::Overload(
+                          [&](absl::string_view& value) {
+                            return absl::ConsumePrefix(&value, prefix);
+                          },
+@@ -1980,7 +1980,7 @@
+     }
+     BytesValue value = reflection.GetValue(*to_unwrap, value_scratch);
+     Unique<google::protobuf::Message> unpacked = WrapUnique(prototype->New(arena), arena);
+-    const bool ok = absl::visit(absl::Overload(
++    const bool ok = std::visit(absl::Overload(
+                                     [&](absl::string_view string) -> bool {
+                                       return unpacked->ParseFromString(string);
+                                     },
+diff -urN orig/internal/well_known_types.h mod/internal/well_known_types.h
+--- orig/internal/well_known_types.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/well_known_types.h	2026-09-28 10:01:47.094777157 +0000
+@@ -48,7 +48,7 @@
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/any.h"
+ #include "common/memory.h"
+ #include "google/protobuf/arena.h"
+@@ -62,36 +62,36 @@
+ // Strongly typed variant capable of holding the value representation of any
+ // protocol buffer message string field. We do this instead of type aliasing to
+ // avoid collisions in other variants such as `well_known_types::Value`.
+-class StringValue final : public absl::variant<absl::string_view, absl::Cord> {
++class StringValue final : public std::variant<absl::string_view, absl::Cord> {
+  public:
+-  using absl::variant<absl::string_view, absl::Cord>::variant;
++  using std::variant<absl::string_view, absl::Cord>::variant;
+ 
+   bool ConsumePrefix(absl::string_view prefix);
+ };
+ 
+ // Older versions of GCC do not deal with inheriting from variant correctly when
+ // using `visit`, so we cheat by upcasting.
+-inline const absl::variant<absl::string_view, absl::Cord>& AsVariant(
++inline const std::variant<absl::string_view, absl::Cord>& AsVariant(
+     const StringValue& value) {
+-  return static_cast<const absl::variant<absl::string_view, absl::Cord>&>(
++  return static_cast<const std::variant<absl::string_view, absl::Cord>&>(
+       value);
+ }
+-inline absl::variant<absl::string_view, absl::Cord>& AsVariant(
++inline std::variant<absl::string_view, absl::Cord>& AsVariant(
+     StringValue& value) {
+-  return static_cast<absl::variant<absl::string_view, absl::Cord>&>(value);
++  return static_cast<std::variant<absl::string_view, absl::Cord>&>(value);
+ }
+-inline const absl::variant<absl::string_view, absl::Cord>&& AsVariant(
++inline const std::variant<absl::string_view, absl::Cord>&& AsVariant(
+     const StringValue&& value) {
+-  return static_cast<const absl::variant<absl::string_view, absl::Cord>&&>(
++  return static_cast<const std::variant<absl::string_view, absl::Cord>&&>(
+       value);
+ }
+-inline absl::variant<absl::string_view, absl::Cord>&& AsVariant(
++inline std::variant<absl::string_view, absl::Cord>&& AsVariant(
+     StringValue&& value) {
+-  return static_cast<absl::variant<absl::string_view, absl::Cord>&&>(value);
++  return static_cast<std::variant<absl::string_view, absl::Cord>&&>(value);
+ }
+ 
+ inline bool operator==(const StringValue& lhs, const StringValue& rhs) {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& lhs, const auto& rhs) { return lhs == rhs; },
+       AsVariant(lhs), AsVariant(rhs));
+ }
+@@ -102,7 +102,7 @@
+ 
+ template <typename S>
+ void AbslStringify(S& sink, const StringValue& value) {
+-  sink.Append(absl::visit(
++  sink.Append(std::visit(
+       [&](const auto& value) -> std::string { return absl::StrCat(value); },
+       AsVariant(value)));
+ }
+@@ -135,34 +135,34 @@
+ // Strongly typed variant capable of holding the value representation of any
+ // protocol buffer message bytes field. We do this instead of type aliasing to
+ // avoid collisions in other variants such as `well_known_types::Value`.
+-class BytesValue final : public absl::variant<absl::string_view, absl::Cord> {
++class BytesValue final : public std::variant<absl::string_view, absl::Cord> {
+  public:
+-  using absl::variant<absl::string_view, absl::Cord>::variant;
++  using std::variant<absl::string_view, absl::Cord>::variant;
+ };
+ 
+ // Older versions of GCC do not deal with inheriting from variant correctly when
+ // using `visit`, so we cheat by upcasting.
+-inline const absl::variant<absl::string_view, absl::Cord>& AsVariant(
++inline const std::variant<absl::string_view, absl::Cord>& AsVariant(
+     const BytesValue& value) {
+-  return static_cast<const absl::variant<absl::string_view, absl::Cord>&>(
++  return static_cast<const std::variant<absl::string_view, absl::Cord>&>(
+       value);
+ }
+-inline absl::variant<absl::string_view, absl::Cord>& AsVariant(
++inline std::variant<absl::string_view, absl::Cord>& AsVariant(
+     BytesValue& value) {
+-  return static_cast<absl::variant<absl::string_view, absl::Cord>&>(value);
++  return static_cast<std::variant<absl::string_view, absl::Cord>&>(value);
+ }
+-inline const absl::variant<absl::string_view, absl::Cord>&& AsVariant(
++inline const std::variant<absl::string_view, absl::Cord>&& AsVariant(
+     const BytesValue&& value) {
+-  return static_cast<const absl::variant<absl::string_view, absl::Cord>&&>(
++  return static_cast<const std::variant<absl::string_view, absl::Cord>&&>(
+       value);
+ }
+-inline absl::variant<absl::string_view, absl::Cord>&& AsVariant(
++inline std::variant<absl::string_view, absl::Cord>&& AsVariant(
+     BytesValue&& value) {
+-  return static_cast<absl::variant<absl::string_view, absl::Cord>&&>(value);
++  return static_cast<std::variant<absl::string_view, absl::Cord>&&>(value);
+ }
+ 
+ inline bool operator==(const BytesValue& lhs, const BytesValue& rhs) {
+-  return absl::visit(
++  return std::visit(
+       [](const auto& lhs, const auto& rhs) { return lhs == rhs; },
+       AsVariant(lhs), AsVariant(rhs));
+ }
+@@ -173,7 +173,7 @@
+ 
+ template <typename S>
+ void AbslStringify(S& sink, const BytesValue& value) {
+-  sink.Append(absl::visit(
++  sink.Append(std::visit(
+       [&](const auto& value) -> std::string { return absl::StrCat(value); },
+       AsVariant(value)));
+ }
+@@ -1290,59 +1290,59 @@
+ // google::protobuf::Message>` or `Unique<google::protobuf::Message>`, either of which is an
+ // instance of `google.protobuf.ListValue` which is either a generated message
+ // or dynamic message.
+-class ListValue final : public absl::variant<ListValueConstRef, ListValuePtr> {
+-  using absl::variant<ListValueConstRef, ListValuePtr>::variant;
++class ListValue final : public std::variant<ListValueConstRef, ListValuePtr> {
++  using std::variant<ListValueConstRef, ListValuePtr>::variant;
+ };
+ 
+ // Older versions of GCC do not deal with inheriting from variant correctly when
+ // using `visit`, so we cheat by upcasting.
+-inline const absl::variant<ListValueConstRef, ListValuePtr>& AsVariant(
++inline const std::variant<ListValueConstRef, ListValuePtr>& AsVariant(
+     const ListValue& value) {
+-  return static_cast<const absl::variant<ListValueConstRef, ListValuePtr>&>(
++  return static_cast<const std::variant<ListValueConstRef, ListValuePtr>&>(
+       value);
+ }
+-inline absl::variant<ListValueConstRef, ListValuePtr>& AsVariant(
++inline std::variant<ListValueConstRef, ListValuePtr>& AsVariant(
+     ListValue& value) {
+-  return static_cast<absl::variant<ListValueConstRef, ListValuePtr>&>(value);
++  return static_cast<std::variant<ListValueConstRef, ListValuePtr>&>(value);
+ }
+-inline const absl::variant<ListValueConstRef, ListValuePtr>&& AsVariant(
++inline const std::variant<ListValueConstRef, ListValuePtr>&& AsVariant(
+     const ListValue&& value) {
+-  return static_cast<const absl::variant<ListValueConstRef, ListValuePtr>&&>(
++  return static_cast<const std::variant<ListValueConstRef, ListValuePtr>&&>(
+       value);
+ }
+-inline absl::variant<ListValueConstRef, ListValuePtr>&& AsVariant(
++inline std::variant<ListValueConstRef, ListValuePtr>&& AsVariant(
+     ListValue&& value) {
+-  return static_cast<absl::variant<ListValueConstRef, ListValuePtr>&&>(value);
++  return static_cast<std::variant<ListValueConstRef, ListValuePtr>&&>(value);
+ }
+ 
+ // Variant holding `std::reference_wrapper<const
+ // google::protobuf::Message>` or `Unique<google::protobuf::Message>`, either of which is an
+ // instance of `google.protobuf.Struct` which is either a generated message or
+ // dynamic message.
+-class Struct final : public absl::variant<StructConstRef, StructPtr> {
++class Struct final : public std::variant<StructConstRef, StructPtr> {
+  public:
+-  using absl::variant<StructConstRef, StructPtr>::variant;
++  using std::variant<StructConstRef, StructPtr>::variant;
+ };
+ 
+ // Older versions of GCC do not deal with inheriting from variant correctly when
+ // using `visit`, so we cheat by upcasting.
+-inline const absl::variant<StructConstRef, StructPtr>& AsVariant(
++inline const std::variant<StructConstRef, StructPtr>& AsVariant(
+     const Struct& value) {
+-  return static_cast<const absl::variant<StructConstRef, StructPtr>&>(value);
++  return static_cast<const std::variant<StructConstRef, StructPtr>&>(value);
+ }
+-inline absl::variant<StructConstRef, StructPtr>& AsVariant(Struct& value) {
+-  return static_cast<absl::variant<StructConstRef, StructPtr>&>(value);
++inline std::variant<StructConstRef, StructPtr>& AsVariant(Struct& value) {
++  return static_cast<std::variant<StructConstRef, StructPtr>&>(value);
+ }
+-inline const absl::variant<StructConstRef, StructPtr>&& AsVariant(
++inline const std::variant<StructConstRef, StructPtr>&& AsVariant(
+     const Struct&& value) {
+-  return static_cast<const absl::variant<StructConstRef, StructPtr>&&>(value);
++  return static_cast<const std::variant<StructConstRef, StructPtr>&&>(value);
+ }
+-inline absl::variant<StructConstRef, StructPtr>&& AsVariant(Struct&& value) {
+-  return static_cast<absl::variant<StructConstRef, StructPtr>&&>(value);
++inline std::variant<StructConstRef, StructPtr>&& AsVariant(Struct&& value) {
++  return static_cast<std::variant<StructConstRef, StructPtr>&&>(value);
+ }
+ 
+ // Variant capable of representing any unwrapped well known type or message.
+-using Value = absl::variant<absl::monostate, std::nullptr_t, bool, int32_t,
++using Value = std::variant<std::monostate, std::nullptr_t, bool, int32_t,
+                             int64_t, uint32_t, uint64_t, float, double,
+                             StringValue, BytesValue, absl::Duration, absl::Time,
+                             ListValue, Struct, Unique<google::protobuf::Message>>;
+@@ -1365,7 +1365,7 @@
+ 
+ // Performs any necessary unwrapping of a well known message type. If no
+ // unwrapping is necessary, the resulting `Value` holds the alternative
+-// `absl::monostate`.
++// `std::monostate`.
+ absl::StatusOr<Value> AdaptFromMessage(
+     google::protobuf::Arena* absl_nullable arena ABSL_ATTRIBUTE_LIFETIME_BOUND,
+     const google::protobuf::Message& message ABSL_ATTRIBUTE_LIFETIME_BOUND,
+diff -urN orig/internal/well_known_types_test.cc mod/internal/well_known_types_test.cc
+--- orig/internal/well_known_types_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/well_known_types_test.cc	2026-09-28 10:01:47.093804460 +0000
+@@ -34,7 +34,7 @@
+ #include "absl/strings/cord.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/memory.h"
+ #include "internal/message_type_name.h"
+ #include "internal/minimal_descriptor_pool.h"
+diff -urN orig/parser/macro_expr_factory.cc mod/parser/macro_expr_factory.cc
+--- orig/parser/macro_expr_factory.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/parser/macro_expr_factory.cc	2026-09-28 10:01:47.076544289 +0000
+@@ -19,7 +19,7 @@
+ 
+ #include "absl/functional/overload.h"
+ #include "absl/types/optional.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/constant.h"
+ #include "common/expr.h"
+ 
+@@ -28,7 +28,7 @@
+ Expr MacroExprFactory::Copy(const Expr& expr) {
+   // Copying logic is recursive at the moment, we alter it to be iterative in
+   // the future.
+-  return absl::visit(
++  return std::visit(
+       absl::Overload(
+           [this, &expr](const UnspecifiedExpr&) -> Expr {
+             return NewUnspecified(CopyId(expr));
+diff -urN orig/parser/parser.cc mod/parser/parser.cc
+--- orig/parser/parser.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/parser/parser.cc	2026-09-28 10:01:47.075452368 +0000
+@@ -53,7 +53,7 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "antlr4-runtime.h"
+ #include "common/ast.h"
+ #include "common/ast/expr_proto.h"
+@@ -267,7 +267,7 @@
+     if (auto it = macro_calls_.find(expr.id()); it != macro_calls_.end()) {
+       return NewUnspecified(expr.id());
+     }
+-    return absl::visit(
++    return std::visit(
+         absl::Overload(
+             [this, &expr](const UnspecifiedExpr&) -> Expr {
+               return NewUnspecified(expr.id());
+@@ -1554,10 +1554,10 @@
+     return "";
+   }
+ 
+-  if (const auto* ident_expr = absl::get_if<IdentExpr>(&e.kind()); ident_expr) {
++  if (const auto* ident_expr = std::get_if<IdentExpr>(&e.kind()); ident_expr) {
+     return ident_expr->name();
+   }
+-  if (const auto* select_expr = absl::get_if<SelectExpr>(&e.kind());
++  if (const auto* select_expr = std::get_if<SelectExpr>(&e.kind());
+       select_expr) {
+     std::string prefix = ExtractQualifiedName(ctx, select_expr->operand());
+     if (!prefix.empty()) {
+diff -urN orig/runtime/internal/convert_constant.cc mod/runtime/internal/convert_constant.cc
+--- orig/runtime/internal/convert_constant.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/runtime/internal/convert_constant.cc	2026-09-28 10:01:47.121427745 +0000
+@@ -20,7 +20,7 @@
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+ #include "absl/time/time.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/allocator.h"
+ #include "common/constant.h"
+ #include "common/value.h"
+@@ -72,7 +72,7 @@
+ // A status maybe returned if value creation fails.
+ absl::StatusOr<Value> ConvertConstant(const Constant& constant,
+                                       Allocator<> allocator) {
+-  return absl::visit(ConvertVisitor{allocator}, constant.constant_kind());
++  return std::visit(ConvertVisitor{allocator}, constant.constant_kind());
+ }
+ 
+ }  // namespace cel::runtime_internal
+diff -urN orig/runtime/memory_safety_test.cc mod/runtime/memory_safety_test.cc
+--- orig/runtime/memory_safety_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/runtime/memory_safety_test.cc	2026-09-28 10:01:47.078184170 +0000
+@@ -30,7 +30,7 @@
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/str_format.h"
+ #include "absl/strings/string_view.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "checker/validation_result.h"
+ #include "common/decl.h"
+ #include "common/type.h"
+@@ -210,7 +210,7 @@
+ void InitActivation(const TestCase& test_case, google::protobuf::Arena& arena,
+                     Activation& activation) {
+   for (const auto& [key, value] : test_case.activation) {
+-    if (absl::holds_alternative<Value>(value)) {
++    if (std::holds_alternative<Value>(value)) {
+       activation.InsertOrAssignValue(key, std::get<Value>(value));
+     } else {
+       // Note: This assumes that the TestCase is valid for the given TEST.
+diff -urN orig/tools/branch_coverage.cc mod/tools/branch_coverage.cc
+--- orig/tools/branch_coverage.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/tools/branch_coverage.cc	2026-09-28 10:01:47.073148823 +0000
+@@ -26,7 +26,7 @@
+ #include "absl/functional/overload.h"
+ #include "absl/status/status.h"
+ #include "absl/synchronization/mutex.h"
+-#include "absl/types/variant.h"
++#include <variant>
+ #include "common/value.h"
+ #include "eval/internal/interop.h"
+ #include "eval/public/cel_value.h"
+@@ -151,7 +151,7 @@
+   if (it != coverage_nodes_.end()) {
+     const CoverageNode& coverage_node = it->second;
+     stats.evaluation_count = coverage_node.evaluate_count;
+-    absl::visit(absl::Overload([&](const ConstantNode& cov) {},
++    std::visit(absl::Overload([&](const ConstantNode& cov) {},
+                                [&](const OtherNode& cov) {
+                                  stats.error_count = cov.result_error;
+                                },
+@@ -221,7 +221,7 @@
+                   // legacy and legacy types.
+                   value.ErrorOrDie() != &UnsupportedConversionError();
+ 
+-  absl::visit(absl::Overload([&](ConstantNode& node) {},
++  std::visit(absl::Overload([&](ConstantNode& node) {},
+                              [&](OtherNode& cov) {
+                                if (is_error) {
+                                  cov.result_error++;
