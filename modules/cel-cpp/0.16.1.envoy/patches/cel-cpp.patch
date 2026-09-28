@@ -1,6 +1,66 @@
+diff -urN orig/common/internal/byte_string.cc mod/common/internal/byte_string.cc
+--- orig/common/internal/byte_string.cc
++++ mod/common/internal/byte_string.cc
+@@ -104,6 +104,12 @@
+ 
+ ByteString::ByteString(Allocator<> allocator, absl::string_view string) {
+   ABSL_DCHECK_LE(string.size(), max_size());
++
++  if (string.data() == nullptr) {
++    SetSmallEmpty(allocator.arena());
++    return;
++  }
++
+   auto* arena = allocator.arena();
+   if (string.size() <= kSmallByteStringCapacity) {
+     SetSmall(arena, string);
+diff -urN orig/common/value.h mod/common/value.h
+--- orig/common/value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/value.h	2026-09-28 10:47:06.657659437 +0000
+@@ -33,7 +33,6 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/utility/utility.h"
+ #include "base/attribute.h"
+ #include "common/arena.h"
+ #include "common/native_type.h"
+@@ -371,12 +370,12 @@
+ 
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   Value(const OptionalValue& value)
+-      : variant_(absl::in_place_type<OpaqueValue>,
++      : variant_(std::in_place_type<OpaqueValue>,
+                  static_cast<const OpaqueValue&>(value)) {}
+ 
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   Value(OptionalValue&& value)
+-      : variant_(absl::in_place_type<OpaqueValue>,
++      : variant_(std::in_place_type<OpaqueValue>,
+                  static_cast<OpaqueValue&&>(value)) {}
+ 
+   // NOLINTNEXTLINE(google-explicit-constructor)
+@@ -396,7 +395,7 @@
+                 common_internal::IsValueAlternativeV<absl::remove_cvref_t<T>>>>
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   Value(T&& alternative) noexcept
+-      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
+                  std::forward<T>(alternative)) {}
+ 
+   template <typename T,
+@@ -2802,7 +2801,7 @@
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena) const {
+-  ABSL_DCHECK_GT(qualifiers.size(), 0);
++  ABSL_DCHECK_GT(static_cast<int>(qualifiers.size()), 0);
+   ABSL_DCHECK(descriptor_pool != nullptr);
+   ABSL_DCHECK(message_factory != nullptr);
+   ABSL_DCHECK(arena != nullptr);
 diff -urN orig/base/attribute.cc mod/base/attribute.cc
 --- orig/base/attribute.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/base/attribute.cc	2026-09-28 10:47:06.476627140 +0000
++++ mod/base/attribute.cc	2026-09-28 10:01:47.064912871 +0000
 @@ -23,7 +23,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -179,7 +239,7 @@ diff -urN orig/base/attribute.h mod/base/attribute.h
  
 diff -urN orig/common/ast/constant_proto.cc mod/common/ast/constant_proto.cc
 --- orig/common/ast/constant_proto.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast/constant_proto.cc	2026-09-28 10:47:06.596410277 +0000
++++ mod/common/ast/constant_proto.cc	2026-09-28 10:01:47.122886876 +0000
 @@ -24,7 +24,7 @@
  #include "absl/status/status.h"
  #include "absl/strings/str_cat.h"
@@ -200,7 +260,7 @@ diff -urN orig/common/ast/constant_proto.cc mod/common/ast/constant_proto.cc
                             return absl::OkStatus();
 diff -urN orig/common/ast/expr_proto.cc mod/common/ast/expr_proto.cc
 --- orig/common/ast/expr_proto.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast/expr_proto.cc	2026-09-28 10:47:06.596010387 +0000
++++ mod/common/ast/expr_proto.cc	2026-09-28 10:01:47.122771240 +0000
 @@ -27,7 +27,7 @@
  #include "absl/functional/overload.h"
  #include "absl/status/status.h"
@@ -221,7 +281,7 @@ diff -urN orig/common/ast/expr_proto.cc mod/common/ast/expr_proto.cc
                proto->Clear();
 diff -urN orig/common/ast/metadata.cc mod/common/ast/metadata.cc
 --- orig/common/ast/metadata.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast/metadata.cc	2026-09-28 10:47:06.595346402 +0000
++++ mod/common/ast/metadata.cc	2026-09-28 10:01:47.122154446 +0000
 @@ -26,7 +26,7 @@
  #include "absl/functional/overload.h"
  #include "absl/log/absl_check.h"
@@ -251,7 +311,7 @@ diff -urN orig/common/ast/metadata.cc mod/common/ast/metadata.cc
    }
 diff -urN orig/common/ast/metadata.h mod/common/ast/metadata.h
 --- orig/common/ast/metadata.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast/metadata.h	2026-09-28 10:47:06.459016913 +0000
++++ mod/common/ast/metadata.h	2026-09-28 10:01:47.122457002 +0000
 @@ -29,7 +29,7 @@
  #include "absl/base/nullability.h"
  #include "absl/container/flat_hash_map.h"
@@ -466,7 +526,7 @@ diff -urN orig/common/ast/metadata.h mod/common/ast/metadata.h
        }
 diff -urN orig/common/ast/metadata_test.cc mod/common/ast/metadata_test.cc
 --- orig/common/ast/metadata_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast/metadata_test.cc	2026-09-28 10:47:06.595742044 +0000
++++ mod/common/ast/metadata_test.cc	2026-09-28 10:01:47.122609939 +0000
 @@ -18,7 +18,7 @@
  #include <string>
  #include <utility>
@@ -508,7 +568,7 @@ diff -urN orig/common/ast/metadata_test.cc mod/common/ast/metadata_test.cc
  
 diff -urN orig/common/ast_proto.cc mod/common/ast_proto.cc
 --- orig/common/ast_proto.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast_proto.cc	2026-09-28 10:47:06.525697549 +0000
++++ mod/common/ast_proto.cc	2026-09-28 10:01:47.088137015 +0000
 @@ -29,7 +29,7 @@
  #include "absl/container/flat_hash_map.h"
  #include "absl/status/status.h"
@@ -529,7 +589,7 @@ diff -urN orig/common/ast_proto.cc mod/common/ast_proto.cc
  }  // namespace
 diff -urN orig/common/ast_proto_test.cc mod/common/ast_proto_test.cc
 --- orig/common/ast_proto_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast_proto_test.cc	2026-09-28 10:47:06.524207414 +0000
++++ mod/common/ast_proto_test.cc	2026-09-28 10:01:47.087391475 +0000
 @@ -30,7 +30,7 @@
  #include "absl/status/statusor.h"
  #include "absl/strings/str_cat.h"
@@ -550,7 +610,7 @@ diff -urN orig/common/ast_proto_test.cc mod/common/ast_proto_test.cc
  TEST(AstConvertersTest, ReferenceToNative) {
 diff -urN orig/common/ast_rewrite.cc mod/common/ast_rewrite.cc
 --- orig/common/ast_rewrite.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast_rewrite.cc	2026-09-28 10:47:06.514532028 +0000
++++ mod/common/ast_rewrite.cc	2026-09-28 10:01:47.080852164 +0000
 @@ -19,7 +19,7 @@
  
  #include "absl/log/absl_log.h"
@@ -629,7 +689,7 @@ diff -urN orig/common/ast_rewrite.cc mod/common/ast_rewrite.cc
  }  // namespace
 diff -urN orig/common/ast_traverse.cc mod/common/ast_traverse.cc
 --- orig/common/ast_traverse.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/ast_traverse.cc	2026-09-28 10:47:06.517492551 +0000
++++ mod/common/ast_traverse.cc	2026-09-28 10:01:47.082485624 +0000
 @@ -18,7 +18,7 @@
  #include <stack>
  
@@ -686,7 +746,7 @@ diff -urN orig/common/ast_traverse.cc mod/common/ast_traverse.cc
  }  // namespace
 diff -urN orig/common/constant.h mod/common/constant.h
 --- orig/common/constant.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/constant.h	2026-09-28 10:47:06.414503490 +0000
++++ mod/common/constant.h	2026-09-28 10:01:47.083515707 +0000
 @@ -25,7 +25,7 @@
  #include "absl/functional/overload.h"
  #include "absl/strings/string_view.h"
@@ -891,7 +951,7 @@ diff -urN orig/common/constant.h mod/common/constant.h
            },
 diff -urN orig/common/decl_proto.cc mod/common/decl_proto.cc
 --- orig/common/decl_proto.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/decl_proto.cc	2026-09-28 10:47:06.514922310 +0000
++++ mod/common/decl_proto.cc	2026-09-28 10:01:47.080988760 +0000
 @@ -22,7 +22,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -903,7 +963,7 @@ diff -urN orig/common/decl_proto.cc mod/common/decl_proto.cc
  #include "common/type_proto.h"
 diff -urN orig/common/decl_proto.h mod/common/decl_proto.h
 --- orig/common/decl_proto.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/decl_proto.h	2026-09-28 10:47:06.415966777 +0000
++++ mod/common/decl_proto.h	2026-09-28 10:01:47.084712348 +0000
 @@ -19,7 +19,7 @@
  #include "absl/base/nullability.h"
  #include "absl/status/statusor.h"
@@ -924,7 +984,7 @@ diff -urN orig/common/decl_proto.h mod/common/decl_proto.h
      google::protobuf::Arena* absl_nonnull arena);
 diff -urN orig/common/decl_proto_test.cc mod/common/decl_proto_test.cc
 --- orig/common/decl_proto_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/decl_proto_test.cc	2026-09-28 10:47:06.524785158 +0000
++++ mod/common/decl_proto_test.cc	2026-09-28 10:01:47.087695020 +0000
 @@ -19,7 +19,7 @@
  #include "absl/status/status.h"
  #include "absl/status/status_matchers.h"
@@ -966,7 +1026,7 @@ diff -urN orig/common/decl_proto_test.cc mod/common/decl_proto_test.cc
      case DeclType::kInvalid: {
 diff -urN orig/common/decl_proto_v1alpha1.cc mod/common/decl_proto_v1alpha1.cc
 --- orig/common/decl_proto_v1alpha1.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/decl_proto_v1alpha1.cc	2026-09-28 10:47:06.515101396 +0000
++++ mod/common/decl_proto_v1alpha1.cc	2026-09-28 10:01:47.081053399 +0000
 @@ -18,7 +18,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -978,7 +1038,7 @@ diff -urN orig/common/decl_proto_v1alpha1.cc mod/common/decl_proto_v1alpha1.cc
  #include "google/protobuf/arena.h"
 diff -urN orig/common/decl_proto_v1alpha1.h mod/common/decl_proto_v1alpha1.h
 --- orig/common/decl_proto_v1alpha1.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/decl_proto_v1alpha1.h	2026-09-28 10:47:06.421233294 +0000
++++ mod/common/decl_proto_v1alpha1.h	2026-09-28 10:01:47.088938182 +0000
 @@ -21,7 +21,7 @@
  #include "absl/base/nullability.h"
  #include "absl/status/statusor.h"
@@ -999,7 +1059,7 @@ diff -urN orig/common/decl_proto_v1alpha1.h mod/common/decl_proto_v1alpha1.h
      google::protobuf::Arena* absl_nonnull arena);
 diff -urN orig/common/expr.cc mod/common/expr.cc
 --- orig/common/expr.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/expr.cc	2026-09-28 10:47:06.521286767 +0000
++++ mod/common/expr.cc	2026-09-28 10:01:47.084861032 +0000
 @@ -20,7 +20,7 @@
  #include "absl/base/no_destructor.h"
  #include "absl/functional/overload.h"
@@ -1020,7 +1080,7 @@ diff -urN orig/common/expr.cc mod/common/expr.cc
              dst->mutable_kind().emplace<UnspecifiedExpr>();
 diff -urN orig/common/expr.h mod/common/expr.h
 --- orig/common/expr.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/expr.h	2026-09-28 10:47:06.416760175 +0000
++++ mod/common/expr.h	2026-09-28 10:01:47.086127252 +0000
 @@ -25,7 +25,7 @@
  #include "absl/base/attributes.h"
  #include "absl/strings/string_view.h"
@@ -1147,25 +1207,9 @@ diff -urN orig/common/expr.h mod/common/expr.h
    if (kind_.index() <= 9) {
      return static_cast<ExprKindCase>(kind_.index());
    }
-diff -urN orig/common/internal/byte_string.cc mod/common/internal/byte_string.cc
---- orig/common/internal/byte_string.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/internal/byte_string.cc	2026-09-28 10:47:06.619625056 +0000
-@@ -104,6 +104,12 @@
- 
- ByteString::ByteString(Allocator<> allocator, absl::string_view string) {
-   ABSL_DCHECK_LE(string.size(), max_size());
-+
-+  if (string.data() == nullptr) {
-+    SetSmallEmpty(allocator.arena());
-+    return;
-+  }
-+
-   auto* arena = allocator.arena();
-   if (string.size() <= kSmallByteStringCapacity) {
-     SetSmall(arena, string);
 diff -urN orig/common/legacy_value.cc mod/common/legacy_value.cc
 --- orig/common/legacy_value.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/legacy_value.cc	2026-09-28 10:47:06.517083904 +0000
++++ mod/common/legacy_value.cc	2026-09-28 10:01:47.081943803 +0000
 @@ -34,7 +34,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -1184,38 +1228,9 @@ diff -urN orig/common/legacy_value.cc mod/common/legacy_value.cc
          absl::Overload(
              [](const FieldSpecifier& field) -> absl::string_view {
                return field.name;
-diff -urN orig/common/optional_ref.h mod/common/optional_ref.h
---- orig/common/optional_ref.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/optional_ref.h	2026-09-28 10:47:06.658577540 +0000
-@@ -17,13 +17,13 @@
- 
- #include <memory>
- #include <type_traits>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/macros.h"
- #include "absl/base/nullability.h"
- #include "absl/base/optimization.h"
- #include "absl/types/optional.h"
--#include "absl/utility/utility.h"
- 
- namespace cel {
- 
-@@ -36,8 +36,8 @@
-   static_assert(!std::is_reference_v<T>, "T must not be a reference.");
-   static_assert(!std::is_same_v<absl::nullopt_t, std::remove_cv_t<T>>,
-                 "optional_ref<absl::nullopt_t> is not allowed.");
--  static_assert(!std::is_same_v<absl::in_place_t, std::remove_cv_t<T>>,
--                "optional_ref<absl::in_place_t> is not allowed.");
-+  static_assert(!std::is_same_v<std::in_place_t, std::remove_cv_t<T>>,
-+                "optional_ref<std::in_place_t> is not allowed.");
- 
-   using value_type = T;
- 
 diff -urN orig/common/reference.h mod/common/reference.h
 --- orig/common/reference.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/reference.h	2026-09-28 10:47:06.416469861 +0000
++++ mod/common/reference.h	2026-09-28 10:01:47.085826514 +0000
 @@ -22,7 +22,7 @@
  #include "absl/algorithm/container.h"
  #include "absl/base/attributes.h"
@@ -1431,7 +1446,7 @@ diff -urN orig/common/source.cc mod/common/source.cc
              view.subspan(static_cast<size_t>(range_.begin),
 diff -urN orig/common/source.h mod/common/source.h
 --- orig/common/source.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/source.h	2026-09-28 10:47:06.411673382 +0000
++++ mod/common/source.h	2026-09-28 10:01:47.081326631 +0000
 @@ -28,7 +28,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -1452,7 +1467,7 @@ diff -urN orig/common/source.h mod/common/source.h
  };
 diff -urN orig/common/type.cc mod/common/type.cc
 --- orig/common/type.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/type.cc	2026-09-28 10:47:06.519662019 +0000
++++ mod/common/type.cc	2026-09-28 10:01:47.084013480 +0000
 @@ -26,7 +26,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -1813,74 +1828,9 @@ diff -urN orig/common/type.h mod/common/type.h
        variant_;
  };
  
-diff -urN orig/common/types/opaque_type.cc mod/common/types/opaque_type.cc
---- orig/common/types/opaque_type.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/types/opaque_type.cc	2026-09-28 10:47:06.658028039 +0000
-@@ -16,6 +16,7 @@
- #include <cstring>
- #include <string>
- #include <type_traits>
-+#include <utility>
- 
- #include "absl/base/nullability.h"
- #include "absl/log/absl_check.h"
-@@ -24,7 +25,6 @@
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
- #include "absl/types/span.h"
--#include "absl/utility/utility.h"
- #include "common/type.h"
- #include "common/type_kind.h"
- #include "google/protobuf/arena.h"
-@@ -96,14 +96,14 @@
- 
- absl::optional<OptionalType> OpaqueType::AsOptional() const {
-   if (IsOptional()) {
--    return OptionalType(absl::in_place, *this);
-+    return OptionalType(std::in_place, *this);
-   }
-   return std::nullopt;
- }
- 
- OptionalType OpaqueType::GetOptional() const {
-   ABSL_DCHECK(IsOptional()) << DebugString();
--  return OptionalType(absl::in_place, *this);
-+  return OptionalType(std::in_place, *this);
- }
- 
- }  // namespace cel
-diff -urN orig/common/types/optional_type.h mod/common/types/optional_type.h
---- orig/common/types/optional_type.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/types/optional_type.h	2026-09-28 10:47:06.658350023 +0000
-@@ -28,7 +28,6 @@
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
- #include "absl/types/span.h"
--#include "absl/utility/utility.h"
- #include "common/type_kind.h"
- #include "common/types/opaque_type.h"
- #include "google/protobuf/arena.h"
-@@ -49,7 +48,7 @@
- 
-   OptionalType(google::protobuf::Arena* absl_nonnull arena, const Type& parameter)
-       : OptionalType(
--            absl::in_place,
-+            std::in_place,
-             OpaqueType(arena, kName, absl::MakeConstSpan(&parameter, 1))) {}
- 
-   static TypeKind kind() { return kKind; }
-@@ -76,7 +75,7 @@
-  private:
-   friend class OpaqueType;
- 
--  OptionalType(absl::in_place_t, OpaqueType type) : opaque_(std::move(type)) {}
-+  OptionalType(std::in_place_t, OpaqueType type) : opaque_(std::move(type)) {}
- 
-   OpaqueType opaque_;
- };
 diff -urN orig/common/types/struct_type.cc mod/common/types/struct_type.cc
 --- orig/common/types/struct_type.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/types/struct_type.cc	2026-09-28 10:47:06.617377551 +0000
++++ mod/common/types/struct_type.cc	2026-09-28 10:01:47.132581701 +0000
 @@ -18,7 +18,7 @@
  #include "absl/log/absl_check.h"
  #include "absl/strings/string_view.h"
@@ -1942,7 +1892,7 @@ diff -urN orig/common/types/struct_type.cc mod/common/types/struct_type.cc
            [](common_internal::BasicStructType alt) {
 diff -urN orig/common/types/struct_type.h mod/common/types/struct_type.h
 --- orig/common/types/struct_type.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/types/struct_type.h	2026-09-28 10:47:06.472803930 +0000
++++ mod/common/types/struct_type.h	2026-09-28 10:01:47.132138381 +0000
 @@ -27,7 +27,7 @@
  #include "absl/base/optimization.h"
  #include "absl/strings/string_view.h"
@@ -1990,7 +1940,7 @@ diff -urN orig/common/types/struct_type.h mod/common/types/struct_type.h
   private:
 diff -urN orig/common/types/types.h mod/common/types/types.h
 --- orig/common/types/types.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/types/types.h	2026-09-28 10:47:06.468377328 +0000
++++ mod/common/types/types.h	2026-09-28 10:01:47.130629480 +0000
 @@ -20,7 +20,7 @@
  #include <type_traits>
  
@@ -2020,7 +1970,7 @@ diff -urN orig/common/types/types.h mod/common/types/types.h
  
 diff -urN orig/common/value.cc mod/common/value.cc
 --- orig/common/value.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/value.cc	2026-09-28 10:47:06.522148914 +0000
++++ mod/common/value.cc	2026-09-28 10:01:47.085673009 +0000
 @@ -38,7 +38,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/time/time.h"
@@ -2205,50 +2155,6 @@ diff -urN orig/common/value.cc mod/common/value.cc
  #endif
  
  ListValue Value::GetList() const& {
-diff -urN orig/common/value.h mod/common/value.h
---- orig/common/value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/value.h	2026-09-28 10:47:06.657659437 +0000
-@@ -33,7 +33,6 @@
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
- #include "absl/types/span.h"
--#include "absl/utility/utility.h"
- #include "base/attribute.h"
- #include "common/arena.h"
- #include "common/native_type.h"
-@@ -371,12 +370,12 @@
- 
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   Value(const OptionalValue& value)
--      : variant_(absl::in_place_type<OpaqueValue>,
-+      : variant_(std::in_place_type<OpaqueValue>,
-                  static_cast<const OpaqueValue&>(value)) {}
- 
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   Value(OptionalValue&& value)
--      : variant_(absl::in_place_type<OpaqueValue>,
-+      : variant_(std::in_place_type<OpaqueValue>,
-                  static_cast<OpaqueValue&&>(value)) {}
- 
-   // NOLINTNEXTLINE(google-explicit-constructor)
-@@ -396,7 +395,7 @@
-                 common_internal::IsValueAlternativeV<absl::remove_cvref_t<T>>>>
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   Value(T&& alternative) noexcept
--      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
-                  std::forward<T>(alternative)) {}
- 
-   template <typename T,
-@@ -2802,7 +2801,7 @@
-     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
-     google::protobuf::MessageFactory* absl_nonnull message_factory,
-     google::protobuf::Arena* absl_nonnull arena) const {
--  ABSL_DCHECK_GT(qualifiers.size(), 0);
-+  ABSL_DCHECK_GT(static_cast<int>(qualifiers.size()), 0);
-   ABSL_DCHECK(descriptor_pool != nullptr);
-   ABSL_DCHECK(message_factory != nullptr);
-   ABSL_DCHECK(arena != nullptr);
 diff -urN orig/common/values/bytes_value_input_stream.h mod/common/values/bytes_value_input_stream.h
 --- orig/common/values/bytes_value_input_stream.h	2026-08-13 22:12:09.000000000 +0000
 +++ mod/common/values/bytes_value_input_stream.h	2026-09-28 10:47:06.661098378 +0000
@@ -2429,181 +2335,9 @@ diff -urN orig/common/values/bytes_value_output_stream.h mod/common/values/bytes
    }
  
    void Destruct() { AsVariant().~variant(); }
-diff -urN orig/common/values/duration_value.h mod/common/values/duration_value.h
---- orig/common/values/duration_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/duration_value.h	2026-09-28 10:47:06.659125468 +0000
-@@ -20,6 +20,7 @@
- 
- #include <ostream>
- #include <string>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/nullability.h"
-@@ -28,7 +29,6 @@
- #include "absl/status/statusor.h"
- #include "absl/strings/string_view.h"
- #include "absl/time/time.h"
--#include "absl/utility/utility.h"
- #include "common/type.h"
- #include "common/value_kind.h"
- #include "common/values/values.h"
-@@ -52,7 +52,7 @@
-   static constexpr ValueKind kKind = ValueKind::kDuration;
- 
-   explicit DurationValue(absl::Duration value) noexcept
--      : DurationValue(absl::in_place, value) {
-+      : DurationValue(std::in_place, value) {
-     ABSL_DCHECK_OK(internal::ValidateDuration(value));
-   }
- 
-@@ -117,13 +117,13 @@
-   friend class common_internal::ValueMixin<DurationValue>;
-   friend DurationValue UnsafeDurationValue(absl::Duration value);
- 
--  DurationValue(absl::in_place_t, absl::Duration value) : value_(value) {}
-+  DurationValue(std::in_place_t, absl::Duration value) : value_(value) {}
- 
-   absl::Duration value_ = absl::ZeroDuration();
- };
- 
- inline DurationValue UnsafeDurationValue(absl::Duration value) {
--  return DurationValue(absl::in_place, value);
-+  return DurationValue(std::in_place, value);
- }
- 
- inline absl::StatusOr<DurationValue> SafeDurationValue(absl::Duration value) {
-diff -urN orig/common/values/list_value.h mod/common/values/list_value.h
---- orig/common/values/list_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/list_value.h	2026-09-28 10:47:06.661545005 +0000
-@@ -36,7 +36,6 @@
- #include "absl/status/statusor.h"
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
--#include "absl/utility/utility.h"
- #include "common/native_type.h"
- #include "common/optional_ref.h"
- #include "common/value_kind.h"
-@@ -68,7 +67,7 @@
-           common_internal::IsListValueAlternativeV<absl::remove_cvref_t<T>>>>
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   ListValue(T&& value)
--      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
-                  std::forward<T>(value)) {}
- 
-   ListValue() = default;
-diff -urN orig/common/values/list_value_variant.h mod/common/values/list_value_variant.h
---- orig/common/values/list_value_variant.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/list_value_variant.h	2026-09-28 10:47:06.660499735 +0000
-@@ -18,12 +18,12 @@
- #include <cstddef>
- #include <cstdint>
- #include <type_traits>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/nullability.h"
- #include "absl/log/absl_check.h"
- #include "absl/meta/type_traits.h"
--#include "absl/utility/utility.h"
- #include "common/values/custom_list_value.h"
- #include "common/values/legacy_list_value.h"
- #include "common/values/parsed_json_list_value.h"
-@@ -80,7 +80,7 @@
- // is only lists. It is not stored directly in ValueVariant.
- class alignas(kListValueVariantAlign) ListValueVariant final {
-  public:
--  ListValueVariant() : ListValueVariant(absl::in_place_type<CustomListValue>) {}
-+  ListValueVariant() : ListValueVariant(std::in_place_type<CustomListValue>) {}
- 
-   ListValueVariant(const ListValueVariant&) = default;
-   ListValueVariant(ListValueVariant&&) = default;
-@@ -88,7 +88,7 @@
-   ListValueVariant& operator=(ListValueVariant&&) = default;
- 
-   template <typename T, typename... Args>
--  explicit ListValueVariant(absl::in_place_type_t<T>, Args&&... args)
-+  explicit ListValueVariant(std::in_place_type_t<T>, Args&&... args)
-       : index_(ListValueAlternative<T>::kIndex) {
-     static_assert(alignof(T) <= kListValueVariantAlign);
-     static_assert(sizeof(T) <= kListValueVariantSize);
-@@ -100,7 +100,7 @@
-   template <typename T, typename = std::enable_if_t<
-                             IsListValueAlternativeV<absl::remove_cvref_t<T>>>>
-   explicit ListValueVariant(T&& value)
--      : ListValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : ListValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
-                          std::forward<T>(value)) {}
- 
-   template <typename T>
-diff -urN orig/common/values/map_value.h mod/common/values/map_value.h
---- orig/common/values/map_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/map_value.h	2026-09-28 10:47:06.660269543 +0000
-@@ -43,7 +43,6 @@
- #include "absl/status/statusor.h"
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
--#include "absl/utility/utility.h"
- #include "common/native_type.h"
- #include "common/optional_ref.h"
- #include "common/value_kind.h"
-@@ -75,7 +74,7 @@
-                 absl::remove_cvref_t<T>>>>
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   MapValue(T&& value)
--      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
-                  std::forward<T>(value)) {}
- 
-   MapValue() = default;
-diff -urN orig/common/values/map_value_variant.h mod/common/values/map_value_variant.h
---- orig/common/values/map_value_variant.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/map_value_variant.h	2026-09-28 10:47:06.660055622 +0000
-@@ -18,12 +18,12 @@
- #include <cstddef>
- #include <cstdint>
- #include <type_traits>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/nullability.h"
- #include "absl/log/absl_check.h"
- #include "absl/meta/type_traits.h"
--#include "absl/utility/utility.h"
- #include "common/values/custom_map_value.h"
- #include "common/values/legacy_map_value.h"
- #include "common/values/parsed_json_map_value.h"
-@@ -78,7 +78,7 @@
- // is only maps. It is not stored directly in ValueVariant.
- class alignas(kMapValueVariantAlign) MapValueVariant final {
-  public:
--  MapValueVariant() : MapValueVariant(absl::in_place_type<CustomMapValue>) {}
-+  MapValueVariant() : MapValueVariant(std::in_place_type<CustomMapValue>) {}
- 
-   MapValueVariant(const MapValueVariant&) = default;
-   MapValueVariant(MapValueVariant&&) = default;
-@@ -86,7 +86,7 @@
-   MapValueVariant& operator=(MapValueVariant&&) = default;
- 
-   template <typename T, typename... Args>
--  explicit MapValueVariant(absl::in_place_type_t<T>, Args&&... args)
-+  explicit MapValueVariant(std::in_place_type_t<T>, Args&&... args)
-       : index_(MapValueAlternative<T>::kIndex) {
-     static_assert(alignof(T) <= kMapValueVariantAlign);
-     static_assert(sizeof(T) <= kMapValueVariantSize);
-@@ -98,7 +98,7 @@
-   template <typename T, typename = std::enable_if_t<
-                             IsMapValueAlternativeV<absl::remove_cvref_t<T>>>>
-   explicit MapValueVariant(T&& value)
--      : MapValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : MapValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
-                         std::forward<T>(value)) {}
- 
-   template <typename T>
 diff -urN orig/common/values/message_value.cc mod/common/values/message_value.cc
 --- orig/common/values/message_value.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/message_value.cc	2026-09-28 10:47:06.597306358 +0000
++++ mod/common/values/message_value.cc	2026-09-28 10:01:47.123738328 +0000
 @@ -27,7 +27,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -2852,7 +2586,7 @@ diff -urN orig/common/values/message_value.h mod/common/values/message_value.h
          },
 diff -urN orig/common/values/parsed_json_list_value.cc mod/common/values/parsed_json_list_value.cc
 --- orig/common/values/parsed_json_list_value.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/parsed_json_list_value.cc	2026-09-28 10:47:06.609881893 +0000
++++ mod/common/values/parsed_json_list_value.cc	2026-09-28 10:01:47.130339677 +0000
 @@ -27,7 +27,7 @@
  #include "absl/strings/cord.h"
  #include "absl/strings/str_cat.h"
@@ -2873,7 +2607,7 @@ diff -urN orig/common/values/parsed_json_list_value.cc mod/common/values/parsed_
                  },
 diff -urN orig/common/values/parsed_json_value.cc mod/common/values/parsed_json_value.cc
 --- orig/common/values/parsed_json_value.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/parsed_json_value.cc	2026-09-28 10:47:06.603643403 +0000
++++ mod/common/values/parsed_json_value.cc	2026-09-28 10:01:47.127724609 +0000
 @@ -24,7 +24,7 @@
  #include "absl/strings/cord.h"
  #include "absl/strings/str_cat.h"
@@ -2892,146 +2626,9 @@ diff -urN orig/common/values/parsed_json_value.cc mod/common/values/parsed_json_
            absl::Overload(
                [&](absl::string_view string) -> StringValue {
                  if (string.empty()) {
-diff -urN orig/common/values/struct_value.h mod/common/values/struct_value.h
---- orig/common/values/struct_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/struct_value.h	2026-09-28 10:47:06.659807166 +0000
-@@ -36,7 +36,6 @@
- #include "absl/strings/string_view.h"
- #include "absl/types/optional.h"
- #include "absl/types/span.h"
--#include "absl/utility/utility.h"
- #include "base/attribute.h"
- #include "common/native_type.h"
- #include "common/optional_ref.h"
-@@ -70,7 +69,7 @@
-           common_internal::IsStructValueAlternativeV<absl::remove_cvref_t<T>>>>
-   // NOLINTNEXTLINE(google-explicit-constructor)
-   StructValue(T&& value)
--      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
-                  std::forward<T>(value)) {}
- 
-   // NOLINTNEXTLINE(google-explicit-constructor)
-diff -urN orig/common/values/struct_value_variant.h mod/common/values/struct_value_variant.h
---- orig/common/values/struct_value_variant.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/struct_value_variant.h	2026-09-28 10:47:06.659571875 +0000
-@@ -18,12 +18,12 @@
- #include <cstddef>
- #include <cstdint>
- #include <type_traits>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/nullability.h"
- #include "absl/log/absl_check.h"
- #include "absl/meta/type_traits.h"
--#include "absl/utility/utility.h"
- #include "common/values/custom_struct_value.h"
- #include "common/values/legacy_struct_value.h"
- #include "common/values/parsed_message_value.h"
-@@ -73,7 +73,7 @@
- class alignas(kStructValueVariantAlign) StructValueVariant final {
-  public:
-   StructValueVariant()
--      : StructValueVariant(absl::in_place_type<ParsedMessageValue>) {}
-+      : StructValueVariant(std::in_place_type<ParsedMessageValue>) {}
- 
-   StructValueVariant(const StructValueVariant&) = default;
-   StructValueVariant(StructValueVariant&&) = default;
-@@ -81,7 +81,7 @@
-   StructValueVariant& operator=(StructValueVariant&&) = default;
- 
-   template <typename T, typename... Args>
--  explicit StructValueVariant(absl::in_place_type_t<T>, Args&&... args)
-+  explicit StructValueVariant(std::in_place_type_t<T>, Args&&... args)
-       : index_(StructValueAlternative<T>::kIndex) {
-     static_assert(alignof(T) <= kStructValueVariantAlign);
-     static_assert(sizeof(T) <= kStructValueVariantSize);
-@@ -93,7 +93,7 @@
-   template <typename T, typename = std::enable_if_t<
-                             IsStructValueAlternativeV<absl::remove_cvref_t<T>>>>
-   explicit StructValueVariant(T&& value)
--      : StructValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : StructValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
-                            std::forward<T>(value)) {}
- 
-   template <typename T>
-diff -urN orig/common/values/timestamp_value.h mod/common/values/timestamp_value.h
---- orig/common/values/timestamp_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/timestamp_value.h	2026-09-28 10:47:06.660700391 +0000
-@@ -20,6 +20,7 @@
- 
- #include <ostream>
- #include <string>
-+#include <utility>
- 
- #include "absl/base/attributes.h"
- #include "absl/base/nullability.h"
-@@ -28,7 +29,6 @@
- #include "absl/status/statusor.h"
- #include "absl/strings/string_view.h"
- #include "absl/time/time.h"
--#include "absl/utility/utility.h"
- #include "common/type.h"
- #include "common/value_kind.h"
- #include "common/values/values.h"
-@@ -53,7 +53,7 @@
-   static constexpr ValueKind kKind = ValueKind::kTimestamp;
- 
-   explicit TimestampValue(absl::Time value) noexcept
--      : TimestampValue(absl::in_place, value) {
-+      : TimestampValue(std::in_place, value) {
-     ABSL_DCHECK_OK(internal::ValidateTimestamp(value));
-   }
- 
-@@ -116,13 +116,13 @@
-   friend class common_internal::ValueMixin<TimestampValue>;
-   friend TimestampValue UnsafeTimestampValue(absl::Time value);
- 
--  TimestampValue(absl::in_place_t, absl::Time value) : value_(value) {}
-+  TimestampValue(std::in_place_t, absl::Time value) : value_(value) {}
- 
-   absl::Time value_ = absl::UnixEpoch();
- };
- 
- inline TimestampValue UnsafeTimestampValue(absl::Time value) {
--  return TimestampValue(absl::in_place, value);
-+  return TimestampValue(std::in_place, value);
- }
- 
- inline absl::StatusOr<TimestampValue> SafeTimestampValue(absl::Time value) {
-diff -urN orig/common/values/value_variant.h mod/common/values/value_variant.h
---- orig/common/values/value_variant.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/common/values/value_variant.h	2026-09-28 10:47:06.661325093 +0000
-@@ -27,7 +27,6 @@
- #include "absl/base/nullability.h"
- #include "absl/log/absl_check.h"
- #include "absl/meta/type_traits.h"
--#include "absl/utility/utility.h"
- #include "common/arena.h"
- #include "common/value_kind.h"
- #include "common/values/bool_value.h"
-@@ -484,7 +483,7 @@
-   }
- 
-   template <typename T, typename... Args>
--  explicit ValueVariant(absl::in_place_type_t<T>, Args&&... args)
-+  explicit ValueVariant(std::in_place_type_t<T>, Args&&... args)
-       : index_(ValueAlternative<T>::kIndex), kind_(ValueAlternative<T>::kKind) {
-     static_assert(alignof(T) <= kValueVariantAlign);
-     static_assert(sizeof(T) <= kValueVariantSize);
-@@ -496,7 +495,7 @@
-   template <typename T, typename = std::enable_if_t<
-                             IsValueAlternativeV<absl::remove_cvref_t<T>>>>
-   explicit ValueVariant(T&& value)
--      : ValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
-+      : ValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
-                      std::forward<T>(value)) {}
- 
-   ValueKind kind() const { return kind_; }
 diff -urN orig/eval/compiler/comprehension_vulnerability_check.cc mod/eval/compiler/comprehension_vulnerability_check.cc
 --- orig/eval/compiler/comprehension_vulnerability_check.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/compiler/comprehension_vulnerability_check.cc	2026-09-28 10:47:06.547069721 +0000
++++ mod/eval/compiler/comprehension_vulnerability_check.cc	2026-09-28 10:01:47.099913976 +0000
 @@ -20,7 +20,7 @@
  
  #include "absl/status/status.h"
@@ -3052,7 +2649,7 @@ diff -urN orig/eval/compiler/comprehension_vulnerability_check.cc mod/eval/compi
  bool ComprehensionHasMemoryExhaustionVulnerability(
 diff -urN orig/eval/compiler/flat_expr_builder.cc mod/eval/compiler/flat_expr_builder.cc
 --- orig/eval/compiler/flat_expr_builder.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/compiler/flat_expr_builder.cc	2026-09-28 10:47:06.548107237 +0000
++++ mod/eval/compiler/flat_expr_builder.cc	2026-09-28 10:01:47.100683304 +0000
 @@ -45,7 +45,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/strings/strip.h"
@@ -3073,7 +2670,7 @@ diff -urN orig/eval/compiler/flat_expr_builder.cc mod/eval/compiler/flat_expr_bu
        return;
 diff -urN orig/eval/compiler/flat_expr_builder_extensions.cc mod/eval/compiler/flat_expr_builder_extensions.cc
 --- orig/eval/compiler/flat_expr_builder_extensions.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/compiler/flat_expr_builder_extensions.cc	2026-09-28 10:47:06.551058602 +0000
++++ mod/eval/compiler/flat_expr_builder_extensions.cc	2026-09-28 10:01:47.102281528 +0000
 @@ -28,7 +28,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -3183,7 +2780,7 @@ diff -urN orig/eval/compiler/flat_expr_builder_extensions.cc mod/eval/compiler/f
  }
 diff -urN orig/eval/compiler/flat_expr_builder_extensions.h mod/eval/compiler/flat_expr_builder_extensions.h
 --- orig/eval/compiler/flat_expr_builder_extensions.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/compiler/flat_expr_builder_extensions.h	2026-09-28 10:47:06.435233919 +0000
++++ mod/eval/compiler/flat_expr_builder_extensions.h	2026-09-28 10:01:47.101113302 +0000
 @@ -35,7 +35,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -3281,29 +2878,9 @@ diff -urN orig/eval/compiler/flat_expr_builder_extensions.h mod/eval/compiler/fl
  
      const cel::Expr* self_;
      const cel::Expr* absl_nullable parent_;
-diff -urN orig/eval/eval/attribute_trail.h mod/eval/eval/attribute_trail.h
---- orig/eval/eval/attribute_trail.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/eval/attribute_trail.h	2026-09-28 10:47:06.661767683 +0000
-@@ -5,7 +5,6 @@
- #include <utility>
- 
- #include "absl/types/optional.h"
--#include "absl/utility/utility.h"
- #include "base/attribute.h"
- 
- namespace google::api::expr::runtime {
-@@ -24,7 +23,7 @@
-   AttributeTrail() : attribute_(absl::nullopt) {}
- 
-   explicit AttributeTrail(std::string variable_name)
--      : attribute_(absl::in_place, std::move(variable_name)) {}
-+      : attribute_(std::in_place, std::move(variable_name)) {}
- 
-   explicit AttributeTrail(cel::Attribute attribute)
-       : attribute_(std::move(attribute)) {}
 diff -urN orig/eval/internal/cel_value_equal_test.cc mod/eval/internal/cel_value_equal_test.cc
 --- orig/eval/internal/cel_value_equal_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/internal/cel_value_equal_test.cc	2026-09-28 10:47:06.573792358 +0000
++++ mod/eval/internal/cel_value_equal_test.cc	2026-09-28 10:01:47.113286814 +0000
 @@ -31,7 +31,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/time/time.h"
@@ -3315,7 +2892,7 @@ diff -urN orig/eval/internal/cel_value_equal_test.cc mod/eval/internal/cel_value
  #include "eval/public/containers/container_backed_map_impl.h"
 diff -urN orig/eval/public/ast_rewrite.cc mod/eval/public/ast_rewrite.cc
 --- orig/eval/public/ast_rewrite.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/ast_rewrite.cc	2026-09-28 10:47:06.561791742 +0000
++++ mod/eval/public/ast_rewrite.cc	2026-09-28 10:01:47.107536985 +0000
 @@ -19,7 +19,7 @@
  
  #include "cel/expr/syntax.pb.h"
@@ -3372,7 +2949,7 @@ diff -urN orig/eval/public/ast_rewrite.cc mod/eval/public/ast_rewrite.cc
  }  // namespace
 diff -urN orig/eval/public/ast_traverse.cc mod/eval/public/ast_traverse.cc
 --- orig/eval/public/ast_traverse.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/ast_traverse.cc	2026-09-28 10:47:06.563075339 +0000
++++ mod/eval/public/ast_traverse.cc	2026-09-28 10:01:47.108444797 +0000
 @@ -19,7 +19,7 @@
  
  #include "cel/expr/syntax.pb.h"
@@ -3411,7 +2988,7 @@ diff -urN orig/eval/public/ast_traverse.cc mod/eval/public/ast_traverse.cc
  }  // namespace
 diff -urN orig/eval/public/cel_attribute.cc mod/eval/public/cel_attribute.cc
 --- orig/eval/public/cel_attribute.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/cel_attribute.cc	2026-09-28 10:47:06.569863039 +0000
++++ mod/eval/public/cel_attribute.cc	2026-09-28 10:01:47.111100945 +0000
 @@ -82,7 +82,7 @@
    std::vector<CelAttributeQualifierPattern> path;
    path.reserve(path_spec.size());
@@ -3423,7 +3000,7 @@ diff -urN orig/eval/public/cel_attribute.cc mod/eval/public/cel_attribute.cc
  }
 diff -urN orig/eval/public/cel_attribute.h mod/eval/public/cel_attribute.h
 --- orig/eval/public/cel_attribute.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/cel_attribute.h	2026-09-28 10:47:06.445992597 +0000
++++ mod/eval/public/cel_attribute.h	2026-09-28 10:01:47.110343336 +0000
 @@ -20,7 +20,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/strings/substitute.h"
@@ -3442,29 +3019,9 @@ diff -urN orig/eval/public/cel_attribute.h mod/eval/public/cel_attribute.h
                                          bool, CelAttributeQualifierPattern>>
          path_spec = {});
  
-diff -urN orig/eval/public/cel_function_adapter_impl.h mod/eval/public/cel_function_adapter_impl.h
---- orig/eval/public/cel_function_adapter_impl.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/cel_function_adapter_impl.h	2026-09-28 10:47:06.624546616 +0000
-@@ -20,6 +20,7 @@
- #include <memory>
- #include <optional>
- #include <utility>
-+#include <tuple>
- 
- #include "absl/status/status.h"
- #include "absl/status/statusor.h"
-@@ -340,7 +341,7 @@
-         absl::Span<const CelValue>,
-         std::tuple<::google::protobuf::Arena*, Arguments...> input, CelValue* result,
-         ::google::protobuf::Arena* arena) const {
--      return ValueConverter().NativeToValue(absl::apply(handler_, input), arena,
-+      return ValueConverter().NativeToValue(std::apply(handler_, input), arena,
-                                             result);
-     }
- #else
 diff -urN orig/eval/public/cel_value.h mod/eval/public/cel_value.h
 --- orig/eval/public/cel_value.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/cel_value.h	2026-09-28 10:47:06.447380229 +0000
++++ mod/eval/public/cel_value.h	2026-09-28 10:01:47.111738384 +0000
 @@ -31,7 +31,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/time/time.h"
@@ -3487,7 +3044,7 @@ diff -urN orig/eval/public/cel_value.h mod/eval/public/cel_value.h
    using MessageWrapper = google::api::expr::runtime::MessageWrapper;
 diff -urN orig/eval/public/cel_value_internal.h mod/eval/public/cel_value_internal.h
 --- orig/eval/public/cel_value_internal.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/cel_value_internal.h	2026-09-28 10:47:06.446300665 +0000
++++ mod/eval/public/cel_value_internal.h	2026-09-28 10:01:47.110590803 +0000
 @@ -20,7 +20,7 @@
  #include <utility>
  
@@ -3536,7 +3093,7 @@ diff -urN orig/eval/public/cel_value_internal.h mod/eval/public/cel_value_intern
  // Adapter for visitor clients that depend on google::protobuf::Message as a variant type.
 diff -urN orig/eval/public/equality_function_registrar_test.cc mod/eval/public/equality_function_registrar_test.cc
 --- orig/eval/public/equality_function_registrar_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/equality_function_registrar_test.cc	2026-09-28 10:47:06.562631317 +0000
++++ mod/eval/public/equality_function_registrar_test.cc	2026-09-28 10:01:47.108278557 +0000
 @@ -34,7 +34,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/time/time.h"
@@ -3562,7 +3119,7 @@ diff -urN orig/eval/public/equality_function_registrar_test.cc mod/eval/public/e
                                  StatusIs(absl::StatusCode::kUnknown,
 diff -urN orig/eval/public/structs/cel_proto_wrap_util.cc mod/eval/public/structs/cel_proto_wrap_util.cc
 --- orig/eval/public/structs/cel_proto_wrap_util.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/eval/public/structs/cel_proto_wrap_util.cc	2026-09-28 10:47:06.578357079 +0000
++++ mod/eval/public/structs/cel_proto_wrap_util.cc	2026-09-28 10:01:47.115873380 +0000
 @@ -40,7 +40,7 @@
  #include "absl/synchronization/mutex.h"
  #include "absl/time/time.h"
@@ -3610,7 +3167,7 @@ diff -urN orig/eval/public/structs/cel_proto_wrap_util.cc mod/eval/public/struct
                if (string.data() == scratch.data() &&
 diff -urN orig/extensions/math_ext_macros.cc mod/extensions/math_ext_macros.cc
 --- orig/extensions/math_ext_macros.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/extensions/math_ext_macros.cc	2026-09-28 10:47:06.479536337 +0000
++++ mod/extensions/math_ext_macros.cc	2026-09-28 10:01:47.066512313 +0000
 @@ -23,7 +23,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -3631,7 +3188,7 @@ diff -urN orig/extensions/math_ext_macros.cc mod/extensions/math_ext_macros.cc
                         return const_expr.has_double_value() ||
 diff -urN orig/extensions/proto_ext.cc mod/extensions/proto_ext.cc
 --- orig/extensions/proto_ext.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/extensions/proto_ext.cc	2026-09-28 10:47:06.478921544 +0000
++++ mod/extensions/proto_ext.cc	2026-09-28 10:01:47.066172332 +0000
 @@ -24,7 +24,7 @@
  #include "absl/strings/str_cat.h"
  #include "absl/types/optional.h"
@@ -3652,7 +3209,7 @@ diff -urN orig/extensions/proto_ext.cc mod/extensions/proto_ext.cc
              if (select_expr.test_only()) {
 diff -urN orig/extensions/protobuf/internal/qualify.cc mod/extensions/protobuf/internal/qualify.cc
 --- orig/extensions/protobuf/internal/qualify.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/extensions/protobuf/internal/qualify.cc	2026-09-28 10:47:06.540005703 +0000
++++ mod/extensions/protobuf/internal/qualify.cc	2026-09-28 10:01:47.096297647 +0000
 @@ -23,7 +23,7 @@
  #include "absl/status/statusor.h"
  #include "absl/strings/str_cat.h"
@@ -3693,7 +3250,7 @@ diff -urN orig/extensions/protobuf/internal/qualify.cc mod/extensions/protobuf/i
            -> absl::Status {
 diff -urN orig/extensions/select_optimization.cc mod/extensions/select_optimization.cc
 --- orig/extensions/select_optimization.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/extensions/select_optimization.cc	2026-09-28 10:47:06.485865727 +0000
++++ mod/extensions/select_optimization.cc	2026-09-28 10:01:47.067839140 +0000
 @@ -33,7 +33,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -3750,7 +3307,7 @@ diff -urN orig/extensions/select_optimization.cc mod/extensions/select_optimizat
                          },
 diff -urN orig/internal/json.cc mod/internal/json.cc
 --- orig/internal/json.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/json.cc	2026-09-28 10:47:06.531719443 +0000
++++ mod/internal/json.cc	2026-09-28 10:01:47.091794651 +0000
 @@ -40,7 +40,7 @@
  #include "absl/strings/str_cat.h"
  #include "absl/strings/str_join.h"
@@ -3834,7 +3391,7 @@ diff -urN orig/internal/json.cc mod/internal/json.cc
                               return string;
 diff -urN orig/internal/message_equality.cc mod/internal/message_equality.cc
 --- orig/internal/message_equality.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/message_equality.cc	2026-09-28 10:47:06.533629264 +0000
++++ mod/internal/message_equality.cc	2026-09-28 10:01:47.093110630 +0000
 @@ -32,7 +32,7 @@
  #include "absl/strings/str_cat.h"
  #include "absl/strings/string_view.h"
@@ -3855,7 +3412,7 @@ diff -urN orig/internal/message_equality.cc mod/internal/message_equality.cc
                       DoubleValueEqualer{}, StringValueEqualer{},
 diff -urN orig/internal/number.h mod/internal/number.h
 --- orig/internal/number.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/number.h	2026-09-28 10:47:06.428805245 +0000
++++ mod/internal/number.h	2026-09-28 10:01:47.094903665 +0000
 @@ -18,7 +18,7 @@
  #include <cstdint>
  #include <limits>
@@ -3948,60 +3505,9 @@ diff -urN orig/internal/number.h mod/internal/number.h
    }
  };
  
-diff -urN orig/internal/strings.cc mod/internal/strings.cc
---- orig/internal/strings.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/strings.cc	2026-09-28 10:47:06.620564007 +0000
-@@ -253,7 +253,7 @@
-           if (is_bytes_literal) {
-             dest->push_back(static_cast<char>(ch));
-           } else {
--            Utf8Encode(*dest, ch);
-+            Utf8Encode(ch, dest);
-           }
-           break;
-         }
-@@ -297,7 +297,7 @@
-           if (is_bytes_literal) {
-             dest->push_back(static_cast<char>(ch));
-           } else {
--            Utf8Encode(*dest, ch);
-+            Utf8Encode(ch, dest);
-           }
-           break;
-         }
-@@ -350,7 +350,7 @@
-             // Error offset was set to the start of the escape above the switch.
-             return false;
-           }
--          Utf8Encode(*dest, cp);
-+          Utf8Encode(cp, dest);
-           break;
-         }
-         case 'U': {
-@@ -412,7 +412,7 @@
-             // Error offset was set to the start of the escape above the switch.
-             return false;
-           }
--          Utf8Encode(*dest, cp);
-+          Utf8Encode(cp, dest);
-           break;
-         }
-         case '\r':
-diff -urN orig/internal/utf8_test.cc mod/internal/utf8_test.cc
---- orig/internal/utf8_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/utf8_test.cc	2026-09-28 10:47:06.620812062 +0000
-@@ -171,7 +171,7 @@
- TEST_P(Utf8EncodeTest, Compliance) {
-   const Utf8EncodeTestCase& test_case = GetParam();
-   std::string result;
--  EXPECT_EQ(Utf8Encode(result, test_case.code_point),
-+  EXPECT_EQ(Utf8Encode(test_case.code_point, &result),
-             test_case.code_units.size());
-   EXPECT_EQ(result, test_case.code_units);
- }
 diff -urN orig/internal/well_known_types.cc mod/internal/well_known_types.cc
 --- orig/internal/well_known_types.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/well_known_types.cc	2026-09-28 10:47:06.531267906 +0000
++++ mod/internal/well_known_types.cc	2026-09-28 10:01:47.091300091 +0000
 @@ -44,7 +44,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/strings/strip.h"
@@ -4058,7 +3564,7 @@ diff -urN orig/internal/well_known_types.cc mod/internal/well_known_types.cc
                                      },
 diff -urN orig/internal/well_known_types.h mod/internal/well_known_types.h
 --- orig/internal/well_known_types.h	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/well_known_types.h	2026-09-28 10:47:06.428584591 +0000
++++ mod/internal/well_known_types.h	2026-09-28 10:01:47.094777157 +0000
 @@ -48,7 +48,7 @@
  #include "absl/strings/str_cat.h"
  #include "absl/strings/string_view.h"
@@ -4272,7 +3778,7 @@ diff -urN orig/internal/well_known_types.h mod/internal/well_known_types.h
      const google::protobuf::Message& message ABSL_ATTRIBUTE_LIFETIME_BOUND,
 diff -urN orig/internal/well_known_types_test.cc mod/internal/well_known_types_test.cc
 --- orig/internal/well_known_types_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/internal/well_known_types_test.cc	2026-09-28 10:47:06.535256116 +0000
++++ mod/internal/well_known_types_test.cc	2026-09-28 10:01:47.093804460 +0000
 @@ -34,7 +34,7 @@
  #include "absl/strings/cord.h"
  #include "absl/strings/string_view.h"
@@ -4284,7 +3790,7 @@ diff -urN orig/internal/well_known_types_test.cc mod/internal/well_known_types_t
  #include "internal/minimal_descriptor_pool.h"
 diff -urN orig/parser/macro_expr_factory.cc mod/parser/macro_expr_factory.cc
 --- orig/parser/macro_expr_factory.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/parser/macro_expr_factory.cc	2026-09-28 10:47:06.505057569 +0000
++++ mod/parser/macro_expr_factory.cc	2026-09-28 10:01:47.076544289 +0000
 @@ -19,7 +19,7 @@
  
  #include "absl/functional/overload.h"
@@ -4305,7 +3811,7 @@ diff -urN orig/parser/macro_expr_factory.cc mod/parser/macro_expr_factory.cc
              return NewUnspecified(CopyId(expr));
 diff -urN orig/parser/parser.cc mod/parser/parser.cc
 --- orig/parser/parser.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/parser/parser.cc	2026-09-28 10:47:06.503438643 +0000
++++ mod/parser/parser.cc	2026-09-28 10:01:47.075452368 +0000
 @@ -53,7 +53,7 @@
  #include "absl/strings/string_view.h"
  #include "absl/types/optional.h"
@@ -4339,7 +3845,7 @@ diff -urN orig/parser/parser.cc mod/parser/parser.cc
      if (!prefix.empty()) {
 diff -urN orig/runtime/internal/convert_constant.cc mod/runtime/internal/convert_constant.cc
 --- orig/runtime/internal/convert_constant.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/runtime/internal/convert_constant.cc	2026-09-28 10:47:06.594379679 +0000
++++ mod/runtime/internal/convert_constant.cc	2026-09-28 10:01:47.121427745 +0000
 @@ -20,7 +20,7 @@
  #include "absl/status/status.h"
  #include "absl/status/statusor.h"
@@ -4360,7 +3866,7 @@ diff -urN orig/runtime/internal/convert_constant.cc mod/runtime/internal/convert
  }  // namespace cel::runtime_internal
 diff -urN orig/runtime/memory_safety_test.cc mod/runtime/memory_safety_test.cc
 --- orig/runtime/memory_safety_test.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/runtime/memory_safety_test.cc	2026-09-28 10:47:06.509484482 +0000
++++ mod/runtime/memory_safety_test.cc	2026-09-28 10:01:47.078184170 +0000
 @@ -30,7 +30,7 @@
  #include "absl/strings/str_cat.h"
  #include "absl/strings/str_format.h"
@@ -4381,7 +3887,7 @@ diff -urN orig/runtime/memory_safety_test.cc mod/runtime/memory_safety_test.cc
        // Note: This assumes that the TestCase is valid for the given TEST.
 diff -urN orig/tools/branch_coverage.cc mod/tools/branch_coverage.cc
 --- orig/tools/branch_coverage.cc	2026-08-13 22:12:09.000000000 +0000
-+++ mod/tools/branch_coverage.cc	2026-09-28 10:47:06.498287143 +0000
++++ mod/tools/branch_coverage.cc	2026-09-28 10:01:47.073148823 +0000
 @@ -26,7 +26,7 @@
  #include "absl/functional/overload.h"
  #include "absl/status/status.h"
@@ -4409,3 +3915,497 @@ diff -urN orig/tools/branch_coverage.cc mod/tools/branch_coverage.cc
                               [&](OtherNode& cov) {
                                 if (is_error) {
                                   cov.result_error++;
+diff -urN orig/common/optional_ref.h mod/common/optional_ref.h
+--- orig/common/optional_ref.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/optional_ref.h	2026-09-28 10:47:06.658577540 +0000
+@@ -17,13 +17,13 @@
+ 
+ #include <memory>
+ #include <type_traits>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/macros.h"
+ #include "absl/base/nullability.h"
+ #include "absl/base/optimization.h"
+ #include "absl/types/optional.h"
+-#include "absl/utility/utility.h"
+ 
+ namespace cel {
+ 
+@@ -36,8 +36,8 @@
+   static_assert(!std::is_reference_v<T>, "T must not be a reference.");
+   static_assert(!std::is_same_v<absl::nullopt_t, std::remove_cv_t<T>>,
+                 "optional_ref<absl::nullopt_t> is not allowed.");
+-  static_assert(!std::is_same_v<absl::in_place_t, std::remove_cv_t<T>>,
+-                "optional_ref<absl::in_place_t> is not allowed.");
++  static_assert(!std::is_same_v<std::in_place_t, std::remove_cv_t<T>>,
++                "optional_ref<std::in_place_t> is not allowed.");
+ 
+   using value_type = T;
+ 
+diff -urN orig/common/types/opaque_type.cc mod/common/types/opaque_type.cc
+--- orig/common/types/opaque_type.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/types/opaque_type.cc	2026-09-28 10:47:06.658028039 +0000
+@@ -16,6 +16,7 @@
+ #include <cstring>
+ #include <string>
+ #include <type_traits>
++#include <utility>
+ 
+ #include "absl/base/nullability.h"
+ #include "absl/log/absl_check.h"
+@@ -24,7 +25,6 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/utility/utility.h"
+ #include "common/type.h"
+ #include "common/type_kind.h"
+ #include "google/protobuf/arena.h"
+@@ -96,14 +96,14 @@
+ 
+ absl::optional<OptionalType> OpaqueType::AsOptional() const {
+   if (IsOptional()) {
+-    return OptionalType(absl::in_place, *this);
++    return OptionalType(std::in_place, *this);
+   }
+   return std::nullopt;
+ }
+ 
+ OptionalType OpaqueType::GetOptional() const {
+   ABSL_DCHECK(IsOptional()) << DebugString();
+-  return OptionalType(absl::in_place, *this);
++  return OptionalType(std::in_place, *this);
+ }
+ 
+ }  // namespace cel
+diff -urN orig/common/types/optional_type.h mod/common/types/optional_type.h
+--- orig/common/types/optional_type.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/types/optional_type.h	2026-09-28 10:47:06.658350023 +0000
+@@ -28,7 +28,6 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/utility/utility.h"
+ #include "common/type_kind.h"
+ #include "common/types/opaque_type.h"
+ #include "google/protobuf/arena.h"
+@@ -49,7 +48,7 @@
+ 
+   OptionalType(google::protobuf::Arena* absl_nonnull arena, const Type& parameter)
+       : OptionalType(
+-            absl::in_place,
++            std::in_place,
+             OpaqueType(arena, kName, absl::MakeConstSpan(&parameter, 1))) {}
+ 
+   static TypeKind kind() { return kKind; }
+@@ -76,7 +75,7 @@
+  private:
+   friend class OpaqueType;
+ 
+-  OptionalType(absl::in_place_t, OpaqueType type) : opaque_(std::move(type)) {}
++  OptionalType(std::in_place_t, OpaqueType type) : opaque_(std::move(type)) {}
+ 
+   OpaqueType opaque_;
+ };
+diff -urN orig/common/values/duration_value.h mod/common/values/duration_value.h
+--- orig/common/values/duration_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/duration_value.h	2026-09-28 10:47:06.659125468 +0000
+@@ -20,6 +20,7 @@
+ 
+ #include <ostream>
+ #include <string>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/nullability.h"
+@@ -28,7 +29,6 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/utility/utility.h"
+ #include "common/type.h"
+ #include "common/value_kind.h"
+ #include "common/values/values.h"
+@@ -52,7 +52,7 @@
+   static constexpr ValueKind kKind = ValueKind::kDuration;
+ 
+   explicit DurationValue(absl::Duration value) noexcept
+-      : DurationValue(absl::in_place, value) {
++      : DurationValue(std::in_place, value) {
+     ABSL_DCHECK_OK(internal::ValidateDuration(value));
+   }
+ 
+@@ -117,13 +117,13 @@
+   friend class common_internal::ValueMixin<DurationValue>;
+   friend DurationValue UnsafeDurationValue(absl::Duration value);
+ 
+-  DurationValue(absl::in_place_t, absl::Duration value) : value_(value) {}
++  DurationValue(std::in_place_t, absl::Duration value) : value_(value) {}
+ 
+   absl::Duration value_ = absl::ZeroDuration();
+ };
+ 
+ inline DurationValue UnsafeDurationValue(absl::Duration value) {
+-  return DurationValue(absl::in_place, value);
++  return DurationValue(std::in_place, value);
+ }
+ 
+ inline absl::StatusOr<DurationValue> SafeDurationValue(absl::Duration value) {
+diff -urN orig/common/values/list_value.h mod/common/values/list_value.h
+--- orig/common/values/list_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/list_value.h	2026-09-28 10:47:06.661545005 +0000
+@@ -36,7 +36,6 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+-#include "absl/utility/utility.h"
+ #include "common/native_type.h"
+ #include "common/optional_ref.h"
+ #include "common/value_kind.h"
+@@ -68,7 +67,7 @@
+           common_internal::IsListValueAlternativeV<absl::remove_cvref_t<T>>>>
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   ListValue(T&& value)
+-      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
+                  std::forward<T>(value)) {}
+ 
+   ListValue() = default;
+diff -urN orig/common/values/list_value_variant.h mod/common/values/list_value_variant.h
+--- orig/common/values/list_value_variant.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/list_value_variant.h	2026-09-28 10:47:06.660499735 +0000
+@@ -18,12 +18,12 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <type_traits>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/nullability.h"
+ #include "absl/log/absl_check.h"
+ #include "absl/meta/type_traits.h"
+-#include "absl/utility/utility.h"
+ #include "common/values/custom_list_value.h"
+ #include "common/values/legacy_list_value.h"
+ #include "common/values/parsed_json_list_value.h"
+@@ -80,7 +80,7 @@
+ // is only lists. It is not stored directly in ValueVariant.
+ class alignas(kListValueVariantAlign) ListValueVariant final {
+  public:
+-  ListValueVariant() : ListValueVariant(absl::in_place_type<CustomListValue>) {}
++  ListValueVariant() : ListValueVariant(std::in_place_type<CustomListValue>) {}
+ 
+   ListValueVariant(const ListValueVariant&) = default;
+   ListValueVariant(ListValueVariant&&) = default;
+@@ -88,7 +88,7 @@
+   ListValueVariant& operator=(ListValueVariant&&) = default;
+ 
+   template <typename T, typename... Args>
+-  explicit ListValueVariant(absl::in_place_type_t<T>, Args&&... args)
++  explicit ListValueVariant(std::in_place_type_t<T>, Args&&... args)
+       : index_(ListValueAlternative<T>::kIndex) {
+     static_assert(alignof(T) <= kListValueVariantAlign);
+     static_assert(sizeof(T) <= kListValueVariantSize);
+@@ -100,7 +100,7 @@
+   template <typename T, typename = std::enable_if_t<
+                             IsListValueAlternativeV<absl::remove_cvref_t<T>>>>
+   explicit ListValueVariant(T&& value)
+-      : ListValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : ListValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
+                          std::forward<T>(value)) {}
+ 
+   template <typename T>
+diff -urN orig/common/values/map_value.h mod/common/values/map_value.h
+--- orig/common/values/map_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/map_value.h	2026-09-28 10:47:06.660269543 +0000
+@@ -43,7 +43,6 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+-#include "absl/utility/utility.h"
+ #include "common/native_type.h"
+ #include "common/optional_ref.h"
+ #include "common/value_kind.h"
+@@ -75,7 +74,7 @@
+                 absl::remove_cvref_t<T>>>>
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   MapValue(T&& value)
+-      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
+                  std::forward<T>(value)) {}
+ 
+   MapValue() = default;
+diff -urN orig/common/values/map_value_variant.h mod/common/values/map_value_variant.h
+--- orig/common/values/map_value_variant.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/map_value_variant.h	2026-09-28 10:47:06.660055622 +0000
+@@ -18,12 +18,12 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <type_traits>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/nullability.h"
+ #include "absl/log/absl_check.h"
+ #include "absl/meta/type_traits.h"
+-#include "absl/utility/utility.h"
+ #include "common/values/custom_map_value.h"
+ #include "common/values/legacy_map_value.h"
+ #include "common/values/parsed_json_map_value.h"
+@@ -78,7 +78,7 @@
+ // is only maps. It is not stored directly in ValueVariant.
+ class alignas(kMapValueVariantAlign) MapValueVariant final {
+  public:
+-  MapValueVariant() : MapValueVariant(absl::in_place_type<CustomMapValue>) {}
++  MapValueVariant() : MapValueVariant(std::in_place_type<CustomMapValue>) {}
+ 
+   MapValueVariant(const MapValueVariant&) = default;
+   MapValueVariant(MapValueVariant&&) = default;
+@@ -86,7 +86,7 @@
+   MapValueVariant& operator=(MapValueVariant&&) = default;
+ 
+   template <typename T, typename... Args>
+-  explicit MapValueVariant(absl::in_place_type_t<T>, Args&&... args)
++  explicit MapValueVariant(std::in_place_type_t<T>, Args&&... args)
+       : index_(MapValueAlternative<T>::kIndex) {
+     static_assert(alignof(T) <= kMapValueVariantAlign);
+     static_assert(sizeof(T) <= kMapValueVariantSize);
+@@ -98,7 +98,7 @@
+   template <typename T, typename = std::enable_if_t<
+                             IsMapValueAlternativeV<absl::remove_cvref_t<T>>>>
+   explicit MapValueVariant(T&& value)
+-      : MapValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : MapValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
+                         std::forward<T>(value)) {}
+ 
+   template <typename T>
+diff -urN orig/common/values/struct_value.h mod/common/values/struct_value.h
+--- orig/common/values/struct_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/struct_value.h	2026-09-28 10:47:06.659807166 +0000
+@@ -36,7 +36,6 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/optional.h"
+ #include "absl/types/span.h"
+-#include "absl/utility/utility.h"
+ #include "base/attribute.h"
+ #include "common/native_type.h"
+ #include "common/optional_ref.h"
+@@ -70,7 +69,7 @@
+           common_internal::IsStructValueAlternativeV<absl::remove_cvref_t<T>>>>
+   // NOLINTNEXTLINE(google-explicit-constructor)
+   StructValue(T&& value)
+-      : variant_(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : variant_(std::in_place_type<absl::remove_cvref_t<T>>,
+                  std::forward<T>(value)) {}
+ 
+   // NOLINTNEXTLINE(google-explicit-constructor)
+diff -urN orig/common/values/struct_value_variant.h mod/common/values/struct_value_variant.h
+--- orig/common/values/struct_value_variant.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/struct_value_variant.h	2026-09-28 10:47:06.659571875 +0000
+@@ -18,12 +18,12 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <type_traits>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/nullability.h"
+ #include "absl/log/absl_check.h"
+ #include "absl/meta/type_traits.h"
+-#include "absl/utility/utility.h"
+ #include "common/values/custom_struct_value.h"
+ #include "common/values/legacy_struct_value.h"
+ #include "common/values/parsed_message_value.h"
+@@ -73,7 +73,7 @@
+ class alignas(kStructValueVariantAlign) StructValueVariant final {
+  public:
+   StructValueVariant()
+-      : StructValueVariant(absl::in_place_type<ParsedMessageValue>) {}
++      : StructValueVariant(std::in_place_type<ParsedMessageValue>) {}
+ 
+   StructValueVariant(const StructValueVariant&) = default;
+   StructValueVariant(StructValueVariant&&) = default;
+@@ -81,7 +81,7 @@
+   StructValueVariant& operator=(StructValueVariant&&) = default;
+ 
+   template <typename T, typename... Args>
+-  explicit StructValueVariant(absl::in_place_type_t<T>, Args&&... args)
++  explicit StructValueVariant(std::in_place_type_t<T>, Args&&... args)
+       : index_(StructValueAlternative<T>::kIndex) {
+     static_assert(alignof(T) <= kStructValueVariantAlign);
+     static_assert(sizeof(T) <= kStructValueVariantSize);
+@@ -93,7 +93,7 @@
+   template <typename T, typename = std::enable_if_t<
+                             IsStructValueAlternativeV<absl::remove_cvref_t<T>>>>
+   explicit StructValueVariant(T&& value)
+-      : StructValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : StructValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
+                            std::forward<T>(value)) {}
+ 
+   template <typename T>
+diff -urN orig/common/values/timestamp_value.h mod/common/values/timestamp_value.h
+--- orig/common/values/timestamp_value.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/timestamp_value.h	2026-09-28 10:47:06.660700391 +0000
+@@ -20,6 +20,7 @@
+ 
+ #include <ostream>
+ #include <string>
++#include <utility>
+ 
+ #include "absl/base/attributes.h"
+ #include "absl/base/nullability.h"
+@@ -28,7 +29,6 @@
+ #include "absl/status/statusor.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/time/time.h"
+-#include "absl/utility/utility.h"
+ #include "common/type.h"
+ #include "common/value_kind.h"
+ #include "common/values/values.h"
+@@ -53,7 +53,7 @@
+   static constexpr ValueKind kKind = ValueKind::kTimestamp;
+ 
+   explicit TimestampValue(absl::Time value) noexcept
+-      : TimestampValue(absl::in_place, value) {
++      : TimestampValue(std::in_place, value) {
+     ABSL_DCHECK_OK(internal::ValidateTimestamp(value));
+   }
+ 
+@@ -116,13 +116,13 @@
+   friend class common_internal::ValueMixin<TimestampValue>;
+   friend TimestampValue UnsafeTimestampValue(absl::Time value);
+ 
+-  TimestampValue(absl::in_place_t, absl::Time value) : value_(value) {}
++  TimestampValue(std::in_place_t, absl::Time value) : value_(value) {}
+ 
+   absl::Time value_ = absl::UnixEpoch();
+ };
+ 
+ inline TimestampValue UnsafeTimestampValue(absl::Time value) {
+-  return TimestampValue(absl::in_place, value);
++  return TimestampValue(std::in_place, value);
+ }
+ 
+ inline absl::StatusOr<TimestampValue> SafeTimestampValue(absl::Time value) {
+diff -urN orig/common/values/value_variant.h mod/common/values/value_variant.h
+--- orig/common/values/value_variant.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/common/values/value_variant.h	2026-09-28 10:47:06.661325093 +0000
+@@ -27,7 +27,6 @@
+ #include "absl/base/nullability.h"
+ #include "absl/log/absl_check.h"
+ #include "absl/meta/type_traits.h"
+-#include "absl/utility/utility.h"
+ #include "common/arena.h"
+ #include "common/value_kind.h"
+ #include "common/values/bool_value.h"
+@@ -484,7 +483,7 @@
+   }
+ 
+   template <typename T, typename... Args>
+-  explicit ValueVariant(absl::in_place_type_t<T>, Args&&... args)
++  explicit ValueVariant(std::in_place_type_t<T>, Args&&... args)
+       : index_(ValueAlternative<T>::kIndex), kind_(ValueAlternative<T>::kKind) {
+     static_assert(alignof(T) <= kValueVariantAlign);
+     static_assert(sizeof(T) <= kValueVariantSize);
+@@ -496,7 +495,7 @@
+   template <typename T, typename = std::enable_if_t<
+                             IsValueAlternativeV<absl::remove_cvref_t<T>>>>
+   explicit ValueVariant(T&& value)
+-      : ValueVariant(absl::in_place_type<absl::remove_cvref_t<T>>,
++      : ValueVariant(std::in_place_type<absl::remove_cvref_t<T>>,
+                      std::forward<T>(value)) {}
+ 
+   ValueKind kind() const { return kind_; }
+diff -urN orig/eval/eval/attribute_trail.h mod/eval/eval/attribute_trail.h
+--- orig/eval/eval/attribute_trail.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/eval/attribute_trail.h	2026-09-28 10:47:06.661767683 +0000
+@@ -5,7 +5,6 @@
+ #include <utility>
+ 
+ #include "absl/types/optional.h"
+-#include "absl/utility/utility.h"
+ #include "base/attribute.h"
+ 
+ namespace google::api::expr::runtime {
+@@ -24,7 +23,7 @@
+   AttributeTrail() : attribute_(absl::nullopt) {}
+ 
+   explicit AttributeTrail(std::string variable_name)
+-      : attribute_(absl::in_place, std::move(variable_name)) {}
++      : attribute_(std::in_place, std::move(variable_name)) {}
+ 
+   explicit AttributeTrail(cel::Attribute attribute)
+       : attribute_(std::move(attribute)) {}
+diff -urN orig/eval/public/cel_function_adapter_impl.h mod/eval/public/cel_function_adapter_impl.h
+--- orig/eval/public/cel_function_adapter_impl.h	2026-08-13 22:12:09.000000000 +0000
++++ mod/eval/public/cel_function_adapter_impl.h	2026-09-28 10:47:06.624546616 +0000
+@@ -20,6 +20,7 @@
+ #include <memory>
+ #include <optional>
+ #include <utility>
++#include <tuple>
+ 
+ #include "absl/status/status.h"
+ #include "absl/status/statusor.h"
+@@ -340,7 +341,7 @@
+         absl::Span<const CelValue>,
+         std::tuple<::google::protobuf::Arena*, Arguments...> input, CelValue* result,
+         ::google::protobuf::Arena* arena) const {
+-      return ValueConverter().NativeToValue(absl::apply(handler_, input), arena,
++      return ValueConverter().NativeToValue(std::apply(handler_, input), arena,
+                                             result);
+     }
+ #else
+diff -urN orig/internal/strings.cc mod/internal/strings.cc
+--- orig/internal/strings.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/strings.cc	2026-09-28 10:47:06.620564007 +0000
+@@ -253,7 +253,7 @@
+           if (is_bytes_literal) {
+             dest->push_back(static_cast<char>(ch));
+           } else {
+-            Utf8Encode(*dest, ch);
++            Utf8Encode(ch, dest);
+           }
+           break;
+         }
+@@ -297,7 +297,7 @@
+           if (is_bytes_literal) {
+             dest->push_back(static_cast<char>(ch));
+           } else {
+-            Utf8Encode(*dest, ch);
++            Utf8Encode(ch, dest);
+           }
+           break;
+         }
+@@ -350,7 +350,7 @@
+             // Error offset was set to the start of the escape above the switch.
+             return false;
+           }
+-          Utf8Encode(*dest, cp);
++          Utf8Encode(cp, dest);
+           break;
+         }
+         case 'U': {
+@@ -412,7 +412,7 @@
+             // Error offset was set to the start of the escape above the switch.
+             return false;
+           }
+-          Utf8Encode(*dest, cp);
++          Utf8Encode(cp, dest);
+           break;
+         }
+         case '\r':
+diff -urN orig/internal/utf8_test.cc mod/internal/utf8_test.cc
+--- orig/internal/utf8_test.cc	2026-08-13 22:12:09.000000000 +0000
++++ mod/internal/utf8_test.cc	2026-09-28 10:47:06.620812062 +0000
+@@ -171,7 +171,7 @@
+ TEST_P(Utf8EncodeTest, Compliance) {
+   const Utf8EncodeTestCase& test_case = GetParam();
+   std::string result;
+-  EXPECT_EQ(Utf8Encode(result, test_case.code_point),
++  EXPECT_EQ(Utf8Encode(test_case.code_point, &result),
+             test_case.code_units.size());
+   EXPECT_EQ(result, test_case.code_units);
+ }
