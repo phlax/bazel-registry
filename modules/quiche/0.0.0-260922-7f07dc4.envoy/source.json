@@ -9,7 +9,7 @@
     },
     "overlay": {
         "BUILD.bazel": "sha256-btTDxyldxuIttWMBG22iw/bnNT23fEtm0GsYbYXx+vg=",
-        "quiche_overlay.bzl": "sha256-qY+xbPBF8XDfMErmFwjic+drlAytcwwxgytPL7b5sFk=",
+        "quiche_overlay.bzl": "sha256-G8VUNge4iweEN07/YtjmlSvKeeyfcZyhPE5wtLIHK0k=",
         "extensions.bzl": "sha256-CMNzHyry4UGLTGqH1aRFngZjdz3WEpDwipdJyIId3t0=",
         "envoy_deps.bzl": "sha256-iSZdcoZ4fJTDsezIPLhCZV0FUZQo92gGpmWPJHCK+ak="
     }

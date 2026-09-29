@@ -5,6 +5,10 @@ quiche_copts = [
     "-Wno-unused-function",
     "-Wno-old-style-cast",
     "-Wno-deprecated-declarations",
+    # quiche mixes absl::Nonnull/Nullable-annotated and unannotated pointers in the
+    # same headers (e.g. common/stable_block_list.h); clang then warns on every
+    # unannotated pointer. Upstream builds with this off too.
+    "-Wno-nullability-completeness",
     # Envoy build should not fail if a dependency has a warning.
     "-Wno-error",
 ] + select({

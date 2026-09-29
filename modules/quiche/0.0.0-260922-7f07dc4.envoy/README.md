@@ -4,6 +4,8 @@ This module packages QUICHE from commit `7f07dc4d14c5702607a0dee9c7e4ab07f63f988
 
 The overlay breaks the `@envoy` cycle by inlining lightweight compatibility macros and rewriting Envoy platform deps to `@quiche_deps` aliases configured by the `quiche.deps(...)` module extension. By default those aliases point at QUICHE's upstream default platform impl headers (or empty stubs for Envoy-only/test-only hooks). Envoy should override them to its real platform impl targets when consuming this module.
 
+The overlay's `quiche_copts` carries the warning suppressions needed to build QUICHE cleanly under clang, so consumers need no `.bazelrc` flags for them.
+
 The overlay also replaces Envoy's `config_setting`s: OS conditions resolve directly against `@platforms//os:*`, while `:apple`, `:windows_x86_64` and `:disable_http3` are defined locally in the overlay.
 
 ## `quiche.deps(...)` overrides
