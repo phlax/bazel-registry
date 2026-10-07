@@ -1,0 +1,5 @@
+diff --git a/src/lookup.cc b/src/lookup.cc
+--- a/src/lookup.cc
++++ b/src/lookup.cc
+@@ -49,0 +50 @@
++	return 0;
