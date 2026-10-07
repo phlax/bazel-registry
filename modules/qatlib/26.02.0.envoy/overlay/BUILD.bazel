@@ -1,5 +1,12 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# qatlib upstream is not warning-clean; silence noise in Envoy builds.
+_QATLIB_WARNING_COPTS = [
+    "-Wno-unused-function",
+    "-Wno-unused-variable",
+    "-Wno-unused-but-set-variable",
+]
+
 label_flag(
     name = "crypto_lib",
     build_setting_default = "@boringssl//:crypto",
@@ -17,7 +24,7 @@ cc_library(
         "quickassist/utilities/osal/include",
         "quickassist/utilities/osal/src/linux/user_space/include",
     ],
-    copts = ["-fPIC"],
+    copts = _QATLIB_WARNING_COPTS + ["-fPIC"],
     visibility = ["//visibility:public"],
     deps = [
         ":crypto_lib",
@@ -35,7 +42,7 @@ cc_library(
         "quickassist/utilities/adf_ctl",
         "quickassist/utilities/libusdm_drv",
     ],
-    copts = ["-fPIC"],
+    copts = _QATLIB_WARNING_COPTS + ["-fPIC"],
     visibility = ["//visibility:public"],
 )
 
@@ -58,7 +65,7 @@ cc_library(
         "quickassist/utilities/libusdm_drv/include",
         "quickassist/utilities/libusdm_drv/user_space",
     ],
-    copts = ["-fPIC"],
+    copts = _QATLIB_WARNING_COPTS + ["-fPIC"],
     visibility = ["//visibility:public"],
     alwayslink = True,
     deps = [
@@ -188,7 +195,7 @@ cc_library(
         "quickassist/utilities/libusdm_drv/user_space",
         "quickassist/utilities/osal/include",
     ],
-    copts = [
+    copts = _QATLIB_WARNING_COPTS + [
         "-fPIC",
         "-O3",
         "-D_GNU_SOURCE",
