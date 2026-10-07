@@ -1,5 +1,5 @@
 diff --git a/source/common/BUILD.bazel b/source/common/BUILD.bazel
-index e894ed9..6090b44 100644
+index e894ed9..2f3bb45 100644
 --- a/source/common/BUILD.bazel
 +++ b/source/common/BUILD.bazel
 @@ -12,11 +12,16 @@ package(
@@ -21,7 +21,7 @@ index e894ed9..6090b44 100644
  # not specified correctly. Use dependencies.txt in depstest for assistance. See
  # https://stackoverflow.com/q/66111709/2077918 .
  
-@@ -43,37 +48,24 @@ cc_library(
+@@ -43,37 +48,28 @@ cc_library(
  
  cc_library(
      name = "platform",
@@ -60,7 +60,11 @@ index e894ed9..6090b44 100644
      ],
 -    linkopts = ["-ldl"],
 +    copts = select({
-+        ":clang": ["-Wno-thread-safety-analysis"],
++        ":clang": [
++            "-Wno-thread-safety-analysis",
++            # ICU implements and internally calls deprecated-but-ABI-stable APIs.
++            "-Wno-deprecated-declarations",
++        ],
 +        "//conditions:default": [],
 +    }),
 +    linkopts = select({
@@ -70,7 +74,7 @@ index e894ed9..6090b44 100644
  )
  
  cc_library(
-@@ -1214,6 +1206,6 @@ cc_library(
+@@ -1214,6 +1210,6 @@ cc_library(
          ":headers",
      ],
      local_defines = [
@@ -79,7 +83,7 @@ index e894ed9..6090b44 100644
      ],
  )
 diff --git a/source/i18n/BUILD.bazel b/source/i18n/BUILD.bazel
-index 2d85cdb..4e3e207 100644
+index 2d85cdb..3e33775 100644
 --- a/source/i18n/BUILD.bazel
 +++ b/source/i18n/BUILD.bazel
 @@ -13,10 +13,10 @@ package(
@@ -135,49 +139,65 @@ index 2d85cdb..4e3e207 100644
      deps = [
          ":headers",
          ":uclean_i18n",
-@@ -88,6 +60,10 @@ cc_library(
+@@ -88,6 +60,14 @@ cc_library(
          "//icu4c/source/common:uvector32",
          "//icu4c/source/common:uvector64",
      ],
 +    copts = select({
-+        "//icu4c/source/common:clang": ["-Wno-thread-safety-analysis"],
++        "//icu4c/source/common:clang": [
++            "-Wno-thread-safety-analysis",
++            # ICU implements and internally calls deprecated-but-ABI-stable APIs.
++            "-Wno-deprecated-declarations",
++        ],
 +        "//conditions:default": [],
 +    }),
      local_defines = [
          "U_I18N_IMPLEMENTATION",
      ],
-@@ -109,6 +85,10 @@ cc_library(
+@@ -109,6 +89,14 @@ cc_library(
          "//icu4c/source/common:ucharstriebuilder",
          "//icu4c/source/common:uset_props"
      ],
 +    copts = select({
-+        "//icu4c/source/common:clang": ["-Wno-thread-safety-analysis"],
++        "//icu4c/source/common:clang": [
++            "-Wno-thread-safety-analysis",
++            # ICU implements and internally calls deprecated-but-ABI-stable APIs.
++            "-Wno-deprecated-declarations",
++        ],
 +        "//conditions:default": [],
 +    }),
      local_defines = [
          "U_I18N_IMPLEMENTATION",
      ],
-@@ -124,6 +104,10 @@ cc_library(
+@@ -124,6 +112,14 @@ cc_library(
      deps = [
          "//icu4c/source/common:platform",
      ],
 +    copts = select({
-+        "//icu4c/source/common:clang": ["-Wno-thread-safety-analysis"],
++        "//icu4c/source/common:clang": [
++            "-Wno-thread-safety-analysis",
++            # ICU implements and internally calls deprecated-but-ABI-stable APIs.
++            "-Wno-deprecated-declarations",
++        ],
 +        "//conditions:default": [],
 +    }),
      local_defines = [
          "U_I18N_IMPLEMENTATION",
      ],
 diff --git a/source/stubdata/BUILD.bazel b/source/stubdata/BUILD.bazel
-index 20344ef..949d347 100644
+index 20344ef..9587ce8 100644
 --- a/source/stubdata/BUILD.bazel
 +++ b/source/stubdata/BUILD.bazel
-@@ -18,6 +18,10 @@ cc_library(
+@@ -18,6 +18,14 @@ cc_library(
      srcs = ["stubdata.cpp"],
      hdrs = ["stubdata.h"],
      deps = ["//icu4c/source/common:headers"],
 +    copts = select({
-+        "//icu4c/source/common:clang": ["-Wno-thread-safety-analysis"],
++        "//icu4c/source/common:clang": [
++            "-Wno-thread-safety-analysis",
++            # ICU implements and internally calls deprecated-but-ABI-stable APIs.
++            "-Wno-deprecated-declarations",
++        ],
 +        "//conditions:default": [],
 +    }),
      local_defines = [
