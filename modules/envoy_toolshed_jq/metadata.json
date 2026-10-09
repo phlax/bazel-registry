@@ -17,10 +17,6 @@
         "github:envoyproxy/toolshed"
     ],
     "versions": [
-        "0.4.15.envoy",
-        "0.5.0.envoy",
-        "0.5.1.envoy",
-        "0.5.2.envoy",
         "0.5.3.envoy"
     ],
     "yanked_versions": {}
