@@ -11,7 +11,8 @@
         "github:proxy-wasm/proxy-wasm-cpp-host"
     ],
     "versions": [
-        "0.0.0-260704-f2db56a.envoy"
+        "0.0.0-260704-f2db56a.envoy",
+        "0.0.0-260704-f2db56a.envoy.1"
     ],
     "yanked_versions": {}
 }

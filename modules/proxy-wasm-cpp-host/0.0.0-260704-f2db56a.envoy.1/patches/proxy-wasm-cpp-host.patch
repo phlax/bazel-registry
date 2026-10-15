@@ -1,0 +1,376 @@
+diff -ruN original/BUILD edited/BUILD
+--- original/BUILD	2026-09-25 09:12:31.438361446 +0000
++++ edited/BUILD	2026-09-25 09:13:25.652134034 +0000
+@@ -93,7 +93,7 @@
+         "@com_google_absl//absl/cleanup",
+     ] + select({
+         "//bazel:crypto_system": [],
+-        "//conditions:default": ["@boringssl//:crypto"],
++        "//conditions:default": ["@proxy_wasm_cpp_host_deps//:crypto_lib"],
+     }),
+     alwayslink = 1,
+ )
+@@ -136,7 +136,7 @@
+     deps = [
+         ":base_lib",
+         ":wasm_vm_headers",
+-        "//bazel:wee8_no_pointer_compression",
++        "@proxy_wasm_cpp_host_deps//:v8_engine",
+     ],
+ )
+ 
+@@ -158,7 +158,7 @@
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_bytecodealliance_wasm_micro_runtime//:wamr_lib",
++        "@proxy_wasm_cpp_host_deps//:wamr_lib",
+     ],
+ )
+ 
+@@ -185,7 +185,7 @@
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_wasmedge_wasmedge//:wasmedge_lib",
++        "@proxy_wasm_cpp_host_deps//:wasmedge_lib",
+     ],
+ )
+ 
+@@ -224,7 +224,7 @@
+     deps = [
+         ":base_lib",
+         ":wasm_vm_headers",
+-        "@com_github_bytecodealliance_wasmtime//:wasmtime_lib",
++        "@proxy_wasm_cpp_host_deps//:wasmtime_lib",
+     ],
+ )
+ 
+diff -ruN original/bazel/BUILD edited/bazel/BUILD
+--- original/bazel/BUILD	2026-09-25 09:12:31.438639435 +0000
++++ edited/bazel/BUILD	2026-09-25 09:17:11.030378792 +0000
+@@ -13,43 +13,90 @@
+ # limitations under the License.
+ 
+ load("@bazel_skylib//lib:selects.bzl", "selects")
++load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+ load(":v8_transition.bzl", "v8_lib_no_pointer_compression")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
++# Engine selection flag, replacing the legacy --define engine=<value>.
++# Values:
++#   v8          - V8 Wasm engine (default)
++#   wamr        - WebAssembly Micro Runtime, interpreter mode
++#   wamr-interp - WebAssembly Micro Runtime, interpreter mode
++#   wamr-jit    - WebAssembly Micro Runtime, JIT mode
++#   wasmtime    - Wasmtime engine
++#   wasmedge    - WasmEdge engine
++#   null        - Null (no-op) engine
++#   disabled    - No engine; disables all wasm functionality
++#   multi       - Multiple engines
++string_flag(
++    name = "engine",
++    build_setting_default = "v8",
++    values = [
++        "v8",
++        "wamr",
++        "wamr-interp",
++        "wamr-jit",
++        "wasmtime",
++        "wasmedge",
++        "null",
++        "disabled",
++        "multi",
++    ],
++)
++
+ config_setting(
+     name = "engine_null",
+-    values = {"define": "engine=null"},
++    flag_values = {"//bazel:engine": "null"},
+ )
+ 
+ config_setting(
+     name = "engine_v8",
+-    values = {"define": "engine=v8"},
++    flag_values = {"//bazel:engine": "v8"},
++)
++
++# engine_wamr_interp matches both "wamr-interp" and the generic "wamr" alias.
++config_setting(
++    name = "_engine_wamr_interp_strict",
++    flag_values = {"//bazel:engine": "wamr-interp"},
+ )
+ 
+ config_setting(
++    name = "engine_wamr",
++    flag_values = {"//bazel:engine": "wamr"},
++)
++
++selects.config_setting_group(
+     name = "engine_wamr_interp",
+-    values = {"define": "engine=wamr-interp"},
++    match_any = [
++        ":_engine_wamr_interp_strict",
++        ":engine_wamr",
++    ],
+ )
+ 
+ config_setting(
+     name = "engine_wamr_jit",
+-    values = {"define": "engine=wamr-jit"},
++    flag_values = {"//bazel:engine": "wamr-jit"},
+ )
+ 
+ config_setting(
+     name = "engine_wasmedge",
+-    values = {"define": "engine=wasmedge"},
++    flag_values = {"//bazel:engine": "wasmedge"},
+ )
+ 
+ config_setting(
+     name = "engine_wasmtime",
+-    values = {"define": "engine=wasmtime"},
++    flag_values = {"//bazel:engine": "wasmtime"},
+ )
+ 
+ config_setting(
+     name = "multiengine",
+-    values = {"define": "engine=multi"},
++    flag_values = {"//bazel:engine": "multi"},
++)
++
++config_setting(
++    name = "engine_disabled",
++    flag_values = {"//bazel:engine": "disabled"},
+ )
+ 
+ config_setting(
+@@ -77,4 +124,9 @@
+     library = "@v8//:wee8",
+ )
+ 
++alias(
++    name = "default_wasmedge_lib",
++    actual = "@com_github_wasmedge_wasmedge//:wasmedge_lib",
++)
++
+ exports_files(["tsan_suppressions.txt"])
+diff -ruN original/envoy_deps.bzl edited/envoy_deps.bzl
+--- original/envoy_deps.bzl	1970-01-01 00:00:00.000000000 +0000
++++ edited/envoy_deps.bzl	2026-09-25 09:13:25.651931225 +0000
+@@ -0,0 +1,57 @@
++"""Shared dependency-injection helpers for Envoy registry modules.
++
++This file is duplicated across Envoy registry modules that use deps
++extensions. Keep the copies identical so they can be consolidated later.
++"""
++
++def envoy_value(tag, name):
++    return getattr(tag, name, None)
++
++
++def envoy_module_id(mod):
++    if mod.version:
++        return "%s@%s" % (mod.name, mod.version)
++    return mod.name
++
++
++def _canonical_label(label):
++    if label == None:
++        return None
++    return str(label)
++
++
++def _pick_one(extension_name, attr_name, values):
++    chosen = None
++    chosen_module = None
++    chosen_canonical = None
++    for module_name, label in values:
++        if label == None:
++            continue
++        canonical = _canonical_label(label)
++        if chosen == None:
++            chosen = label
++            chosen_module = module_name
++            chosen_canonical = canonical
++            continue
++        if chosen_canonical != canonical:
++            fail(
++                "Conflicting %s.deps(%s=...) labels from modules %s (%s) and %s (%s)." % (
++                    extension_name,
++                    attr_name,
++                    chosen_module,
++                    chosen_canonical,
++                    module_name,
++                    canonical,
++                ),
++            )
++    return chosen
++
++
++def envoy_pick(extension_name, attr_name, root_values, non_root_values, default):
++    chosen = _pick_one(extension_name, attr_name, root_values)
++    if chosen != None:
++        return chosen
++    chosen = _pick_one(extension_name, attr_name, non_root_values)
++    if chosen != None:
++        return chosen
++    return default
+diff -ruN original/extensions.bzl edited/extensions.bzl
+--- original/extensions.bzl	1970-01-01 00:00:00.000000000 +0000
++++ edited/extensions.bzl	2026-09-25 09:17:11.030561723 +0000
+@@ -0,0 +1,152 @@
++"""Module extension for configuring proxy-wasm-cpp-host dependency aliases."""
++
++load("//:envoy_deps.bzl", "envoy_module_id", "envoy_pick", "envoy_value")
++
++
++def _proxy_wasm_cpp_host_deps_repo_impl(repo_ctx):
++    repo_ctx.file(
++        "BUILD.bazel",
++        """alias(
++    name = "crypto_lib",
++    actual = "{crypto_lib}",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "wamr_lib",
++    actual = "{wamr_lib}",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "wasmtime_lib",
++    actual = "{wasmtime_lib}",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "prefixed_wasmtime_lib",
++    actual = "{prefixed_wasmtime_lib}",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "wasmedge_lib",
++    actual = "{wasmedge_lib}",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "v8_engine",
++    actual = "{v8_engine}",
++    visibility = ["//visibility:public"],
++)
++""".format(
++            crypto_lib = str(repo_ctx.attr.crypto_lib),
++            wamr_lib = str(repo_ctx.attr.wamr_lib),
++            wasmtime_lib = str(repo_ctx.attr.wasmtime_lib),
++            prefixed_wasmtime_lib = str(repo_ctx.attr.prefixed_wasmtime_lib),
++            wasmedge_lib = str(repo_ctx.attr.wasmedge_lib),
++            v8_engine = str(repo_ctx.attr.v8_engine),
++        ),
++    )
++
++
++_proxy_wasm_cpp_host_deps_repo = repository_rule(
++    implementation = _proxy_wasm_cpp_host_deps_repo_impl,
++    attrs = {
++        "crypto_lib": attr.string(doc = "Label to alias as :crypto_lib."),
++        "wamr_lib": attr.string(doc = "Label to alias as :wamr_lib."),
++        "wasmtime_lib": attr.string(doc = "Label to alias as :wasmtime_lib."),
++        "prefixed_wasmtime_lib": attr.string(doc = "Label to alias as :prefixed_wasmtime_lib."),
++        "wasmedge_lib": attr.string(doc = "Label to alias as :wasmedge_lib."),
++        "v8_engine": attr.string(doc = "Label to alias as :v8_engine."),
++    },
++)
++
++
++def _proxy_wasm_cpp_host_impl(module_ctx):
++    root = []
++    non_root = []
++    for mod in module_ctx.modules:
++        for tag in mod.tags.deps:
++            values = struct(
++                module_name = envoy_module_id(mod),
++                crypto_lib = envoy_value(tag, "crypto_lib"),
++                wamr_lib = envoy_value(tag, "wamr_lib"),
++                wasmtime_lib = envoy_value(tag, "wasmtime_lib"),
++                prefixed_wasmtime_lib = envoy_value(tag, "prefixed_wasmtime_lib"),
++                wasmedge_lib = envoy_value(tag, "wasmedge_lib"),
++                v8_engine = envoy_value(tag, "v8_engine"),
++            )
++            if mod.is_root:
++                root.append(values)
++            else:
++                non_root.append(values)
++
++    _proxy_wasm_cpp_host_deps_repo(
++        name = "proxy_wasm_cpp_host_deps",
++        crypto_lib = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "crypto_lib",
++            [(entry.module_name, entry.crypto_lib) for entry in root],
++            [(entry.module_name, entry.crypto_lib) for entry in non_root],
++            "@boringssl//:crypto",
++        )),
++        wamr_lib = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "wamr_lib",
++            [(entry.module_name, entry.wamr_lib) for entry in root],
++            [(entry.module_name, entry.wamr_lib) for entry in non_root],
++            "@com_github_bytecodealliance_wasm_micro_runtime//:wamr_lib",
++        )),
++        wasmtime_lib = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "wasmtime_lib",
++            [(entry.module_name, entry.wasmtime_lib) for entry in root],
++            [(entry.module_name, entry.wasmtime_lib) for entry in non_root],
++            "@com_github_wasmtime//:wasmtime_lib",
++        )),
++        prefixed_wasmtime_lib = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "prefixed_wasmtime_lib",
++            [(entry.module_name, entry.prefixed_wasmtime_lib) for entry in root],
++            [(entry.module_name, entry.prefixed_wasmtime_lib) for entry in non_root],
++            "@com_github_wasmtime//:prefixed_wasmtime_lib",
++        )),
++        wasmedge_lib = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "wasmedge_lib",
++            [(entry.module_name, entry.wasmedge_lib) for entry in root],
++            [(entry.module_name, entry.wasmedge_lib) for entry in non_root],
++            "@@proxy-wasm-cpp-host+//bazel:default_wasmedge_lib",
++        )),
++        v8_engine = str(envoy_pick(
++            "proxy_wasm_cpp_host",
++            "v8_engine",
++            [(entry.module_name, entry.v8_engine) for entry in root],
++            [(entry.module_name, entry.v8_engine) for entry in non_root],
++            "@@proxy-wasm-cpp-host+//bazel:wee8_no_pointer_compression",
++        )),
++    )
++
++    return module_ctx.extension_metadata(reproducible = True)
++
++
++deps = tag_class(
++    attrs = {
++        "crypto_lib": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's crypto dependency."),
++        "wamr_lib": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's WAMR dependency."),
++        "wasmtime_lib": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's Wasmtime dependency."),
++        "prefixed_wasmtime_lib": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's prefixed Wasmtime dependency."),
++        "wasmedge_lib": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's WasmEdge dependency."),
++        "v8_engine": attr.label(doc = "Optional label to use for proxy-wasm-cpp-host's V8 dependency."),
++    },
++    doc = "Configures the dependency labels used by proxy-wasm-cpp-host.",
++)
++
++proxy_wasm_cpp_host = module_extension(
++    implementation = _proxy_wasm_cpp_host_impl,
++    tag_classes = {"deps": deps},
++    doc = "Creates @proxy_wasm_cpp_host_deps aliases for proxy-wasm-cpp-host's configurable deps.",
++)
