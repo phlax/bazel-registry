@@ -11,7 +11,8 @@
         "github:v8/v8"
     ],
     "versions": [
-        "14.6.202.10.envoy"
+        "14.6.202.10.envoy",
+        "14.6.202.10.envoy.1"
     ],
     "yanked_versions": {}
 }
