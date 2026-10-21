@@ -1,0 +1,22 @@
+diff -ruN gurl-dd4080fec0b443296c0ed0036e1e776df8813aa7/base/third_party/icu/BUILD googleurl-bazel9/base/third_party/icu/BUILD
+--- gurl-dd4080fec0b443296c0ed0036e1e776df8813aa7/base/third_party/icu/BUILD	2022-11-03 17:49:43.000000000 +0000
++++ googleurl-bazel9/base/third_party/icu/BUILD	2026-10-21 18:59:45.388316716 +0000
+@@ -2,6 +2,7 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ load("//build_config:build_config.bzl", "build_config")
++load("@rules_cc//cc:defs.bzl", "cc_library")
+ 
+ cc_library(
+     name = "icu",
+diff -ruN gurl-dd4080fec0b443296c0ed0036e1e776df8813aa7/polyfills/BUILD googleurl-bazel9/polyfills/BUILD
+--- gurl-dd4080fec0b443296c0ed0036e1e776df8813aa7/polyfills/BUILD	2022-11-03 17:49:43.000000000 +0000
++++ googleurl-bazel9/polyfills/BUILD	2026-10-21 18:59:45.393316693 +0000
+@@ -2,6 +2,7 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ load("//build_config:build_config.bzl", "build_config")
++load("@rules_cc//cc:defs.bzl", "cc_library")
+ 
+ cc_library(
+     name = "polyfills",
