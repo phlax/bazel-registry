@@ -11,7 +11,8 @@
         "github:grpc-ecosystem/grpc-httpjson-transcoding"
     ],
     "versions": [
-        "0.0.0-20250507-a6e226f.envoy"
+        "0.0.0-20250507-a6e226f.envoy",
+        "0.0.0-20250507-a6e226f.envoy.1"
     ],
     "yanked_versions": {}
 }

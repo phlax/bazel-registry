@@ -1,0 +1,49 @@
+diff -ruN transcoding-before/googleapis_ext.bzl transcoding-after/googleapis_ext.bzl
+--- transcoding-before/googleapis_ext.bzl	2026-10-21 20:59:48.440891115 +0000
++++ transcoding-after/googleapis_ext.bzl	2026-10-21 21:00:57.115098890 +0000
+@@ -3,4 +3,7 @@
+ googleapis_ext = module_extension(implementation = lambda x: switched_rules_by_language(
+     name = "com_google_googleapis_imports",
+     cc = True,
++    rules_override = {
++        "cc_proto_library": ["@com_google_protobuf//bazel:cc_proto_library.bzl", ""],
++    },
+ ))
+diff -ruN transcoding-before/perf_benchmark/BUILD transcoding-after/perf_benchmark/BUILD
+--- transcoding-before/perf_benchmark/BUILD	2025-05-07 10:49:26.000000000 +0000
++++ transcoding-after/perf_benchmark/BUILD	2026-10-21 21:00:57.110098836 +0000
+@@ -14,6 +14,8 @@
+ #
+ ################################################################################
+ #
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+ load("@io_bazel_rules_docker//cc:image.bzl", "cc_image")
+diff -ruN transcoding-before/src/BUILD transcoding-after/src/BUILD
+--- transcoding-before/src/BUILD	2025-05-07 10:49:26.000000000 +0000
++++ transcoding-after/src/BUILD	2026-10-21 21:00:57.097098696 +0000
+@@ -14,6 +14,8 @@
+ #
+ ################################################################################
+ #
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+diff -ruN transcoding-before/test/BUILD transcoding-after/test/BUILD
+--- transcoding-before/test/BUILD	2025-05-07 10:49:26.000000000 +0000
++++ transcoding-after/test/BUILD	2026-10-21 21:00:57.103098761 +0000
+@@ -14,7 +14,9 @@
+ #
+ ################################################################################
+ #
+-load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ load("@rules_fuzzing//fuzzing:cc_defs.bzl", "cc_fuzz_test")
+ 
+ package(default_visibility = ["//visibility:public"])
