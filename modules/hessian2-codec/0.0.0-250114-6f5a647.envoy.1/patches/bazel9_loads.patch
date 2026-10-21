@@ -1,0 +1,59 @@
+diff -ruN hessian/common/BUILD hessian-fixed/common/BUILD
+--- hessian/common/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/common/BUILD	2026-10-21 20:29:40.347187670 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
+ load("//:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN hessian/demo/BUILD hessian-fixed/demo/BUILD
+--- hessian/demo/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/demo/BUILD	2026-10-21 20:29:40.351187593 +0000
+@@ -2,6 +2,7 @@
+     "@com_google_absl//absl:copts/GENERATED_copts.bzl",
+     "ABSL_GCC_FLAGS",
+ )
++load("@rules_cc//cc:defs.bzl", "cc_binary")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+diff -ruN hessian/example/BUILD hessian-fixed/example/BUILD
+--- hessian/example/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/example/BUILD	2026-10-21 20:29:40.339187823 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_binary")
+ load("//:copts.bzl", "DEFAULT_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN hessian/example/mutiple_src/BUILD hessian-fixed/example/mutiple_src/BUILD
+--- hessian/example/mutiple_src/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/example/mutiple_src/BUILD	2026-10-21 20:29:40.343187746 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+ load("//:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN hessian/hessian2/BUILD hessian-fixed/hessian2/BUILD
+--- hessian/hessian2/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/hessian2/BUILD	2026-10-21 20:29:40.327188053 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ load("//:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN hessian/hessian2/basic_codec/BUILD hessian-fixed/hessian2/basic_codec/BUILD
+--- hessian/hessian2/basic_codec/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/hessian2/basic_codec/BUILD	2026-10-21 20:29:40.331187977 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ load("//:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN hessian/hessian2/test_framework/BUILD hessian-fixed/hessian2/test_framework/BUILD
+--- hessian/hessian2/test_framework/BUILD	2025-01-14 14:14:56.000000000 +0000
++++ hessian-fixed/hessian2/test_framework/BUILD	2026-10-21 20:29:40.335187900 +0000
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ load("//:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ package(default_visibility = ["//visibility:public"])
