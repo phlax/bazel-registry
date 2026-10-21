@@ -1,0 +1,117 @@
+diff -ruN a/ocpdiag/core/compat/BUILD b/ocpdiag/core/compat/BUILD
+--- a/ocpdiag/core/compat/BUILD	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/core/compat/BUILD	2026-10-21 20:36:34.852018805 +0000
+@@ -11,6 +11,8 @@
+ and external google libraries.
+ """
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ licenses(["notice"])
+ 
+ # External users may want to use these tools.
+diff -ruN a/ocpdiag/core/examples/full_spec/BUILD b/ocpdiag/core/examples/full_spec/BUILD
+--- a/ocpdiag/core/examples/full_spec/BUILD	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/core/examples/full_spec/BUILD	2026-10-21 20:36:34.856018767 +0000
+@@ -6,6 +6,8 @@
+ 
+ # An example that output all of the possible outputs of the OCPDiag results library.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
++
+ cc_library(
+     name = "full_spec_lib",
+     srcs = ["full_spec.cc"],
+diff -ruN a/ocpdiag/core/results/BUILD b/ocpdiag/core/results/BUILD
+--- a/ocpdiag/core/results/BUILD	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/core/results/BUILD	2026-10-21 20:36:34.861018720 +0000
+@@ -4,6 +4,8 @@
+ # license that can be found in the LICENSE file or at
+ # https://opensource.org/licenses/MIT.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
++
+ licenses(["notice"])
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN a/ocpdiag/core/results/data_model/BUILD b/ocpdiag/core/results/data_model/BUILD
+--- a/ocpdiag/core/results/data_model/BUILD	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/core/results/data_model/BUILD	2026-10-21 20:36:34.866018672 +0000
+@@ -7,7 +7,10 @@
+ # The data model for the results library, including functions for converting back and forth between
+ # protobuf and struct representations.
+ 
+-load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_proto_library")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
++load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ 
+ licenses(["notice"])
+ 
+diff -ruN a/ocpdiag/core/testing/BUILD b/ocpdiag/core/testing/BUILD
+--- a/ocpdiag/core/testing/BUILD	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/core/testing/BUILD	2026-10-21 20:36:34.871018625 +0000
+@@ -4,6 +4,9 @@
+ # license that can be found in the LICENSE file or at
+ # https://opensource.org/licenses/MIT.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++load("@rules_python//python:defs.bzl", "py_library")
++
+ licenses(["notice"])
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN a/ocpdiag/embed.bzl b/ocpdiag/embed.bzl
+--- a/ocpdiag/embed.bzl	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/embed.bzl	2026-10-21 20:36:34.875018587 +0000
+@@ -6,6 +6,8 @@
+ 
+ """Starlark definitions for build rules embed data files directly into code libraries."""
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ def cc_data_library(
+         name,
+         data,
+@@ -72,7 +74,7 @@
+     )
+ 
+     # Encapsulate the code an header files into a cc_library.
+-    native.cc_library(
++    cc_library(
+         name = name,
+         srcs = [name + ".cc"],
+         hdrs = [name + ".h"],
+diff -ruN a/ocpdiag/python.bzl b/ocpdiag/python.bzl
+--- a/ocpdiag/python.bzl	2023-05-05 20:31:56.000000000 +0000
++++ b/ocpdiag/python.bzl	2026-10-21 20:36:34.880018540 +0000
+@@ -7,6 +7,7 @@
+ """BUILD rules for Python wrappers."""
+ 
+ load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
++load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+ 
+ # Placeholder to use until bazel supports pytype_pybind_extension.
+ def pytype_pybind_extension(name, **kwargs):
+@@ -16,16 +17,16 @@
+ 
+ # Placeholder to use until bazel supports pytype_strict_library.
+ def pytype_strict_library(name, **kwargs):
+-    native.py_library(name = name, **kwargs)
++    py_library(name = name, **kwargs)
+ 
+ # Placeholder to use until bazel supports pytype_strict_binary.
+ def pytype_strict_binary(name, **kwargs):
+-    native.py_binary(name = name, **kwargs)
++    py_binary(name = name, **kwargs)
+ 
+ # Placeholder to use until bazel supports pytype_strict_contrib_test.
+ def pytype_strict_contrib_test(name, **kwargs):
+-    native.py_test(name = name, **kwargs)
++    py_test(name = name, **kwargs)
+ 
+ # Placeholder to use until bazel supports py_strict_test.
+ def py_strict_test(name, **kwargs):
+-    native.py_test(name = name, **kwargs)
++    py_test(name = name, **kwargs)
