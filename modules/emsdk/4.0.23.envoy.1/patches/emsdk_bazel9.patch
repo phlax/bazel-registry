@@ -1,3 +1,14 @@
+diff --git a/emscripten_toolchain/BUILD.bazel b/emscripten_toolchain/BUILD.bazel
+--- a/emscripten_toolchain/BUILD.bazel
++++ b/emscripten_toolchain/BUILD.bazel
+@@ -1,6 +1,7 @@
+ load("//:emscripten_deps.bzl", "emscripten_repo_name")
+ load("//:remote_emscripten_repository.bzl", "create_toolchains", "emscripten_toolchain_name")
+ load("@rules_python//python:py_binary.bzl", "py_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
 diff --git a/emscripten_toolchain/toolchain.bzl b/emscripten_toolchain/toolchain.bzl
 --- a/emscripten_toolchain/toolchain.bzl
 +++ b/emscripten_toolchain/toolchain.bzl
@@ -39,3 +50,31 @@ diff --git a/remote_emscripten_repository.bzl b/remote_emscripten_repository.bzl
          name = "everything-" + name,
          toolchains = {
              "wasm": cc_wasm_target,
+diff --git a/test_external/BUILD b/test_external/BUILD
+--- a/test_external/BUILD
++++ b/test_external/BUILD
+@@ -1,4 +1,5 @@
+ load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+ 
+ cc_binary(
+     name = "hello-world",
+diff --git a/test_external/long_command_line/BUILD.bazel b/test_external/long_command_line/BUILD.bazel
+--- a/test_external/long_command_line/BUILD.bazel
++++ b/test_external/long_command_line/BUILD.bazel
+@@ -1,4 +1,6 @@
+ load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ 
+ _TEST_TARGETS = [
+     "long_command_line_file01",
+diff --git a/test_secondary_lto_cache/BUILD b/test_secondary_lto_cache/BUILD
+--- a/test_secondary_lto_cache/BUILD
++++ b/test_secondary_lto_cache/BUILD
+@@ -1,4 +1,5 @@
+ load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+ 
+ cc_binary(
+     name = "hello-world",
