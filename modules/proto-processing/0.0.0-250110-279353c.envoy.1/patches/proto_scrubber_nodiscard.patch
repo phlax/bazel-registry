@@ -1,0 +1,329 @@
+diff --git a/proto_processing_lib/proto_scrubber/proto_scrubber.cc b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+--- a/proto_processing_lib/proto_scrubber/proto_scrubber.cc
++++ b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+@@ -210,7 +210,7 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanField(
+   int tag_insert_position = 0;
+   if (tag != 0) {
+     uint32_t message_length;
+-    input_stream->ReadVarint32(&message_length);
++    (void)input_stream->ReadVarint32(&message_length);
+     // Sets the limit of input_stream to be the length of the current message,
+     // so we can do a sanity check at the end of this method to make sure we
+     // have consumed the whole message. Also remembers the original limit so
+@@ -344,7 +344,7 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanAnyField(
+     std::vector<TagCopy>* tag_insert, uint32_t* scrubbed_fields_checksum,
+     const bool is_checksum_enabled) const {
+   uint32_t field_length;
+-  input_stream->ReadVarint32(&field_length);  // length of the "Any" field.
++  (void)input_stream->ReadVarint32(&field_length);  // length of the "Any" field.
+   CodedInputStream::Limit old_limit = input_stream->PushLimit(field_length);
+ 
+   uint32_t tag;
+@@ -363,16 +363,16 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanAnyField(
+       type_url_tag = tag;
+       // read type_url
+       uint32_t type_url_size;
+-      input_stream->ReadVarint32(&type_url_size);
+-      input_stream->ReadString(&type_url, type_url_size);
++      (void)input_stream->ReadVarint32(&type_url_size);
++      (void)input_stream->ReadString(&type_url, type_url_size);
+       type_url_tag_copy = MakeTagCopyForCopying(
+           current_position, input_stream->CurrentPosition() - current_position);
+     } else if (field_number == 2) {
+       value_tag = tag;
+       // read value
+       uint32_t value_size;
+-      input_stream->ReadVarint32(&value_size);
+-      input_stream->ReadCord(&value->Cord(), value_size);
++      (void)input_stream->ReadVarint32(&value_size);
++      (void)input_stream->ReadCord(&value->Cord(), value_size);
+     } else {
+       // Any message should only have field 1 and 2. Ignore any other fields.
+       IncreaseUnknownFieldDroppedCount(kAnyType, field_number,
+@@ -537,7 +537,7 @@ FieldCheckResults ProtoScrubber::CheckEnumValue(
+   // Adds the current value of the enum field to the end of the 'path' and
+   // calls CheckField().
+   uint32_t enum_value;
+-  input_stream->ReadVarint32(&enum_value);
++  (void)input_stream->ReadVarint32(&enum_value);
+   path->push_back(absl::StrCat(enum_value));
+   FieldCheckResults result = CheckField(*path, field, excluded_by_filter);
+   // Enum value has been read, directly adds to checksum if it is Excluded.
+@@ -568,7 +568,7 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanEnumField(
+     tag_insert->push_back(MakeTagCopyForInserting(tag, 0));
+     int tag_insert_position = tag_insert->size() - 1;
+     uint32_t message_length;
+-    input_stream->ReadVarint32(&message_length);
++    (void)input_stream->ReadVarint32(&message_length);
+     // Sets the limit of input_stream to be the length of the current field,
+     // so we can do a sanity check at the end of this method to make sure we
+     // have consumed the whole field.
+@@ -660,7 +660,7 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanMapField(
+     // scanning. The TagCopy for each entry is created with tag = 0, and only
+     // the "length" will be inserted into the output stream.
+     uint32_t length;
+-    input_stream->ReadVarint32(&length);
++    (void)input_stream->ReadVarint32(&length);
+     CodedInputStream::Limit old_limit = input_stream->PushLimit(length);
+     while (input_stream->BytesUntilLimit() > 0) {
+       // We need to create one "length only" TagCopy for each entry.
+@@ -715,7 +715,7 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanMapEntry(
+     std::vector<std::string>* parent_tags, std::vector<TagCopy>* tag_insert,
+     uint32_t* scrubbed_fields_checksum, const bool is_checksum_enabled) const {
+   uint32_t entry_length;
+-  input_stream->ReadVarint32(&entry_length);  // message length
++  (void)input_stream->ReadVarint32(&entry_length);  // message length
+   CodedInputStream::Limit old_limit = input_stream->PushLimit(entry_length);
+ 
+   uint32_t result = 0;
+@@ -887,81 +887,81 @@ const std::string ProtoScrubber::ReadMapKeyAsString(
+   switch (field.kind()) {
+     case google::protobuf::Field::TYPE_BOOL: {
+       uint64_t buffer64;
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = buffer64 != 0 ? "true" : "false";
+       break;
+     }
+     case google::protobuf::Field::TYPE_INT32: {
+       uint32_t buffer32;
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<int32_t>(buffer32));
+       break;
+     }
+     case google::protobuf::Field::TYPE_INT64: {
+       uint64_t buffer64;
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<int64_t>(buffer64));
+       break;
+     }
+     case google::protobuf::Field::TYPE_UINT32: {
+       uint32_t buffer32;
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<uint32_t>(buffer32));
+       break;
+     }
+     case google::protobuf::Field::TYPE_UINT64: {
+       uint64_t buffer64;
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<uint64_t>(buffer64));
+       break;
+     }
+     case google::protobuf::Field::TYPE_SINT32: {
+       uint32_t buffer32;
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(WireFormatLite::ZigZagDecode32(buffer32));
+       break;
+     }
+     case google::protobuf::Field::TYPE_SINT64: {
+       uint64_t buffer64;
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(WireFormatLite::ZigZagDecode64(buffer64));
+       break;
+     }
+     case google::protobuf::Field::TYPE_SFIXED32: {
+       uint32_t buffer32;
+-      input_stream->ReadLittleEndian32(&buffer32);
++      (void)input_stream->ReadLittleEndian32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<int32_t>(buffer32));
+       break;
+     }
+     case google::protobuf::Field::TYPE_SFIXED64: {
+       uint64_t buffer64;
+-      input_stream->ReadLittleEndian64(&buffer64);
++      (void)input_stream->ReadLittleEndian64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<int64_t>(buffer64));
+       break;
+     }
+     case google::protobuf::Field::TYPE_FIXED32: {
+       uint32_t buffer32;
+-      input_stream->ReadLittleEndian32(&buffer32);
++      (void)input_stream->ReadLittleEndian32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<uint32_t>(buffer32));
+       break;
+     }
+     case google::protobuf::Field::TYPE_FIXED64: {
+       uint64_t buffer64;
+-      input_stream->ReadLittleEndian64(&buffer64);
++      (void)input_stream->ReadLittleEndian64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<uint64_t>(buffer64));
+       break;
+     }
+     case google::protobuf::Field::TYPE_STRING: {
+       uint32_t buffer32;
+-      input_stream->ReadVarint32(&buffer32);  // string size.
+-      input_stream->ReadString(&result, buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);  // string size.
++      (void)input_stream->ReadString(&result, buffer32);
+       break;
+     }
+     case google::protobuf::Field::TYPE_BYTES: {
+       uint32_t buffer32;
+       absl::Cord cord;
+-      input_stream->ReadVarint32(&buffer32);  // cord size.
+-      input_stream->ReadCord(&cord, buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);  // cord size.
++      (void)input_stream->ReadCord(&cord, buffer32);
+       result = std::string(cord);
+       break;
+     }
+diff --git a/proto_processing_lib/proto_scrubber/checksummer.cc b/proto_processing_lib/proto_scrubber/checksummer.cc
+--- a/proto_processing_lib/proto_scrubber/checksummer.cc
++++ b/proto_processing_lib/proto_scrubber/checksummer.cc
+@@ -292,7 +292,7 @@ absl::Status Checksummer::ScanNonRepeatedField(
+   }
+ 
+   uint32_t buffer32 = 0;
+-  input_stream->ReadVarint32(&buffer32);
++  (void)input_stream->ReadVarint32(&buffer32);
+   int old_limit = input_stream->PushLimit(buffer32);
+ 
+   const TypeRenderer* type_renderer = FindTypeRenderer(field.type_url());
+@@ -353,14 +353,14 @@ absl::Status Checksummer::ScanAnyMessage(
+     if (child_field->number() == 1) {
+       // Read type_url
+       uint32_t type_url_size;
+-      input_stream->ReadVarint32(&type_url_size);
+-      input_stream->ReadString(&type_url, type_url_size);
++      (void)input_stream->ReadVarint32(&type_url_size);
++      (void)input_stream->ReadString(&type_url, type_url_size);
+       type_url_tag = child_tag;
+     } else if (child_field->number() == 2) {
+       // Read value
+       uint32_t value_size;
+-      input_stream->ReadVarint32(&value_size);
+-      input_stream->ReadString(&value, value_size);
++      (void)input_stream->ReadVarint32(&value_size);
++      (void)input_stream->ReadString(&value, value_size);
+       value_tag = child_tag;
+     }
+   }
+@@ -399,7 +399,7 @@ absl::Status Checksummer::ScanPacked(
+     const google::protobuf::Field& field, std::vector<std::string>* parent_tags,
+     uint32_t* tag, uint32_t* checksum) const {
+   uint32_t length;
+-  input_stream->ReadVarint32(&length);
++  (void)input_stream->ReadVarint32(&length);
+   int old_limit = input_stream->PushLimit(length);
+   while (input_stream->BytesUntilLimit() > 0) {
+     RETURN_IF_ERROR(ScanNonRepeatedField(type_finder, input_stream, field,
+@@ -433,7 +433,7 @@ void Checksummer::RenderTimestampAndDuration(
+     switch (field_number) {
+       case 1:
+         // read seconds
+-        input_stream->ReadVarint64(&seconds);
++        (void)input_stream->ReadVarint64(&seconds);
+         if (seconds != 0) {
+           parent_tags->push_back(absl::StrCat(child_tag));
+           checksummer->AddToChecksum(
+@@ -444,7 +444,7 @@ void Checksummer::RenderTimestampAndDuration(
+         break;
+       case 2:
+         // read nanos
+-        input_stream->ReadVarint32(&nanos);
++        (void)input_stream->ReadVarint32(&nanos);
+         if (nanos != 0) {
+           parent_tags->push_back(absl::StrCat(child_tag));
+           checksummer->AddToChecksum(
+@@ -502,77 +502,77 @@ void Checksummer::ScanPrimitiveField(google::protobuf::io::CodedInputStream* inp
+       WireFormatLite::SkipField(input_stream, *tag);
+       break;
+     case google::protobuf::Field::TYPE_DOUBLE:
+-      input_stream->ReadLittleEndian64(&buffer64);
++      (void)input_stream->ReadLittleEndian64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<double>(buffer64));
+       break;
+     case google::protobuf::Field::TYPE_FLOAT:
+-      input_stream->ReadLittleEndian32(&buffer32);
++      (void)input_stream->ReadLittleEndian32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<float>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_INT64:
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<int64_t>(buffer64));
+       break;
+     case google::protobuf::Field::TYPE_UINT64:
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<uint64_t>(buffer64));
+       break;
+     case google::protobuf::Field::TYPE_INT32:
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<int32_t>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_FIXED64:
+-      input_stream->ReadLittleEndian64(&buffer64);
++      (void)input_stream->ReadLittleEndian64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<uint64_t>(buffer64));
+       break;
+     case google::protobuf::Field::TYPE_FIXED32:
+-      input_stream->ReadLittleEndian32(&buffer32);
++      (void)input_stream->ReadLittleEndian32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<uint32_t>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_BOOL:
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       if (ignore_zero_value && buffer64 == 0) {
+         return;
+       }
+       result = buffer64 != 0 ? "true" : "false";
+       break;
+     case google::protobuf::Field::TYPE_STRING:
+-      input_stream->ReadVarint32(&buffer32);  // string size.
+-      input_stream->ReadString(&result, buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);  // string size.
++      (void)input_stream->ReadString(&result, buffer32);
+       break;
+     case google::protobuf::Field::TYPE_GROUP:
+       WireFormatLite::SkipField(input_stream, *tag);
+       break;
+     case google::protobuf::Field::TYPE_BYTES: {
+       absl::Cord cord;
+-      input_stream->ReadVarint32(&buffer32);
+-      input_stream->ReadCord(&cord, buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadCord(&cord, buffer32);
+       result = std::string(cord);
+       break;
+     }
+     case google::protobuf::Field::TYPE_UINT32:
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<uint32_t>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_ENUM:
+       // Just use uint32 to represent ENUM.
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<uint32_t>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_SINT32:
+-      input_stream->ReadVarint32(&buffer32);
++      (void)input_stream->ReadVarint32(&buffer32);
+       result = absl::StrCat(WireFormatLite::ZigZagDecode32(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_SINT64:
+-      input_stream->ReadVarint64(&buffer64);
++      (void)input_stream->ReadVarint64(&buffer64);
+       result = absl::StrCat(WireFormatLite::ZigZagDecode64(buffer64));
+       break;
+     case google::protobuf::Field::TYPE_SFIXED32:
+-      input_stream->ReadLittleEndian32(&buffer32);
++      (void)input_stream->ReadLittleEndian32(&buffer32);
+       result = absl::StrCat(absl::bit_cast<int32_t>(buffer32));
+       break;
+     case google::protobuf::Field::TYPE_SFIXED64:
+-      input_stream->ReadLittleEndian64(&buffer64);
++      (void)input_stream->ReadLittleEndian64(&buffer64);
+       result = absl::StrCat(absl::bit_cast<int64_t>(buffer64));
+       break;
+     default:

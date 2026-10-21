@@ -1,0 +1,83 @@
+diff --git a/proto_processing_lib/proto_scrubber/checksummer.cc b/proto_processing_lib/proto_scrubber/checksummer.cc
+index 8257ee8..8fa4f9b 100644
+--- a/proto_processing_lib/proto_scrubber/checksummer.cc
++++ b/proto_processing_lib/proto_scrubber/checksummer.cc
+@@ -215,7 +215,9 @@ absl::Status Checksummer::ScanMessage(
+       field = FindAndVerifyField(type, tag);
+     }
+     if (field == nullptr) {
+-      WireFormatLite::SkipField(input_stream, tag);
++      if (!WireFormatLite::SkipField(input_stream, tag)) {
++        return absl::InvalidArgumentError("Failed to skip field");
++      }
+       tag = input_stream->ReadTag();
+       continue;
+     }
+@@ -347,7 +349,9 @@ absl::Status Checksummer::ScanAnyMessage(
+        child_tag = input_stream->ReadTag()) {
+     child_field = FindAndVerifyField(type, child_tag);
+     if (child_field == nullptr) {
+-      WireFormatLite::SkipField(input_stream, child_tag);
++      if (!WireFormatLite::SkipField(input_stream, child_tag)) {
++        return absl::InvalidArgumentError("Failed to skip field");
++      }
+       continue;
+     }
+     if (child_field->number() == 1) {
+@@ -479,7 +483,8 @@ void Checksummer::RenderWrapperValue(
+     if (child_field == nullptr) {
+       LOG(WARNING) << "fail to find tag '" << child_tag
+                    << "' for type: " << child_type->name();
+-      WireFormatLite::SkipField(input_stream, child_tag);
++      // RenderWrapperValue cannot report malformed or truncated input.
++      (void)WireFormatLite::SkipField(input_stream, child_tag);
+       return;
+     }
+ 
+diff --git a/proto_processing_lib/proto_scrubber/proto_scrubber.cc b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+index e6e244d..f491563 100644
+--- a/proto_processing_lib/proto_scrubber/proto_scrubber.cc
++++ b/proto_processing_lib/proto_scrubber/proto_scrubber.cc
+@@ -269,14 +269,18 @@ return absl::Status(
+             scrubbed_fields_checksum));
+       } else {
+         // Skips this field.
+-        WireFormatLite::SkipField(input_stream, child_tag);
++        if (!WireFormatLite::SkipField(input_stream, child_tag)) {
++          return absl::InvalidArgumentError("Failed to skip field");
++        }
+         position = input_stream->CurrentPosition();
+         child_tag = input_stream->ReadTag();
+       }
+     } else if (check_result == FieldCheckResults::kInclude) {
+       // The current field should be included wholly, save its starting
+       // position and length so it can be copied to the result.
+-      WireFormatLite::SkipField(input_stream, child_tag);
++      if (!WireFormatLite::SkipField(input_stream, child_tag)) {
++        return absl::InvalidArgumentError("Failed to skip field");
++      }
+       uint32_t length = input_stream->CurrentPosition() - position;
+       AddTagCopyOrRollToPrevious(position, length, tag_insert);
+       result += length;
+@@ -379,7 +383,9 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanAnyField(
+                                        scrubber_context_);
+       IncreaseFieldDroppedCount(kAnyType, field_number, scrubber_context_,
+                                 FieldFilters::UnknownFieldFilter);
+-      WireFormatLite::SkipField(input_stream, tag);
++      if (!WireFormatLite::SkipField(input_stream, tag)) {
++        return absl::InvalidArgumentError("Failed to skip field");
++      }
+     }
+     current_position = input_stream->CurrentPosition();
+   }
+@@ -776,7 +782,9 @@ absl::StatusOr<uint32_t> ProtoScrubber::ScanMapEntry(
+               input_stream, &value_field, parent_tags, &tag, &current_position,
+               scrubbed_fields_checksum));
+         } else {
+-          WireFormatLite::SkipField(input_stream, tag);
++          if (!WireFormatLite::SkipField(input_stream, tag)) {
++            return absl::InvalidArgumentError("Failed to skip field");
++          }
+         }
+       } else if (check_result == FieldCheckResults::kInclude) {
+         // The current entry should be included wholly. Saves the starting
