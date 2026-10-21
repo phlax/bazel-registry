@@ -11,7 +11,8 @@
         "github:axboe/liburing"
     ],
     "versions": [
-        "2.15.envoy"
+        "2.15.envoy",
+        "2.15.envoy.1"
     ],
     "yanked_versions": {}
 }
