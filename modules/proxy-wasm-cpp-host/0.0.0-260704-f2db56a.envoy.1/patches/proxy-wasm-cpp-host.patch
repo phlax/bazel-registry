@@ -157,6 +157,17 @@ diff -ruN original/bazel/BUILD edited/bazel/BUILD
 +)
 +
  exports_files(["tsan_suppressions.txt"])
+diff -ruN original/bazel/v8_transition.bzl edited/bazel/v8_transition.bzl
+--- original/bazel/v8_transition.bzl
++++ edited/bazel/v8_transition.bzl
+@@ -19,6 +19,7 @@
+ the same transition that V8 uses.
+ """
+ 
++load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+ load("@v8//:bazel/v8-non-pointer-compression.bzl", "v8_disable_pointer_compression")
+ 
+ def _v8_lib_no_pointer_compression_impl(ctx):
 diff -ruN original/envoy_deps.bzl edited/envoy_deps.bzl
 --- original/envoy_deps.bzl	1970-01-01 00:00:00.000000000 +0000
 +++ edited/envoy_deps.bzl	2026-09-25 09:13:25.651931225 +0000
