@@ -11,7 +11,8 @@
         "github:boostorg/boost"
     ],
     "versions": [
-        "1.89.0.envoy"
+        "1.89.0.envoy",
+        "1.89.0.envoy.1"
     ],
     "yanked_versions": {}
 }

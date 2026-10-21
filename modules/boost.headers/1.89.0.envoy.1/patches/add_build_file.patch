@@ -1,0 +1,21 @@
+--- /dev/null
++++ BUILD.bazel
+@@ -0,0 +1,18 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++filegroup(
++    name = "files",
++    srcs = glob([
++        "boost/**/*.h",
++        "boost/**/*.hpp",
++        "boost/**/*.ipp",
++    ]),
++    visibility = ["//visibility:public"],
++)
++
++cc_library(
++    name = "boost.headers",
++    hdrs = [":files"],
++    includes = ["."],
++    visibility = ["//visibility:public"],
++)
