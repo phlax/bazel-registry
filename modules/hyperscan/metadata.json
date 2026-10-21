@@ -11,7 +11,8 @@
         "github:intel/hyperscan"
     ],
     "versions": [
-        "5.4.2.envoy"
+        "5.4.2.envoy",
+        "5.4.2.envoy.1"
     ],
     "yanked_versions": {}
 }
