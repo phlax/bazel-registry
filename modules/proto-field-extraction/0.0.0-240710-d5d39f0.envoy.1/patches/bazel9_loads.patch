@@ -1,0 +1,73 @@
+diff -ruN extraction-before/proto_field_extraction/field_extractor/BUILD.bazel extraction-after/proto_field_extraction/field_extractor/BUILD.bazel
+--- extraction-before/proto_field_extraction/field_extractor/BUILD.bazel	2026-10-21 20:59:48.443638915 +0000
++++ extraction-after/proto_field_extraction/field_extractor/BUILD.bazel	2026-10-21 21:00:57.064098342 +0000
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(copts=["-Wno-unused-result"],
+diff -ruN extraction-before/proto_field_extraction/field_value_extractor/BUILD.bazel extraction-after/proto_field_extraction/field_value_extractor/BUILD.bazel
+--- extraction-before/proto_field_extraction/field_value_extractor/BUILD.bazel	2026-10-21 20:59:48.443958094 +0000
++++ extraction-after/proto_field_extraction/field_value_extractor/BUILD.bazel	2026-10-21 21:00:57.070098406 +0000
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(copts=["-Wno-unused-result"],
+diff -ruN extraction-before/proto_field_extraction/message_data/BUILD.bazel extraction-after/proto_field_extraction/message_data/BUILD.bazel
+--- extraction-before/proto_field_extraction/message_data/BUILD.bazel	2026-10-21 20:59:48.444062390 +0000
++++ extraction-after/proto_field_extraction/message_data/BUILD.bazel	2026-10-21 21:00:57.075098460 +0000
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(copts=["-Wno-unused-result"],
+diff -ruN extraction-before/proto_field_extraction/test_utils/BUILD.bazel extraction-after/proto_field_extraction/test_utils/BUILD.bazel
+--- extraction-before/proto_field_extraction/test_utils/BUILD.bazel	2026-10-21 20:59:48.444152018 +0000
++++ extraction-after/proto_field_extraction/test_utils/BUILD.bazel	2026-10-21 21:00:57.081098525 +0000
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(copts=["-Wno-unused-result"],
+diff -ruN extraction-before/proto_field_extraction/test_utils/testdata/BUILD.bazel extraction-after/proto_field_extraction/test_utils/testdata/BUILD.bazel
+--- extraction-before/proto_field_extraction/test_utils/testdata/BUILD.bazel	2024-07-10 00:29:57.000000000 +0000
++++ extraction-after/proto_field_extraction/test_utils/testdata/BUILD.bazel	2026-10-21 21:00:57.091098632 +0000
+@@ -12,7 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+ load("@rules_proto//proto:defs.bzl", "proto_descriptor_set")
+ 
+ package(default_visibility = ["//visibility:public"])
+diff -ruN extraction-before/proto_field_extraction/utils/BUILD.bazel extraction-after/proto_field_extraction/utils/BUILD.bazel
+--- extraction-before/proto_field_extraction/utils/BUILD.bazel	2026-10-21 20:59:48.444252687 +0000
++++ extraction-after/proto_field_extraction/utils/BUILD.bazel	2026-10-21 21:00:57.086098578 +0000
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(copts=["-Wno-unused-result"],

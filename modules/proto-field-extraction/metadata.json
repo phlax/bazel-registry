@@ -11,7 +11,8 @@
         "github:grpc-ecosystem/proto-field-extraction"
     ],
     "versions": [
-        "0.0.0-240710-d5d39f0.envoy"
+        "0.0.0-240710-d5d39f0.envoy",
+        "0.0.0-240710-d5d39f0.envoy.1"
     ],
     "yanked_versions": {}
 }
