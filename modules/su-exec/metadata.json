@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/ncopa/su-exec",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:ncopa/su-exec"
+    ],
+    "versions": [
+        "0.3.envoy"
+    ],
+    "yanked_versions": {}
+}
