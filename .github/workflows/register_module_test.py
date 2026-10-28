@@ -282,6 +282,9 @@ bazel_dep(name = "envoyish", version = "1.0.envoyish")
                 ("other/examples", "v1", VERSION, ""),
                 (REPOSITORY, "", VERSION, ""),
                 (REPOSITORY, "v1\ninjection", VERSION, ""),
+                (REPOSITORY, "v1.2.3'$(id)'", VERSION, ""),
+                (REPOSITORY, "v1.2.3`id`", VERSION, ""),
+                (REPOSITORY, "v1.2.3\\", VERSION, ""),
                 (REPOSITORY, "v1", "1.2.3-dev", ""),
                 (REPOSITORY, "v1", VERSION, "bad")):
             with self.assertRaises(ValueError):

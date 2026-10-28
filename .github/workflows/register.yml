@@ -54,8 +54,9 @@ jobs:
             if not isinstance(value, str) or not re.fullmatch(pattern, value):
                 raise SystemExit(f"Invalid {field}: must match {pattern}")
         ref = request.get("ref")
-        if not isinstance(ref, str) or not ref or any(ord(c) < 33 or ord(c) == 127 for c in ref):
-            raise SystemExit("Invalid ref: expected a tag or SHA without whitespace/control characters")
+        # The pinned PR action interpolates its body into shell source.
+        if not isinstance(ref, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+-]*", ref):
+            raise SystemExit("Invalid ref: use only letters, digits, dot, underscore, slash, plus or hyphen")
         dry_run = request.get("dry-run", False)
         if not isinstance(dry_run, bool):
             raise SystemExit("dry-run must be a boolean")
@@ -102,6 +103,9 @@ jobs:
             --version="$VERSION" \
             --sha="$SHA" \
             "${args[@]}"
+    - name: Stage generated entries
+      if: steps.request.outputs.dry-run != 'true'
+      run: git add -- modules
     - name: Create Pull Request
       uses: envoyproxy/toolshed/actions/github/pr@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:

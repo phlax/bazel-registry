@@ -45,6 +45,8 @@ The **Register module** workflow accepts `workflow_dispatch` or a
 ```
 
 Only `envoyproxy/*` repositories and plain `X.Y.Z` versions are accepted.
+Refs may contain only letters, digits, `.`, `_`, `/`, `+`, and `-`, starting
+with a letter or digit.
 Optional `sha` (40 hex characters) verifies the ref's commit and pins upstream
 file reads. Producer release workflows must send the dispatch separately.
 Non-dry runs use the `ENVOY_CI_PUBLISH_APP_ID` and `ENVOY_CI_PUBLISH_APP_KEY`

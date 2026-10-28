@@ -26,8 +26,8 @@ def validate_inputs(repository, ref, version, sha=""):
         raise ValueError("repository must match envoyproxy/[A-Za-z0-9_.-]+")
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise ValueError("version must be plain semver: X.Y.Z")
-    if not ref or any(ord(c) < 33 or ord(c) == 127 for c in ref):
-        raise ValueError("ref must be nonempty and contain no whitespace/control characters")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+-]*", ref):
+        raise ValueError("ref must use only letters, digits, dot, underscore, slash, plus or hyphen")
     if sha and not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
         raise ValueError("sha must be 40 hexadecimal characters")
 
