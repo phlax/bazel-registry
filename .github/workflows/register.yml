@@ -1,0 +1,117 @@
+name: Register module
+
+permissions:
+  contents: read
+
+on:
+  repository_dispatch:
+    types: [register-module]
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Upstream repository (envoyproxy/examples)
+        type: string
+        required: true
+      ref:
+        description: Upstream tag or commit SHA
+        type: string
+        required: true
+      version:
+        description: Upstream release version (X.Y.Z)
+        type: string
+        required: true
+      dry-run:
+        description: Validate without writing entries or opening a PR
+        type: boolean
+        default: false
+
+concurrency:
+  group: register-${{ github.event.client_payload.repository || inputs.repository }}-${{ github.event.client_payload.version || inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  register:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+    - name: Validate request before authentication or checkout
+      id: request
+      env:
+        REQUEST: ${{ toJSON(github.event.client_payload || inputs) }}
+      run: |
+        python3 - <<'PY'
+        import json
+        import os
+        import re
+
+        request = json.loads(os.environ["REQUEST"])
+        for field, pattern in (
+                ("repository", r"envoyproxy/[A-Za-z0-9_.-]+"),
+                ("version", r"[0-9]+\.[0-9]+\.[0-9]+")):
+            value = request.get(field)
+            if not isinstance(value, str) or not re.fullmatch(pattern, value):
+                raise SystemExit(f"Invalid {field}: must match {pattern}")
+        ref = request.get("ref")
+        if not isinstance(ref, str) or not ref or any(ord(c) < 33 or ord(c) == 127 for c in ref):
+            raise SystemExit("Invalid ref: expected a tag or SHA without whitespace/control characters")
+        dry_run = request.get("dry-run", False)
+        if not isinstance(dry_run, bool):
+            raise SystemExit("dry-run must be a boolean")
+        sha = request.get("sha", "")
+        if not isinstance(sha, str) or (sha and not re.fullmatch(r"[0-9a-fA-F]{40}", sha)):
+            raise SystemExit("sha must be 40 hexadecimal characters")
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            for key in ("repository", "version", "ref"):
+                output.write(f"{key}={request[key]}\n")
+            output.write(f"sha={sha}\n")
+            output.write(f"dry-run={str(dry_run).lower()}\n")
+        PY
+    - name: Appauth
+      id: appauth
+      if: steps.request.outputs.dry-run != 'true'
+      uses: envoyproxy/toolshed/actions/appauth@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
+      with:
+        app_id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
+        key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
+    - name: Checkout the registry
+      uses: envoyproxy/toolshed/actions/github/checkout@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
+      with:
+        branch: main
+        committer-name: publish-envoy[bot]
+        committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
+        token: ${{ steps.appauth.outputs.token || github.token }}
+    - name: Register modules
+      id: register
+      env:
+        REPOSITORY: ${{ steps.request.outputs.repository }}
+        REF: ${{ steps.request.outputs.ref }}
+        VERSION: ${{ steps.request.outputs.version }}
+        SHA: ${{ steps.request.outputs.sha }}
+        DRY_RUN: ${{ steps.request.outputs.dry-run }}
+        GH_TOKEN: ${{ steps.appauth.outputs.token || github.token }}
+      run: |
+        args=()
+        if [[ "$DRY_RUN" == true ]]; then
+            args+=(--dry-run)
+        fi
+        python3 .github/workflows/register_module.py \
+            --repository="$REPOSITORY" \
+            --ref="$REF" \
+            --version="$VERSION" \
+            --sha="$SHA" \
+            "${args[@]}"
+    - name: Create Pull Request
+      uses: envoyproxy/toolshed/actions/github/pr@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
+      with:
+        base: main
+        branch: ${{ steps.register.outputs.branch }}
+        title: ${{ steps.register.outputs.title }}
+        body: |
+          Created by publish-envoy[bot] from ${{ steps.request.outputs.repository }}@${{ steps.request.outputs.ref }}
+
+          ${{ steps.register.outputs.summary }}
+        commit: ${{ steps.request.outputs.dry-run != 'true' }}
+        dry-run: ${{ steps.request.outputs.dry-run }}
+        GITHUB_TOKEN: ${{ steps.appauth.outputs.token || github.token }}

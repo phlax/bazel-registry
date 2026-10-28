@@ -35,6 +35,8 @@ jobs:
         fetch-depth: 0
     - name: Test module selection
       run: python3 .github/workflows/registry_select_test.py
+    - name: Test module registration
+      run: python3 .github/workflows/register_module_test.py
     - name: Test registry prune plan
       run: bash .github/workflows/registry_prune_plan_test.sh
     - name: Test registry immutability
