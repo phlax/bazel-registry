@@ -2,11 +2,13 @@
 """Tests for register_module.py; all network access is mocked."""
 
 import contextlib
+import gzip
 import io
 import json
 import os
 import pathlib
 import sys
+import tarfile
 import tempfile
 import unittest
 import urllib.error
@@ -43,10 +45,25 @@ class RegisterModuleTest(unittest.TestCase):
         self.raw = f"https://raw.githubusercontent.com/{REPOSITORY}/v{VERSION}/"
         self.api = f"https://api.github.com/repos/{REPOSITORY}/contents/"
         self.archive = f"https://github.com/{REPOSITORY}/archive/refs/tags/v{VERSION}.tar.gz"
-        self.data[self.archive] = b"release archive"
+        # Archives built from the upstream files at fetch time: {url: prefix}.
+        self.archives = {self.archive: f"examples-{VERSION}"}
         self.add_upstream(".", "examples")
 
+    def build_archive(self, prefix):
+        """A deterministic tar.gz of the upstream MODULE.bazel files under `prefix`."""
+        buffer = io.BytesIO()
+        with gzip.GzipFile(fileobj=buffer, mode="wb", mtime=0) as compressed:
+            with tarfile.open(fileobj=compressed, mode="w") as archive:
+                for url, data in sorted(self.data.items()):
+                    if url.startswith(self.raw) and url.endswith("MODULE.bazel"):
+                        info = tarfile.TarInfo(prefix + "/" + url[len(self.raw):])
+                        info.size = len(data)
+                        archive.addfile(info, io.BytesIO(data))
+        return buffer.getvalue()
+
     def fetch(self, url, optional=False, method="GET"):
+        if url in self.archives:
+            return self.build_archive(self.archives[url])
         if url in self.data:
             return self.data[url]
         if optional:
@@ -58,7 +75,10 @@ class RegisterModuleTest(unittest.TestCase):
         bcr = ".bcr/" + prefix
         self.data[self.raw + prefix + "MODULE.bazel"] = (
             f'module(name = "{name}", version = "{VERSION}")\n' + deps).encode()
-        self.data[self.raw + bcr + "source.template.json"] = TEMPLATE.encode()
+        # Templates give the full strip_prefix, including any subdirectory.
+        self.data[self.raw + bcr + "source.template.json"] = (
+            TEMPLATE if root == "." else TEMPLATE.replace("{REPO}-{VERSION}",
+                                                          "{REPO}-{VERSION}/" + root)).encode()
         self.data[self.raw + bcr + "presubmit.yml"] = b"# unchanged\r\nbuild_targets: []\r\n"
         self.data[self.raw + bcr + "metadata.template.json"] = json.dumps({
             "homepage": "https://example.com", "versions": ["old"], "yanked_versions": {"old": "bad"},
@@ -78,7 +98,7 @@ class RegisterModuleTest(unittest.TestCase):
 
     def run_register(self, **kwargs):
         with contextlib.redirect_stdout(io.StringIO()):
-            return register.register(REPOSITORY, "v" + VERSION, VERSION, self.root, **kwargs)
+            return register.register(REPOSITORY, "v" + VERSION, self.root, **kwargs)
 
     def test_module_rewrites_preserve_unrelated_bytes(self):
         original = '''# keep this header
@@ -123,7 +143,7 @@ ext.configure(value = "local_path_override() # not code")
 
 # keep this footer
 '''
-        self.assertEqual(register.rewrite_module(original, VERSION, {"examples", "sibling"}), expected)
+        self.assertEqual(register.rewrite_module(original, VERSION, {"sibling": VERSION}), expected)
 
     def test_ordinary_comments_and_override_names_in_strings_preserved(self):
         text = '''module(name = "examples", version = "1.2.3")
@@ -131,7 +151,7 @@ ext.configure(value = "local_path_override() # not code")
 # local_path_override(module_name = "foo", path = ".")
 x = "bazel_dep(name = 'unreal', version = '0')"
 '''
-        self.assertEqual(register.rewrite_module(text, VERSION, {"examples"}),
+        self.assertEqual(register.rewrite_module(text, VERSION, {}),
                          text.replace('version = "1.2.3"', 'version = "1.2.3.envoy"'))
 
     def test_dynamic_or_nested_calls_fail_not_guess(self):
@@ -143,7 +163,7 @@ x = "bazel_dep(name = 'unreal', version = '0')"
                 'if True:\n    local_path_override(module_name = "x", path = ".")',
                 'x = [bazel_dep(name = "y", version = "1")]'):
             with self.subTest(text=text), self.assertRaises(ValueError):
-                register.rewrite_module(text, VERSION, {"x"})
+                register.rewrite_module(text, VERSION, {"x": VERSION})
 
     def test_config_list_forms_and_default(self):
         for config in ('moduleRoots: [".", filter-cc, wasm-cc]\n',
@@ -156,17 +176,15 @@ x = "bazel_dep(name = 'unreal', version = '0')"
             with self.subTest(config=config), self.assertRaises(ValueError):
                 register.module_roots(config)
 
-    def test_render_template_subroots(self):
-        for root, strip in ((".", "examples-1.2.3"), ("filter-cc", "examples-1.2.3/filter-cc")):
-            rendered = register.render_source(TEMPLATE, REPOSITORY, "v1.2.3", VERSION, root)
+    def test_render_template_uses_strip_prefix_as_given(self):
+        for strip in ("examples-1.2.3", "examples-1.2.3/filter-cc", "toolshed-jq-v1.2.3"):
+            template = TEMPLATE.replace("{REPO}-{VERSION}", strip)
+            rendered = register.render_source(template, REPOSITORY, "v1.2.3", VERSION)
             self.assertEqual(rendered["strip_prefix"], strip)
             self.assertEqual(rendered["url"], self.archive)
-            template = TEMPLATE.replace("{REPO}-{VERSION}", strip)
-            self.assertEqual(register.render_source(
-                template, REPOSITORY, "v1.2.3", VERSION, root)["strip_prefix"], strip)
         with self.assertRaisesRegex(ValueError, "Unresolved"):
             register.render_source(TEMPLATE.replace("{TAG}", "{UNKNOWN}"),
-                                   REPOSITORY, "v1.2.3", VERSION, ".")
+                                   REPOSITORY, "v1.2.3", VERSION)
 
     def test_metadata_create_and_verbatim_presubmit(self):
         entries = self.run_register()
@@ -181,17 +199,20 @@ x = "bazel_dep(name = 'unreal', version = '0')"
                          b"# unchanged\r\nbuild_targets: []\r\n")
         source = json.loads((path / "1.2.3.envoy/source.json").read_bytes())
         self.assertEqual(list(source), ["url", "integrity", "strip_prefix"])
-        self.assertEqual(source["integrity"], register.integrity(b"release archive"))
+        self.assertEqual(source["integrity"], register.integrity(self.fetch(self.archive)))
 
-    def test_metadata_append_and_duplicate_fails(self):
+    def test_metadata_append_and_rerun_skips(self):
         path = self.add_existing()
         self.run_register()
         metadata = json.loads((path / "metadata.json").read_bytes())
         self.assertEqual(metadata["versions"], ["9.0.0.envoy", "0.1.0.envoy.1", "1.2.3.envoy"])
         self.assertEqual(metadata["homepage"], "keep")
         self.assertEqual(metadata["yanked_versions"], {"9.0.0.envoy": "bad"})
-        with self.assertRaisesRegex(ValueError, "already exists"):
-            self.run_register()
+        output = self.root / "outputs"
+        with mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}):
+            self.assertEqual(self.run_register(), {})
+        self.assertIn("registered=false\n", output.read_text())
+        self.assertIn("examples@1.2.3.envoy: already registered", output.read_text())
 
     def test_dry_run_no_writes_and_outputs(self):
         output = self.root / "outputs"
@@ -199,9 +220,10 @@ x = "bazel_dep(name = 'unreal', version = '0')"
             entries = self.run_register(dry_run=True)
         self.assertIn(("examples", "1.2.3.envoy"), entries)
         self.assertFalse(self.modules.exists())
+        self.assertIn("registered=true\n", output.read_text())
         self.assertIn("modules=examples@1.2.3.envoy\n", output.read_text())
         self.assertIn("title=registry/examples: Add 1.2.3.envoy\n", output.read_text())
-        self.assertIn("branch=register/examples/1.2.3\n", output.read_text())
+        self.assertIn("branch=register/examples/examples-1.2.3.envoy\n", output.read_text())
 
     def test_multiple_modules_download_once_and_verify_siblings(self):
         self.data[self.raw + ".bcr/config.yml"] = b"moduleRoots: [., sibling]"
@@ -278,28 +300,87 @@ bazel_dep(name = "envoyish", version = "1.0.envoyish")
             self.assertEqual(source[kind][path], register.integrity(data))
 
     def test_invalid_inputs_fail_before_network(self):
-        for repository, ref, version, sha in (
-                ("other/examples", "v1", VERSION, ""),
-                (REPOSITORY, "", VERSION, ""),
-                (REPOSITORY, "v1\ninjection", VERSION, ""),
-                (REPOSITORY, "v1.2.3'$(id)'", VERSION, ""),
-                (REPOSITORY, "v1.2.3`id`", VERSION, ""),
-                (REPOSITORY, "v1.2.3\\", VERSION, ""),
-                (REPOSITORY, "v1", "1.2.3-dev", ""),
-                (REPOSITORY, "v1", VERSION, "bad")):
+        for repository, ref, sha in (
+                ("other/examples", "v1", ""),
+                (REPOSITORY, "", ""),
+                (REPOSITORY, "v1\ninjection", ""),
+                (REPOSITORY, "v1.2.3'$(id)'", ""),
+                (REPOSITORY, "v1.2.3`id`", ""),
+                (REPOSITORY, "v1.2.3\\", ""),
+                (REPOSITORY, "v1", "bad")):
             with self.assertRaises(ValueError):
-                register.register(repository, ref, version, self.root, sha=sha)
+                register.register(repository, ref, self.root, sha=sha)
         self.read_url.assert_not_called()
 
-    def test_upstream_version_mismatch_and_missing_presubmit(self):
-        self.data[self.raw + "MODULE.bazel"] = b'module(name = "examples", version = "9.0.0")'
-        with self.assertRaisesRegex(ValueError, "upstream version"):
-            self.run_register()
-        self.add_upstream(".", "examples")
+    def test_presubmit_is_optional(self):
         del self.data[self.raw + ".bcr/presubmit.yml"]
-        with self.assertRaisesRegex(ValueError, "presubmit.yml"):
+        entries = self.run_register()
+        self.assertNotIn("presubmit.yml", entries["examples", "1.2.3.envoy"])
+        self.assertFalse((self.modules / "examples/1.2.3.envoy/presubmit.yml").exists())
+
+    def test_archive_module_must_match_ref(self):
+        archive = self.fetch(self.archive)
+        self.archives.clear()
+        self.data[self.archive] = archive
+        self.data[self.raw + "MODULE.bazel"] += b"# changed after the release\n"
+        with self.assertRaisesRegex(ValueError, "differs from"):
+            self.run_register()
+        self.data[self.archive] = b"not an archive"
+        with self.assertRaisesRegex(ValueError, "Unsupported release archive"):
             self.run_register()
         self.assertFalse(self.modules.exists())
+
+    def test_dev_versions_skipped_and_nothing_to_register(self):
+        self.data[self.raw + "MODULE.bazel"] = b'module(name = "examples", version = "1.2.4-dev")\n'
+        output = self.root / "outputs"
+        with mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}):
+            self.assertEqual(self.run_register(), {})
+        self.assertIn("registered=false\n", output.read_text())
+        self.assertIn("examples@1.2.4-dev: not a release version", output.read_text())
+        self.assertNotIn("branch=", output.read_text())
+        self.assertFalse(self.modules.exists())
+
+    def test_registry_templates_preferred_over_bcr(self):
+        # `.envoy-registry/` overrides `.bcr/` (eg kept for BCR publishing).
+        self.data[self.raw + ".bcr/source.template.json"] = b'{"broken": true}'
+        self.data[self.raw + ".envoy-registry/config.yml"] = b"moduleRoots: [.]"
+        self.data[self.raw + ".envoy-registry/source.template.json"] = TEMPLATE.encode()
+        self.data[self.raw + ".envoy-registry/metadata.template.json"] = b'{"versions": []}'
+        entries = self.run_register()
+        self.assertIn(("examples", "1.2.3.envoy"), entries)
+        self.assertNotIn("presubmit.yml", entries["examples", "1.2.3.envoy"])
+
+    def test_independently_versioned_roots(self):
+        # A monorepo ref where each root has its own release and tarball: only
+        # the new releases register, each hashed from its own archive, and a
+        # dependency on an already-registered sibling still becomes `.envoy`.
+        self.data[self.raw + ".bcr/config.yml"] = b"moduleRoots: [bazel, jq, rules_jq]"
+        roots = {"bazel": ("envoy_toolshed", VERSION), "jq": ("envoy_toolshed_jq", VERSION),
+                 "rules_jq": ("rules_jq", "0.0.2-dev")}
+        for root, (name, version) in roots.items():
+            url = f"https://github.com/{REPOSITORY}/releases/download/v{{TAG}}/{root}.tar.gz"
+            self.data[self.raw + root + "/MODULE.bazel"] = (
+                f'module(name = "{name}", version = "{version}")\n'
+                + ('bazel_dep(name = "envoy_toolshed_jq", version = "1.2.3")\n'
+                   'bazel_dep(name = "rules_jq", version = "0.0.0", dev_dependency = True)\n'
+                   if root == "bazel" else "")).encode()
+            self.data[self.raw + ".bcr/" + root + "/source.template.json"] = json.dumps({
+                "url": url, "integrity": "", "strip_prefix": f"{root}-v{{VERSION}}/{root}",
+            }).encode()
+            self.data[self.raw + ".bcr/" + root + "/metadata.template.json"] = b'{"versions": []}'
+            self.archives[url.replace("{TAG}", VERSION)] = f"{root}-v{version}"
+        (self.add_existing("envoy_toolshed_jq", versions=["1.2.3.envoy"])
+         / "1.2.3.envoy/MODULE.bazel").touch()
+        entries = self.run_register()
+        self.assertEqual(list(entries), [("envoy_toolshed", "1.2.3.envoy")])
+        source = json.loads((self.modules / "envoy_toolshed/1.2.3.envoy/source.json").read_bytes())
+        self.assertEqual(source["strip_prefix"], "bazel-v1.2.3/bazel")
+        self.assertEqual(source["integrity"], register.integrity(self.fetch(source["url"])))
+        module = (self.modules / "envoy_toolshed/1.2.3.envoy/MODULE.bazel").read_text()
+        self.assertIn('bazel_dep(name = "envoy_toolshed_jq", version = "1.2.3.envoy")', module)
+        # The dev dependency is neither rewritten nor verified.
+        self.assertIn('bazel_dep(name = "rules_jq", version = "0.0.0", dev_dependency = True)', module)
+        self.assertFalse(any(c.kwargs.get("method") == "HEAD" for c in self.read_url.call_args_list))
 
     def test_optional_sha_is_verified_and_pins_upstream_reads(self):
         sha = "a" * 40

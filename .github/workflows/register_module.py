@@ -11,21 +11,25 @@ import os
 import pathlib
 import re
 import sys
+import tarfile
 import tokenize
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 
 
 OVERRIDES = {"local_path_override", "git_override", "archive_override"}
 CALLS = OVERRIDES | {"module", "bazel_dep"}
+# Upstream template directory for this registry; `.bcr/` is the fallback.
+TEMPLATES = ".envoy-registry"
+# Only plain release versions are registered; anything else (eg `-dev`) is skipped.
+RELEASE = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
 
 
-def validate_inputs(repository, ref, version, sha=""):
+def validate_inputs(repository, ref, sha=""):
     if not re.fullmatch(r"envoyproxy/[A-Za-z0-9_.-]+", repository):
         raise ValueError("repository must match envoyproxy/[A-Za-z0-9_.-]+")
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
-        raise ValueError("version must be plain semver: X.Y.Z")
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+-]*", ref):
         raise ValueError("ref must use only letters, digits, dot, underscore, slash, plus or hyphen")
     if sha and not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
@@ -123,7 +127,12 @@ def calls(text):
                             nested -= 1
                         stop += 1
                     value_tokens = arguments[n + 2:stop]
-                    if arg.string in ("name", "version"):
+                    if arg.string == "dev_dependency":
+                        if (len(value_tokens) != 1
+                                or value_tokens[0].string not in ("True", "False")):
+                            raise ValueError(f"{token.string}.dev_dependency must be True or False")
+                        attrs["dev_dependency"] = value_tokens[0].string == "True"
+                    elif arg.string in ("name", "version"):
                         if len(value_tokens) != 1 or value_tokens[0].type != tokenize.STRING:
                             raise ValueError(f"{token.string}.{arg.string} must be a string literal")
                         value_token = value_tokens[0]
@@ -157,6 +166,10 @@ def identity(text):
 
 
 def rewrite_module(text, version, siblings):
+    """Rewrite the module to `<version>.envoy` and same-repo release deps to theirs.
+
+    `siblings` maps module names released from the same ref to their versions.
+    """
     edits = []
     for name, start, end, attrs in calls(text):
         if name in OVERRIDES:
@@ -169,14 +182,15 @@ def rewrite_module(text, version, siblings):
             if not {"name", "version"} <= attrs.keys():
                 raise ValueError(f"{name} must have literal name and version")
             if name == "module" or attrs["name"][0] in siblings:
+                expected = version if name == "module" else siblings[attrs["name"][0]]
                 old, start, end = attrs["version"]
-                if old != version:
-                    raise ValueError(f"{name} {attrs['name'][0]} version {old} != {version}")
+                if old != expected:
+                    raise ValueError(f"{name} {attrs['name'][0]} version {old} != {expected}")
                 literal = text[start:end]
                 quote = literal[0]
                 if quote not in ("'", '"') or literal.startswith(quote * 3):
                     raise ValueError("Rewritten versions must use simple quoted strings")
-                edits.append((start, end, quote + version + ".envoy" + quote))
+                edits.append((start, end, quote + expected + ".envoy" + quote))
     for start, end, replacement in sorted(edits, reverse=True):
         text = text[:start] + replacement + text[end:]
 
@@ -202,7 +216,7 @@ def integrity(data):
     return "sha256-" + base64.b64encode(hashlib.sha256(data).digest()).decode()
 
 
-def render_source(template, repository, ref, version, root):
+def render_source(template, repository, ref, version):
     owner, repo = repository.split("/")
     for key, value in {"OWNER": owner, "REPO": repo, "VERSION": version,
                        "TAG": ref.removeprefix("v")}.items():
@@ -217,9 +231,32 @@ def render_source(template, repository, ref, version, root):
     url = urllib.parse.urlsplit(source["url"])
     if url.scheme != "https" or not url.netloc or url.username or url.password:
         raise ValueError("Source URL must be HTTPS without credentials")
-    if root != "." and not source["strip_prefix"].endswith("/" + root):
-        source["strip_prefix"] += "/" + root
     return {key: source[key] for key in ("url", "integrity", "strip_prefix")}
+
+
+def archive_member(data, path):
+    """Return the bytes of `path` inside a tar (any compression) or zip archive."""
+    candidates = (path, "./" + path)
+    if zipfile.is_zipfile(io.BytesIO(data)):
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            for name in candidates:
+                if name in archive.namelist():
+                    return archive.read(name)
+        raise ValueError(f"{path} not found in release archive")
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as archive:
+            for name in candidates:
+                try:
+                    member = archive.getmember(name)
+                except KeyError:
+                    continue
+                extracted = archive.extractfile(member)
+                if extracted is None:
+                    raise ValueError(f"{path} in release archive is not a file")
+                return extracted.read()
+    except tarfile.ReadError as exc:
+        raise ValueError(f"Unsupported release archive: {exc}") from exc
+    raise ValueError(f"{path} not found in release archive")
 
 
 def read_url(url, optional=False, method="GET"):
@@ -272,6 +309,12 @@ class Upstream:
         return files
 
 
+def registered(root, name, version):
+    path = root / name / "metadata.json"
+    return ((root / name / version).exists()
+            or (path.exists() and version in json.loads(path.read_bytes())["versions"]))
+
+
 def update_metadata(root, name, version, upstream, bcr):
     path = root / name / "metadata.json"
     if path.exists():
@@ -309,6 +352,9 @@ def check_dependencies(root, entries):
             if call == "bazel_dep":
                 if not {"name", "version"} <= attrs.keys():
                     raise ValueError("bazel_dep must have literal name and version")
+                if attrs.get("dev_dependency"):
+                    # Consumers never resolve a dependency's dev dependencies.
+                    continue
                 deps.add((attrs["name"][0], attrs["version"][0]))
     failures = []
     for name, version in sorted(deps):
@@ -330,8 +376,13 @@ def check_dependencies(root, entries):
     return len(deps)
 
 
-def register(repository, ref, version, modules_root, dry_run=False, sha=""):
-    validate_inputs(repository, ref, version, sha)
+def register(repository, ref, modules_root, dry_run=False, sha=""):
+    """Register each module root whose version at `ref` is a new release.
+
+    Roots at a non-release version (eg `-dev`) or already registered are skipped,
+    so one ref can carry modules released independently of each other.
+    """
+    validate_inputs(repository, ref, sha)
     root = pathlib.Path(modules_root) / "modules"
     if sha:
         commit = json.loads(read_url(
@@ -340,36 +391,49 @@ def register(repository, ref, version, modules_root, dry_run=False, sha=""):
         if commit["sha"].lower() != sha.lower():
             raise ValueError("ref does not resolve to --sha")
     upstream = Upstream(repository, sha or ref)
-    config = upstream.raw(".bcr/config.yml", optional=True)
+    # Templates for this registry, when they differ from the repo's BCR ones.
+    templates = TEMPLATES
+    config = upstream.raw(templates + "/config.yml", optional=True)
+    if config is None:
+        templates = ".bcr"
+        config = upstream.raw(templates + "/config.yml", optional=True)
     roots = module_roots(config.decode() if config is not None else "")
-    modules = []
+    found = []
     for module_root in roots:
         prefix = "" if module_root == "." else module_root + "/"
         text = upstream.raw(prefix + "MODULE.bazel").decode()
-        name, upstream_version = identity(text)
-        if upstream_version != version:
-            raise ValueError(f"{name}: upstream version {upstream_version} != {version}")
-        modules.append((module_root, name, text))
-    siblings = {name for _, name, _ in modules}
-    if len(siblings) != len(modules):
+        name, module_version = identity(text)
+        found.append((module_root, name, module_version, text))
+    if len({name for _, name, _, _ in found}) != len(found):
         raise ValueError("Duplicate module names")
-    entries, metadata = {}, {}
-    archive_url, archive_integrity = None, None
-    registry_version = version + ".envoy"
-    for module_root, name, text in modules:
-        bcr = ".bcr" + ("/" + module_root if module_root != "." else "")
+    # Every module released from this ref, registered now or before, so deps
+    # between them become `.envoy` either way.
+    siblings = {name: v for _, name, v, _ in found if RELEASE.fullmatch(v)}
+    candidates, skipped = [], []
+    for module_root, name, module_version, text in found:
+        if not RELEASE.fullmatch(module_version):
+            skipped.append(f"{name}@{module_version}: not a release version")
+        elif registered(root, name, module_version + ".envoy"):
+            skipped.append(f"{name}@{module_version}.envoy: already registered")
+        else:
+            candidates.append((module_root, name, module_version, text))
+    entries, metadata, archives = {}, {}, {}
+    for module_root, name, module_version, text in candidates:
+        registry_version = module_version + ".envoy"
+        bcr = templates + ("/" + module_root if module_root != "." else "")
         source = render_source(upstream.raw(bcr + "/source.template.json").decode(),
-                               repository, ref, version, module_root)
-        if archive_url is None:
-            archive_url = source["url"]
-            archive_integrity = integrity(read_url(archive_url))
-        elif source["url"] != archive_url:
-            raise ValueError("All modules must use the same release tarball URL")
-        source["integrity"] = archive_integrity
-        files = {
-            "MODULE.bazel": rewrite_module(text, version, siblings).encode(),
-            "presubmit.yml": upstream.raw(bcr + "/presubmit.yml"),
-        }
+                               repository, ref, module_version)
+        if source["url"] not in archives:
+            archives[source["url"]] = read_url(source["url"])
+        archive = archives[source["url"]]
+        source["integrity"] = integrity(archive)
+        # The registry's MODULE.bazel must be the one Bazel downloads.
+        if archive_member(archive, source["strip_prefix"] + "/MODULE.bazel") != text.encode():
+            raise ValueError(f"{name}: MODULE.bazel in {source['url']} differs from {ref}")
+        files = {"MODULE.bazel": rewrite_module(text, module_version, siblings).encode()}
+        presubmit = upstream.raw(bcr + "/presubmit.yml", optional=True)
+        if presubmit is not None:
+            files["presubmit.yml"] = presubmit
         for kind in ("patches", "overlay"):
             extra = upstream.tree(bcr + "/" + kind)
             if extra:
@@ -381,7 +445,7 @@ def register(repository, ref, version, modules_root, dry_run=False, sha=""):
         files["source.json"] = (json.dumps(source, indent=4) + "\n").encode()
         metadata[name] = update_metadata(root, name, registry_version, upstream, bcr)
         entries[name, registry_version] = files
-    verified = check_dependencies(root, entries)
+    verified = check_dependencies(root, entries) if entries else 0
     if not dry_run:
         for (name, entry_version), files in entries.items():
             for path, data in files.items():
@@ -389,19 +453,25 @@ def register(repository, ref, version, modules_root, dry_run=False, sha=""):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
             (root / name / "metadata.json").write_text(json.dumps(metadata[name], indent=4) + "\n")
-    summary = "\n".join([
-        ("Dry-run; would register:" if dry_run else "Registered:"),
-        *[f"- {name}@{entry_version}" for name, entry_version in entries],
-        f"Integrity: {archive_integrity}",
-        f"Dependencies verified: {verified}",
-    ])
+    lines = [("Dry-run; would register:" if dry_run else "Registered:") if entries
+             else "Nothing to register."]
+    lines += [f"- {name}@{entry_version} ({json.loads(files['source.json'])['integrity']})"
+              for (name, entry_version), files in entries.items()]
+    if skipped:
+        lines += ["Skipped:", *[f"- {reason}" for reason in skipped]]
+    if entries:
+        lines.append(f"Dependencies verified: {verified}")
+    summary = "\n".join(lines)
     print(summary)
     if os.environ.get("GITHUB_OUTPUT"):
-        first = modules[0][1] + ("+" if len(modules) > 1 else "")
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-            output.write(f"modules={','.join(f'{n}@{v}' for n, v in entries)}\n")
-            output.write(f"title=registry/{first}: Add {registry_version}\n")
-            output.write(f"branch=register/{repository.split('/')[1]}/{version}\n")
+            output.write(f"registered={'true' if entries else 'false'}\n")
+            if entries:
+                (first, first_version), *rest = entries
+                label = first + ("+" if rest else "")
+                output.write(f"modules={','.join(f'{n}@{v}' for n, v in entries)}\n")
+                output.write(f"title=registry/{label}: Add {first_version}\n")
+                output.write(f"branch=register/{repository.split('/')[1]}/{first}-{first_version}\n")
             output.write(f"summary<<REGISTER_SUMMARY\n{summary}\nREGISTER_SUMMARY\n")
     return entries
 
@@ -410,13 +480,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--ref", required=True)
-    parser.add_argument("--version", required=True)
     parser.add_argument("--sha", default="")
     parser.add_argument("--modules-root", default=".", help="Registry root containing modules/")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
-        register(args.repository, args.ref, args.version, args.modules_root, args.dry_run, args.sha)
+        register(args.repository, args.ref, args.modules_root, args.dry_run, args.sha)
     except (ValueError, KeyError, OSError, tokenize.TokenError, SyntaxError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
