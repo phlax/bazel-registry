@@ -12,7 +12,8 @@
     ],
     "versions": [
         "45.0.2.envoy",
-        "45.0.2.envoy.1"
+        "45.0.2.envoy.1",
+        "49.0.5.envoy"
     ],
     "yanked_versions": {}
 }

@@ -1,0 +1,26 @@
+matrix:
+  platform:
+  - debian11
+  - ubuntu2404
+  - macos
+  bazel:
+  - 8.x
+
+tasks:
+  verify_targets:
+    name: Verify build targets
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    # Rust >= 1.93 needs mangled allocator symbols when C++ links an rlib.
+    # In rules_rust 0.68.1, only the allocator shim needs unstable features.
+    build_flags:
+    - '--@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=true'
+    - '--@rules_rust//rust/settings:extra_rustc_env=RUSTC_BOOTSTRAP=allocator_library'
+    test_flags:
+    - '--@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=true'
+    - '--@rules_rust//rust/settings:extra_rustc_env=RUSTC_BOOTSTRAP=allocator_library'
+    build_targets:
+    - "@wasmtime//..."
+    - "@wasmtime//:wasmtime_lib"
+    test_targets:
+    - "@wasmtime//:wasmtime_test"
