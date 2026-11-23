@@ -11,7 +11,8 @@
         "github:apache/kafka"
     ],
     "versions": [
-        "3.9.2.envoy"
+        "3.9.2.envoy",
+        "4.4.0.envoy"
     ],
     "yanked_versions": {}
 }

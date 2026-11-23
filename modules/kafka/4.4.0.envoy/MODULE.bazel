@@ -1,0 +1,8 @@
+"""Kafka protocol message definitions from Apache Kafka."""
+
+module(
+    name = "kafka",
+    version = "4.4.0.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 1,
+)
